@@ -10,6 +10,7 @@
 # CPU, disk, and running processes. It uses anti-evasion techniques,
 # such as #exfiltrating results via DNS or HTTP with Base64 encoding.
 #
+#
 # References:
 # - https://evasions.checkpoint.com/src/MacOS/macos.html
 # - https://macos.checkpoint.com/families/MacRansom/
@@ -447,4 +448,5 @@ main() {
     fi
 }
 
+# Run the main function
 main
