@@ -1,3 +1,18 @@
+
+
+![AttackMacOS_icon](https://github.com/user-attachments/assets/dc7809ab-10bf-46d2-8daf-e706af8ed371)
+
+
+# Attack-macOS
+Attack-macOS is a library of scripts mapped to MITRE ATT&CK. Security teams can use Attack-macOS to execute attack techniques and discover new detection opportunities in macOS environments.
+## Objective
+This project aims to simplify the execution of Living Off The Land (LOTL) techniques via scripts to validate macOS endpoint security.
+
+## Dependencies
+
+All Attack-macOS scripts use native macOS binaries, interpreters, playlists, libraries, tools, and utilities. If third-party tools are installed (```brew```, ```slack```,```jamf```),  techniques that leverage third-party apps can be executed. 
+
+### Technique Coverage
 ![Reconnaissance](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Reconnaissance?label=Reconnaissance&type=file)
 ![Resource Development](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Resource_Development?label=Resource%20Development&type=file)
 ![Initial Access](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Initial_Access?label=Initial%20Access&type=file)
@@ -14,36 +29,36 @@
 ![Impact](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Impact?label=Impact&type=file)
 
 
-![attack_macos_icon](https://github.com/user-attachments/assets/7f845f94-0809-4ffe-87d8-c0518ac501e1) 
 
-# Attack-macOS
 
-Attack-macOS is a library of scripts mapped to MITRE ATT&CK. Security teams can use attack-macOS to execute techniques and produce telemetry that facilitates detection opportunities in macOS environments.
 
 ## Key Features
 
-- **Modular Design**: Each script is self-contained and can be used independently or combined for complex scenarios.
+- **Template**: Includes a template for creating new scripts.
+- **Modular Design**: Each script is self-contained and can be used independently or combined with other scripts.
 - **Customizable**: Easy to modify and extend for specific testing needs.
 - **macOS Native**: All scripts use native tools and languages, including Bash, Swift, and AppleScript.
-- **MITRE ATT&CK Mapped**: All scripts are mapped to MITRE ATT&CK.
+- **MITRE ATT&CK Mapped**: All scripts and corresponding arguments are mapped to MITRE ATT&CK.
 - **Logging**: Built-in capability to log script output for analysis.
 - **Encoding**: Multiple options to encode data (Base64, hex) for various testing scenarios.
-- **Encryption**: Integrated functions to encrypt data with AES, Blowfish, and GPG.
+- **Encryption**: Integrated functions to encrypt output with AES, Blowfish, and GPG.
 - **Exfiltration**: Simulated data exfiltration via HTTP or DNS protocols.
+
+
 
 ## Get started
 
-You can execute attack-macOS scripts directly from the command line. For example:
+You can execute attack-macOS scripts from the command line via piped execution or disk. It depends on how what type of telemetry you need to produce. For example:
 
-```bash
-./Collection/keychain_dump.sh
+```sh
+curl -sSL https://raw.githubusercontent.com/darmado/attack-macOS/main/Discovery/accounts.sh | sh -s -- --help
 ```
+For more info, check out our wiki. 
 
-For more detailed usage instructions, use ```--help.```
 
 ## Learn more
 
-[This section would typically contain links to documentation or additional resources. As we don't have this information, we'll leave it as a placeholder.]
+Wiki is in the works...
 
 ## How to Contribute 
 
@@ -59,4 +74,17 @@ Attack-macOS is built as a community development project. Once we add 200+ TTPs,
   4. Push to the branch (`git push origin feature/AmazingFeature`)
   5. Open a Pull Request
 
+## Acknowledgements
+TTPs, attack scenarios, and code snippets are credited in the script's README.
+
+*Special thanks to:*
+- [MITRE ATT&CK ](https://twitter.com/mitreattack)
+- [Red Canary ](https://twitter.com/redcanaryco)
+- [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team)
+- [The DFIR Report](https://thedfirreport.com/)
+
+
+## License
+
+This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](LICENSE) file for details.
 
