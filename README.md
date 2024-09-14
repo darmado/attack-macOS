@@ -1,3 +1,18 @@
+![Reconnaissance](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Reconnaissance?label=Reconnaissance&type=file)
+![Resource Development](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Resource_Development?label=Resource%20Development&type=file)
+![Initial Access](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Initial_Access?label=Initial%20Access&type=file)
+![Execution](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Execution?label=Execution&type=file)
+![Persistence](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Persistence?label=Persistence&type=file)
+![Privilege Escalation](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Privilege_Escalation?label=Privilege%20Escalation&type=file)
+![Defense Evasion](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Defense_Evasion?label=Defense%20Evasion&type=file)
+![Credential Access](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Credential_Access?label=Credential%20Access&type=file)
+![Discovery](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Discovery?label=Discovery&type=file)
+![Lateral Movement](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Lateral_Movement?label=Lateral%20Movement&type=file)
+![Collection](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Collection?label=Collection&type=file)
+![Command and Control](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Command_and_Control?label=Command%20and%20Control&type=file)
+![Exfiltration](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Exfiltration?label=Exfiltration&type=file)
+![Impact](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Impact?label=Impact&type=file)
+
 
 ![attack_macos_icon](https://github.com/user-attachments/assets/7f845f94-0809-4ffe-87d8-c0518ac501e1) 
 
