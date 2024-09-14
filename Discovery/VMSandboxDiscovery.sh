@@ -3,6 +3,7 @@
 # Author: @darmad0
 # Date: 2023-10-06
 # Version: 1.1
+# techhnique: T1497.001 
 #
 # Description:
 # This script checks for indicators suggesting macOS is in 
@@ -14,7 +15,10 @@
 # References:
 # - https://evasions.checkpoint.com/src/MacOS/macos.html
 # - https://macos.checkpoint.com/families/MacRansom/
-#
+# - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1497.001/T1497.001.md
+# - https://github.com/cyberark/VMSandboxDetection
+# - https://attack.mitre.org/techniques/T1497/001/
+
 # Usage:
 #   ./VMSandboxDiscovery.sh [OPTIONS]
 #

@@ -1,0 +1,90 @@
+# Logs
+*.log
+*.log.*
+
+# PID files
+*.pid
+
+# Keys and sensitive data
+*.key
+*.pem
+*.cert
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# Encryption files
+*.enc
+*.gpg
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Bash history files
+.bash_history
+.sh_history
+
+# macOS specific
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Compiled files
+*.pyc
+*.pyo
+*.class
+
+# Dependency directories
+node_modules/
+vendor/
+
+# IDE and editor folders
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Build directories
+build/
+dist/
+
+# Environment files
+.env
+.env.*
+
+# Backup files
+*~
+*.bak
+*.backup
+
+# Script output files
+output/
+results/
+
+# System files that might be created
+.directory
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Exfiltration and encoding output
+exfil_output/
+encoded_data/
+
+# Any file with 'secret' in the name
+*secret*
+
+# Ignore all hidden files and directories except .gitignore
+.*
+!.gitignore
