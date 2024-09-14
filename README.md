@@ -48,7 +48,7 @@ All Attack-macOS scripts use native macOS binaries, interpreters, playlists, lib
 
 ## Get started
 
-You can execute attack-macOS scripts from the command line via piped execution or disk. It depends on how what type of telemetry you need to produce. For example:
+You can execute Attack-macOS scripts from the command line via piped execution or disk. It depends on what telemetry you need to produce. For example:
 
 ```sh
 curl -sSL https://raw.githubusercontent.com/darmado/attack-macOS/main/Discovery/accounts.sh | sh -s -- --help
