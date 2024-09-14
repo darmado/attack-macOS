@@ -1,3 +1,6 @@
+
+![attack_macos_icon](https://github.com/user-attachments/assets/7f845f94-0809-4ffe-87d8-c0518ac501e1) 
+
 # Attack-macOS
 
 Attack-macOS is a library of scripts mapped to MITRE ATT&CK. Security teams can use attack-macOS to execute techniques and produce telemetry that facilitates detection opportunities in macOS environments.
@@ -29,10 +32,10 @@ For more detailed usage instructions, use ```--help.```
 
 ## How to Contribute 
 
-Attack-macOS is built as a community development project. Once we add 200+ TTPs, we'll open it up fully to the community. For now:
+Attack-macOS is built as a community development project. Once we add 200+ TTPs, we'll open it up entirely to the community. For now:
 
 - For bugs, feature requests, or suggestions: 
-  [![GitHub issues](https://img.shields.io/github/issues/yourusername/attack-macOS.svg)](https://github.com/yourusername/attack-macOS/issues)
+  [![GitHub issues](https://img.shields.io/github/issues/yourusername/attack-macOS.svg)](https://github.com/darmado/attack-macOS/issues)
 
 - For new or modified features for scripts:
   1. Fork the repository
@@ -42,4 +45,3 @@ Attack-macOS is built as a community development project. Once we add 200+ TTPs,
   5. Open a Pull Request
 
 
-See `LICENSE` for information regarding the distribution and modification of attack-macOS.
