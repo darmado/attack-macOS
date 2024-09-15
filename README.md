@@ -3,15 +3,17 @@
 ![AttackMacOS_icon](https://github.com/user-attachments/assets/dc7809ab-10bf-46d2-8daf-e706af8ed371)
 
 
-# Attack-macOS
-Attack-macOS is a library of scripts mapped to MITRE ATT&CK. Security teams can use Attack-macOS to execute attack techniques and discover new detection opportunities in macOS environments.
-## Objective
+# Attack macOS
+Attack macOS is a library of scripts mapped to MITRE ATT&CK. Security teams can use Attack-macOS to execute attack techniques and discover new detection opportunities in macOS environments.
+##
+### **Objective**
 This project aims to simplify the execution of Living Off The Land (LOTL) techniques via scripts to validate macOS endpoint security.
 </br>
-## Dependencies
+##
+### Dependencies
 
-All Attack-macOS scripts use native macOS binaries, interpreters, playlists, libraries, tools, and utilities. If third-party tools are installed (```brew```, ```slack```,```jamf```),  techniques that leverage third-party apps can be executed. 
-</br>
+All Attack macOS scripts use native macOS binaries, interpreters, playlists, libraries, tools, and utilities. If third-party tools are installed (```brew```, ```slack```,```jamf```),  techniques that leverage third-party apps can be executed. 
+##
 
 ### Technique Coverage
 ![Reconnaissance](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Reconnaissance?label=Reconnaissance&type=file)
@@ -29,11 +31,10 @@ All Attack-macOS scripts use native macOS binaries, interpreters, playlists, lib
 ![Exfiltration](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Exfiltration?label=Exfiltration&type=file)
 ![Impact](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Impact?label=Impact&type=file)
 
+##
 
 
-</br>
-
-## Key Features
+### Key Features
 
 - **Template**: Includes a template for creating new scripts.
 - **Modular Design**: Each script is self-contained and can be used independently or combined with other scripts.
@@ -44,10 +45,10 @@ All Attack-macOS scripts use native macOS binaries, interpreters, playlists, lib
 - **Encoding**: Multiple options to encode data (Base64, hex) for various testing scenarios.
 - **Encryption**: Integrated functions to encrypt output with AES, Blowfish, and GPG.
 - **Exfiltration**: Simulated data exfiltration via HTTP or DNS protocols.
-</br>
 
+##
 
-## Get started
+### Get started
 
 You can execute Attack-macOS scripts from the command line via piped execution or disk. It depends on what telemetry you need to produce. For example:
 
@@ -55,14 +56,14 @@ You can execute Attack-macOS scripts from the command line via piped execution o
 curl -sSL https://raw.githubusercontent.com/darmado/attack-macOS/main/Discovery/accounts.sh | sh -s -- --help
 ```
 For more info, check out [Script Execution](https://github.com/darmado/attack-macOS/wiki/Script-Execution.md) 
-</br>
+##
 
-## Learn more
+### Learn more
 
 Wiki is in the works...
 
-</br>
-## How to Contribute 
+##
+### How to Contribute 
 
 Attack-macOS is built as a community development project. Once we add 200+ TTPs, we'll open it up entirely to the community. For now:
 
@@ -76,8 +77,9 @@ Attack-macOS is built as a community development project. Once we add 200+ TTPs,
   4. Push to the branch (`git push origin feature/AmazingFeature`)
   5. Open a Pull Request
 
-</br>
-## Acknowledgements
+##
+
+### Acknowledgements
 TTPs, attack scenarios, and code snippets are credited in the script's README.
 
 *Special thanks to:*
@@ -86,8 +88,9 @@ TTPs, attack scenarios, and code snippets are credited in the script's README.
 - [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team)
 - [The DFIR Report](https://thedfirreport.com/)
 
+##
 
-## License
+### License
 
 This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](LICENSE) file for details.
 
