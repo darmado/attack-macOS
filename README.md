@@ -17,20 +17,20 @@ All Attack-macOS scripts use native macOS binaries, interpreters, playlists, lib
 ##
 
 ### Technique Coverage
-![Reconnaissance](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Reconnaissance?label=Reconnaissance&type=file)
-![Resource Development](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Resource_Development?label=Resource%20Development&type=file)
-![Initial Access](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Initial_Access?label=Initial%20Access&type=file)
-![Execution](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Execution?label=Execution&type=file)
-![Persistence](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Persistence?label=Persistence&type=file)
-![Privilege Escalation](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Privilege_Escalation?label=Privilege%20Escalation&type=file)
-![Defense Evasion](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Defense_Evasion?label=Defense%20Evasion&type=file)
-![Credential Access](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Credential_Access?label=Credential%20Access&type=file)
-![Discovery](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Discovery?label=Discovery&type=file)
-![Lateral Movement](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Lateral_Movement?label=Lateral%20Movement&type=file)
-![Collection](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Collection?label=Collection&type=file)
-![Command and Control](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Command_and_Control?label=Command%20and%20Control&type=file)
-![Exfiltration](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Exfiltration?label=Exfiltration&type=file)
-![Impact](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/Impact?label=Impact&type=file)
+![Reconnaissance](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Reconnaissance?label=Reconnaissance&type=file)
+![Resource Development](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Resource_Development?label=Resource%20Development&type=file)
+![Initial Access](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Initial_Access?label=Initial%20Access&type=file)
+![Execution](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Execution?label=Execution&type=file)
+![Persistence](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Persistence?label=Persistence&type=file)
+![Privilege Escalation](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Privilege_Escalation?label=Privilege%20Escalation&type=file)
+![Defense Evasion](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Defense_Evasion?label=Defense%20Evasion&type=file)
+![Credential Access](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Credential_Access?label=Credential%20Access&type=file)
+![Discovery](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Discovery?label=Discovery&type=file)
+![Lateral Movement](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Lateral_Movement?label=Lateral%20Movement&type=file)
+![Collection](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Collection?label=Collection&type=file)
+![Command and Control](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Command_and_Control?label=Command%20and%20Control&type=file)
+![Exfiltration](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Exfiltration?label=Exfiltration&type=file)
+![Impact](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Impact?label=Impact&type=file)
 
 ##
 
@@ -67,6 +67,7 @@ Attack-macOS is built as a community development project. Once we add 200+ TTPs,
 
 ### How To Contribute
 - For bugs, feature requests, or suggestions: 
+
   [![GitHub issues](https://img.shields.io/github/issues/yourusername/attack-macOS.svg)](https://github.com/darmado/attack-macOS/issues)
 
 - For new or modified features for scripts:
