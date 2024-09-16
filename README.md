@@ -59,6 +59,8 @@ For more info, check out our wiki.
 
 Wiki is in the works...
 
+##
+
 ### How to Contribute 
 
 Attack-macOS is built as a community development project. Once we add 200+ TTPs, we'll open it up entirely to the community. For now:
@@ -66,9 +68,7 @@ Attack-macOS is built as a community development project. Once we add 200+ TTPs,
 ##
 
 ### How To Contribute
-- For bugs, feature requests, or suggestions: 
-
-  [![GitHub issues](https://img.shields.io/github/issues/yourusername/attack-macOS.svg)](https://github.com/darmado/attack-macOS/issues)
+- For bugs, feature requests, or suggestions use Githhub > Issues or hit me up on x.com: 
 
 - For new or modified features for scripts:
   1. Fork the repository
@@ -84,6 +84,7 @@ TTPs, attack scenarios, and code snippets are credited in the script's README.
 
 *Special thanks to:*
 - [MITRE ATT&CK ](https://twitter.com/mitreattack)
+- [Objective See](https://objective-see.org/)
 - [Red Canary ](https://twitter.com/redcanaryco)
 - [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team)
 - [The DFIR Report](https://thedfirreport.com/)

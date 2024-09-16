@@ -132,39 +132,6 @@ encode_output() {
             echo "$data" | xxd -p
             ;;
         uuencode)
-#!/bin/sh
-
-# Script Name: [TECHNIQUE_NAME]
-# MITRE ATT&CK Technique: [TECHNIQUE_ID]
-# Author: [YOUR_NAME]
-# Date: $(date +%Y-%m-%d)
-# Version: 1.0
-
-# Description:
-# [Brief description of what the script does and its purpose]
-
-# References:
-# - [URL to MITRE ATT&CK technique]
-# - [Any other relevant references]
-
-# Usage:
-#   ./[SCRIPT_NAME].sh [OPTIONS]
-
-# Options:
-#   -h    Display this help message
-#   -v    Enable verbose output
-
-# Function to display help message
-display_help() {
-    echo "Usage: $0 [OPTIONS]"
-    echo
-    echo "Options:"
-    echo "  -h    Display this help message"
-    echo "  -v    Enable verbose output"
-    echo
-    echo "Description:"
-    echo "  [Brief description of the script's functionality]"
-}
 
 # Parse command-line arguments
 VERBOSE=false
