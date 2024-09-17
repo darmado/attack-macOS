@@ -45,15 +45,31 @@ log() {
     fi
 }
 
-# Function to encode output
-encode() {
-    local data="$1"
-    if [ "$ENCODE" = "base64" ]; then
-        echo "$data" | base64
-    else
-        echo "$data"
-    fi
+# Encoding function
+encode_output() {
+    local output=$1
+    case $ENCODE in
+        b64)
+            echo "$output" | base64
+            ;;
+        hex)
+            echo "$output" | xxd -p
+            ;;
+        uuencode)
+            echo "$output" | uuencode -m -
+            ;;
+        perl_b64)
+            echo "$output" | perl -e 'use MIME::Base64; print encode_base64(join("", <STDIN>));'
+            ;;
+        perl_utf8)
+            echo "$output" | perl -e 'use Encode qw(encode); print encode("utf8", join("", <STDIN>));'
+            ;;
+        *)
+            echo "$output"
+            ;;
+    esac
 }
+
 
 # Helper function: for  time range
 # Function to convert human-readable time to Brave/Chrome timestamp format
@@ -82,10 +98,10 @@ safari_history() {
 
         if [ $? -eq 0 ]; then
             log "Successfully extracted Safari browser history"
-            log "$(encode "$output")"
+            log "$(encode_output "$output")"
         else
             log "Error: Unable to extract Safari history. Authorization might be denied."
-            log "$(encode "$output")"
+            log "$(encode_output "$output")"
         fi
     else
         log "Error: Safari history database not found."
@@ -109,10 +125,10 @@ brave_history() {
 
         if [ $? -eq 0 ]; then
             log "Successfully extracted Brave browser history"
-            log "$(encode "$output")"
+            log "$(encode_output "$output")"
         else
             log "Error: Unable to extract Chrome history. Authorization might be denied."
-            log "$(encode "$output")"
+            log "$(encode_output "$output")"
         fi
     else
         log "Error: Chrome history database not found."
@@ -129,10 +145,10 @@ chrome_history() {
 
         if [ $? -eq 0 ]; then
             log "Successfully extracted Chrome browser history"
-            log "$(encode "$output")"
+            log "$(encode_output "$output")"
         else
             log "Error: Unable to extract Chrome history. Authorization might be denied."
-            log "$(encode "$output")"
+            log "$(encode_output "$output")"
         fi
     else
         log "Error: Chrome history database not found."
@@ -149,10 +165,10 @@ firefox_history() {
 
         if [ $? -eq 0 ]; then
             log "Successfully extracted Firefox browser history"
-            log "$(encode "$output")"
+            log "$(encode_output "$output")"
         else
             log "Error: Unable to extract Firefox history. Authorization might be denied."
-            log "$(encode "$output")"
+            log "$(encode_output "$output")"
         fi
     else
         log "Error: Firefox history database not found."
