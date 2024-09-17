@@ -21,7 +21,6 @@ END_TIME=""
 
 
 # Function: Display help/usage message
-# Function: Display help/usage message
 display_help() {
     echo "Usage: $0 [options]"
     echo ""
@@ -32,12 +31,8 @@ display_help() {
     echo "-s, --safari         Extract Safari browser history"
     echo "-c, --chrome         Extract Chrome browser history"
     echo "-f, --firefox        Extract Firefox browser history"
-    echo "-b, --brave          Extract Brave browser history"
     echo "-l, --log            Log output to file"
-    echo "--start=[time]       Specify start time for history (format: 'YYYY-MM-DD HH:MM:SS')"
-    echo "--end=[time]         Specify end time for history (format: 'YYYY-MM-DD HH:MM:SS')"
-    echo "--encode=[base64]    Encode the output in base64"
-    echo "--encrypt=[key]      Encrypt the output with the provided key"
+    echo "--encode=TYPE        Encode output (b64|hex|uuencode|perl_b64|perl_utf8)"
 }
 
 # Function: Log messages
@@ -99,38 +94,30 @@ safari_history() {
 
 
 
-# Function to extract Brave browser history
+# Function to extract Brave browser histor
+
+#TOO check in  - afer wireless cjar 
+
+
+
 brave_history() {
     local brave_db="$HOME/Library/Application Support/BraveSoftware/Brave-Browser/Default/History"
     local output
 
     if [[ -f "$brave_db" ]]; then
-        local query="SELECT url, last_visit_time FROM urls"
-
-        # If start and end times are provided, modify the query using global variables
-        if [[ -n "$START_TIME" && -n "$END_TIME" ]]; then
-            local start_microseconds
-            local end_microseconds
-            read -r start_microseconds end_microseconds <<< "$(convert_time_range)"
-            query="$query WHERE last_visit_time BETWEEN $start_microseconds AND $end_microseconds"
-        fi
-
-        output=$(sqlite3 "$brave_db" "$query" 2>&1)
+        output=$(sqlite3 "$brave_db" "SELECT last_visit_time, url FROM urls;" 2>&1)
 
         if [ $? -eq 0 ]; then
             log "Successfully extracted Brave browser history"
-            log "$(process_output "$output")"
+            log "$(encode "$output")"
         else
-            log "Error: Unable to extract Brave history. Authorization might be denied."
-            log "$(process_output "$output")"
+            log "Error: Unable to extract Chrome history. Authorization might be denied."
+            log "$(encode "$output")"
         fi
     else
-        log "Error: Brave history database not found."
+        log "Error: Chrome history database not found."
     fi
 }
-
-
-
 
 # Function to extract Chrome history
 chrome_history() {
@@ -138,7 +125,7 @@ chrome_history() {
     local output
 
     if [[ -f "$chrome_db" ]]; then
-        output=$(sqlite3 "$chrome_db" "SELECT url, last_visit_time FROM urls;" 2>&1)
+        output=$(sqlite3 "$chrome_db" "SELECT last_visit_time, url FROM urls;" 2>&1)
 
         if [ $? -eq 0 ]; then
             log "Successfully extracted Chrome browser history"
@@ -172,34 +159,6 @@ firefox_history() {
     fi
 }
 
-# Function to extract Brave browser history
-brave_history() {
-    local brave_db="$HOME/Library/Application Support/BraveSoftware/Brave-Browser/Default/History"
-    local output
-
-    if [[ -f "$brave_db" ]]; then
-        local query="SELECT url, last_visit_time FROM urls"
-        
-        # If start and end times are provided, convert them to Brave's timestamp format
-        if [[ -n "$START_TIME" && -n "$END_TIME" ]]; then
-            local start=$(($(date -j -f "%Y-%m-%d %H:%M:%S" "$START_TIME" "+%s") * 1000000 + 11644473600000000))
-            local end=$(($(date -j -f "%Y-%m-%d %H:%M:%S" "$END_TIME" "+%s") * 1000000 + 11644473600000000))
-            query="$query WHERE last_visit_time BETWEEN $start AND $end"
-        fi
-        
-        output=$(sqlite3 "$brave_db" "$query" 2>&1)
-
-        if [ $? -eq 0 ]; then
-            log "Successfully extracted Brave browser history"
-            log "$(process_output "$output")"
-        else
-            log "Error: Unable to extract Brave history. Authorization might be denied."
-            log "$(process_output "$output")"
-        fi
-    else
-        log "Error: Brave history database not found."
-    fi
-}
 
 
 
@@ -208,6 +167,7 @@ all_browser_history() {
     safari_history
     chrome_history
     firefox_history
+    brave_history
 }
 
 # Main logic that runs after argument parsing
@@ -226,6 +186,10 @@ main() {
 
     if [ "$FIREFOX" = true ]; then
         firefox_history
+    fi
+    
+    if [ "$BRAVE" = true ]; then
+        brave_history
     fi
 }
 
