@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script Name: enable_guest_account.sh
+# Script Name: guest_account.sh
 # MITRE ATT&CK Technique: T1078
 # Author: Your Name
 # Date: $(date +%Y-%m-%d)

