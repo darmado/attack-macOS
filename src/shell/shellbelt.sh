@@ -69,7 +69,8 @@ usage() {
 }
 
 
-# Function to safely check permissions (read, write, execute) for a file
+# HELPER Function
+# checks permissions (read, write, execute) for a file
 # Other functions invoke it to avoid generating permission denied errors
 
 check_permissions() {
