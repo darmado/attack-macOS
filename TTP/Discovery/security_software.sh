@@ -230,7 +230,8 @@ display_help() {
     echo ""
     echo "  Opensource Security Tools:"
     echo "    -ost, --openst          Check all opensource security tools"
-    echo "    --ost=OPTION            Check specific opensource security tool comopnents (pid|files|config|logs)"
+    echo "    --ost=OPTION            Check specific opensource security tool comopnents (pid|files|info)"
+    echo "    --openst=OPTION         Check specific opensource security tool comopnents (pid|files|info)"
     echo ""
     echo "  Firewall:"
     echo "    -f, --firewall          Check firewall status"
@@ -531,10 +532,10 @@ while [ "$#" -gt 0 ]; do
             fi
             ;;
         -t|--tcc) TCC=true ;;
-        --opensource=*)
+        --openst=*)
             SECURITY_TOOLS_CHECKS+=("${1#*=}")
             if [[ -z "${1#*=}" ]]; then
-                echo "Warning: No value provided for --opensource. Please specify a valid option." >&2
+                echo "Warning: No value provided for --openst. Please specify a valid option." >&2
                 exit 1
             fi
             ;;
