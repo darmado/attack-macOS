@@ -2,6 +2,11 @@
 *.log
 *.log.*
 
+# Backup files
+*.bak
+*.backup
+*.backup.*
+
 # PID files
 *.pid
 

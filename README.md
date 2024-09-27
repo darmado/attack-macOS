@@ -1,97 +1,51 @@
+<h1 align="center">
+  <br>
+  <a href="https://github.com/yourcompany/attack-macos"><img src="https://yourcompanylogo.png" alt="attack-macOS" width="200"></a>
+  <br>
+  attack-macOS
+  <br>
+</h1>
 
+<h4 align="center">A collection of macOS shell scripts emulating threat actor activity for security testing and detection engineering.</h4>
 
-![AttackMacOS_icon](https://github.com/user-attachments/assets/dc7809ab-10bf-46d2-8daf-e706af8ed371)
+<p align="center">
+  <a href="https://github.com/yourcompany/attack-macOS">
+    <img src="https://img.shields.io/github/v/release/yourcompany/attack-macOS.svg" alt="Release">
+  </a>
+  <a href="https://gitter.im/yourcompany/attack-macOS"><img src="https://badges.gitter.im/yourcompany/attack-macOS.svg"></a>
+  <a href="mailto:support@yourcompany.com">
+      <img src="https://img.shields.io/badge/Contact-Support-blue.svg">
+  </a>
+</p>
 
+## Key Features
 
-# Attack-macOS
-Attack-macOS is a library of scripts mapped to MITRE ATT&CK. Security teams can use Attack-macOS to execute attack techniques and discover new detection opportunities in macOS environments.
-##
+* **Accurate Threat Emulation** - Scripts that replicate real-world macOS threat actor behaviors using native macOS tools.
+* **No External Dependencies** - Exclusively uses built-in macOS commands, ensuring no third-party software is needed.
+* **Automated Construction** - Scripts are dynamically constructed using YAML input, allowing for flexible automation.
+* **Mapped to MITRE ATT&CK** - Each script is designed to align with specific MITRE ATT&CK techniques, providing clear coverage.
+* **Modular Design** - Built for adaptability; functions handle specific tasks and can be reused across different scripts.
+* **Consistent Logging** - Standardized logging across all scripts, enabling easy telemetry analysis.
+* **Scalable and Interoperable** - Easily integrates with other tools and automation frameworks through wrapper script compatibility.
 
-### Objective
-This project aims to simplify the execution of Living Off The Land (LOTL) techniques via scripts to validate macOS endpoint security.
-##
+## Purpose
+The attack-macOS project aims to provide security professionals with realistic, native threat emulation scripts to validate and improve detection capabilities on macOS systems. The scripts adhere to strict design principles, ensuring consistency, accuracy, and adaptability for various testing scenarios.
 
-### Dependencies
+## Design Principles
 
-All Attack-macOS scripts use native macOS binaries, interpreters, playlists, libraries, tools, and utilities. If third-party tools are installed (```brew```, ```slack```,```jamf```),  techniques that leverage third-party apps can be executed. 
-##
+### 1. Modularity
+- Functions handle single, well-defined tasks and can be reused across different scripts.
+- Encapsulation ensures that telemetry commands and tasks are executed via user-passed arguments, promoting flexibility.
 
-### Technique Coverage
-![Reconnaissance](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Reconnaissance?label=Reconnaissance&type=file)
-![Resource Development](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Resource_Development?label=Resource%20Development&type=file)
-![Initial Access](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Initial_Access?label=Initial%20Access&type=file)
-![Execution](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Execution?label=Execution&type=file)
-![Persistence](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Persistence?label=Persistence&type=file)
-![Privilege Escalation](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Privilege_Escalation?label=Privilege%20Escalation&type=file)
-![Defense Evasion](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Defense_Evasion?label=Defense%20Evasion&type=file)
-![Credential Access](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Credential_Access?label=Credential%20Access&type=file)
-![Discovery](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Discovery?label=Discovery&type=file)
-![Lateral Movement](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Lateral_Movement?label=Lateral%20Movement&type=file)
-![Collection](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Collection?label=Collection&type=file)
-![Command and Control](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Command_and_Control?label=Command%20and%20Control&type=file)
-![Exfiltration](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Exfiltration?label=Exfiltration&type=file)
-![Impact](https://img.shields.io/github/directory-file-count/darmado/attack-macOS/TTP/Impact?label=Impact&type=file)
+### 2. Interoperability
+- Designed to work seamlessly with wrapper scripts, orchestration tools, and automation frameworks.
+- Inputs and outputs are managed using standardized methods to maintain compatibility with other tools.
 
-##
+### 3. Separation of Concerns
+- Each function is focused on a specific task, avoiding overlap and ensuring clear boundaries in functionality.
 
-### Key Features
+### 4. Consistency
+- Uniform structure across all scripts, with standardized naming conventions and predictable outputs.
 
-- **Template**: Includes a template for creating new scripts.
-- **Modular Design**: Each script is self-contained and can be used independently or combined with other scripts.
-- **Customizable**: Easy to modify and extend for specific testing needs.
-- **macOS Native**: All scripts use native tools and languages, including Bash, Swift, and AppleScript.
-- **MITRE ATT&CK Mapped**: All scripts and corresponding arguments are mapped to MITRE ATT&CK.
-- **Logging**: Built-in capability to log script output for analysis.
-- **Encoding**: Multiple options to encode data (Base64, hex) for various testing scenarios.
-- **Encryption**: Integrated functions to encrypt output with AES, Blowfish, and GPG.
-- **Exfiltration**: Simulated data exfiltration via HTTP or DNS protocols.
-
-##
-
-### Quick Start
-
-You can execute Attack-macOS scripts from the command line via piped execution or disk. It depends on what telemetry you need to produce. For example:
-
-```sh
-curl -sSL https://raw.githubusercontent.com/darmado/attack-macOS/main/Discovery/accounts.sh | sh -s -- --help
-```
-For more info, check out our wiki. 
-
-Wiki is in the works...
-
-##
-
-### How to Contribute 
-
-Attack-macOS is built as a community development project. Once we add 200+ TTPs, we'll open it up entirely to the community. For now:
-
-##
-
-### How To Contribute
-- For bugs, feature requests, or suggestions use Githhub > Issues or hit me up on x.com: 
-
-- For new or modified features for scripts:
-  1. Fork the repository
-  2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-  3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-  4. Push to the branch (`git push origin feature/AmazingFeature`)
-  5. Open a Pull Request
-
-##
-
-### Acknowledgements
-TTPs, attack scenarios, and code snippets are credited in the script's README.
-
-*Special thanks to:*
-- [MITRE ATT&CK ](https://twitter.com/mitreattack)
-- [Objective See](https://objective-see.org/)
-- [Red Canary ](https://twitter.com/redcanaryco)
-- [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team)
-- [The DFIR Report](https://thedfirreport.com/)
-
-##
-
-### License
-
-This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](LICENSE) file for details.
-
+### 5. Scalability
+- The execution flow is controlled using global variables and a centralized `main()` function, enabling the addition of new features or techniques without disruption.

@@ -366,6 +366,7 @@ while [ "$#" -gt 0 ]; do
                 EXFIL_URI="${1#*=}"
             fi
             ;;
+            #TODO: finish encrypt
         --encrypt=*)
             ENCRYPT="${1#*=}"
             ENCRYPT_KEY=$(openssl rand -base64 32)
