@@ -26,8 +26,8 @@
 # - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1087.001/T1087.001.yaml
 
 # Global Variables
-NAME="accounts_discovery"
-TACTIC="d   iscovery"
+NAME="accounts"
+TACTIC="discovery"
 TTP_ID="T1087"
 LOG_FILE="${TTP_ID}_${NAME}.log"
 USER=""
