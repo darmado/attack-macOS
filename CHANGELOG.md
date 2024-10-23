@@ -5,33 +5,37 @@ This file documents all significant changes to the project.
 ## [Unreleased]
 
 ### Added
-- Template scripts for MITRE ATT&CK macOS techniques
-- CSSM error code reference in swiftbelt.js
-- Functions for code signing checks:
-  - `checkCodeSigningAPI`
-  - `checkAppCodeSigning`
-  - `checkAllAppsCodeSigning`
+- ATT&CK Coverage Map generation script (`build_coverage_map.py`)
+- Mapping of MITRE ATT&CK techniques for macOS
+- Browser history extraction for Safari, Chrome, Firefox, and Brave
+- Data exfiltration via HTTP and DNS
+- Encoding and encryption functions for output
 - Debug logging
 - ShellCheck for bash script validation
-- ShellCheck binary in repository
+- ShellCheck binary
 - run_shellcheck.sh script
 
 ### Changed
-- Improved `SecurityToolsCheck` function
-- Updated `Discover` function with code signing checks
+- Updated `SecurityToolsCheck` function in security_software.sh
+- Enhanced `Discover` function with additional checks
+- Improved error handling in scripts
 - Modified `parseArguments` function
-- Enhanced error handling in code signing checks
+- Restructured project documentation
+- Updated Procedure Index with script links and new columns
 
 ### Fixed
 - Code signing status reporting
 - Error message formatting
 - Red Canary Mac Monitor detection in SecurityToolsCheck
-- Improved argument parsing to properly handle --help flag
+- Argument parsing for --help flag
+
+### Removed
+- Verbose logging, replaced with debug logging
 
 ## [0.1.0] - 2024-09-01
 
 ### Added
-- Project structure
+- Initial project structure
 - README.md with overview and guide
 - utility.sh template
 - security_software.sh script
