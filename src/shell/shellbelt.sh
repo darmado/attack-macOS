@@ -6,17 +6,19 @@
 # Platform: macOS
 # MITRE ATT&CK Techniques: Various (depends on the command invoked)
 # Author: @darmado | x.com/darmad0
-# Date: $(date +%Y-%m-%d)
+# Original Author: @cedowens | https://github.com/cedowens/
+# Date: 16OCT2024
 # Version: 0.8 alpha
 
+# Objective:
+# Port swiftbelt and crate modular functions that can be invoked from the shell.
+
+# Purpose:
+# Help security teams improve detection baseline on maOS systems
+
 # Description:
-# shellbelt.sh is a macOS security testing script inspired by SwiftBelt. 
-# It is designed to emulate various adversary techniques and gather telemetry 
-# on macOS systems based on the MITRE ATT&CK framework. The script provides 
-# modular functionality to target different techniques such as process discovery, 
-# browser history extraction, security tool detection, and more.
-# Commands can be invoked by passing specific arguments, allowing the script 
-# to run different modules based on the desired technique.
+# shellbelt.sh is a macOS security testing script inspired by SwiftBelt. The script provides 
+# modular functionality to target different discovery techniques. 
 
 # Usage:
 # ./shellbelt.sh [options]
@@ -24,11 +26,8 @@
 # References:
 # - MITRE ATT&CK: https://attack.mitre.org
 # - SwiftBelt: https://github.com/cedowens/SwiftBelt
-# - macOS Built-in Security Tools: [URL to relevant documentation]
+# - Uses macOS Built-in Security Tools: [URL to relevant documentation]
 
-# Notes:
-# - shellbelt.sh is modular, allowing specific techniques to be run based on the arguments passed.
-# - Ensure the script is run with the necessary permissions (sudo may be required for certain modules).
 
 # TODO:
 # - Implement the following functions:
@@ -37,7 +36,7 @@
 #   - log()
 #   - log_and_append()
 #   - log_output()
-#   - setup_log()
+#   - create_log()
 #   - display_help()
 #   - generate_random_key()
 #   - encrypt_data()
@@ -73,7 +72,7 @@ usage() {
 # checks permissions (read, write, execute) for a file
 # Other functions invoke it to avoid generating permission denied errors
 
-check_permissions() {
+check_perms() {
     local filepath="$1"
     local mode="$2"
 
@@ -160,7 +159,7 @@ launch_agents() {
     # System launch agents
     launch_agents_dir="/Library/LaunchAgents"
     if [ -d "$launch_agents_dir" ]; then
-        check_permissions "$launch_agents_dir" "r"
+        check_perms "$launch_agents_dir" "r"
         if [ $? -eq 0 ]; then
             ls "$launch_agents_dir"
         else
@@ -173,7 +172,7 @@ launch_agents() {
     # User launch agents
     user_launch_agents_dir=~/Library/LaunchAgents
     if [ -d "$user_launch_agents_dir" ]; then
-        check_permissions "$user_launch_agents_dir" "r"
+        check_perms "$user_launch_agents_dir" "r"
         if [ $? -eq 0 ]; then
             ls "$user_launch_agents_dir"
         else
@@ -190,11 +189,11 @@ browser_history() {
     echo "Extracting browser history..."
 
     # Safari History
-    safari_db=~/Library/Safari/History.db
-    if [ -f "$safari_db" ]; then
-        check_permissions "$safari_db" "r"
+    db_history_safari=~/Library/Safari/History.db
+    if [ -f "$db_history_safari" ]; then
+        check_perms "$db_history_safari" "r"
         if [ $? -eq 0 ]; then
-            sqlite3 "$safari_db" "SELECT url, visit_time FROM history_visits INNER JOIN history_items ON history_visits.history_item = history_items.id;"
+            sqlite3 "$db_history_safari" "SELECT url, visit_time FROM history_visits INNER JOIN history_items ON history_visits.history_item = history_items.id;"
         else
             echo "No read permission for Safari history database."
         fi
@@ -203,9 +202,9 @@ browser_history() {
     fi
 
     # Chrome History
-    chrome_db=~/Library/Application\ Support/Google/Chrome/Default/History
+    db_history_chrome=~/Library/Application\ Support/Google/Chrome/Default/History
     if [ -f "$chrome_db" ]; then
-        check_permissions "$chrome_db" "r"
+        check_perms "$chrome_db" "r"
         if [ $? -eq 0 ]; then
             sqlite3 "$chrome_db" "SELECT url, last_visit_time FROM urls;"
         else
@@ -217,8 +216,8 @@ browser_history() {
 
     # Firefox History
     firefox_db=~/Library/Application\ Support/Firefox/Profiles/*.default-release/places.sqlite
-    if [ -f "$firefox_db" ]; then
-        check_permissions "$firefox_db" "r"
+    if [ -f "$db_history_firefox" ]; then
+        check_perms "$firefox_db" "r"
         if [ $? -eq 0 ]; then
             sqlite3 "$firefox_db" "SELECT url, last_visit_date FROM moz_places;"
         else
@@ -237,7 +236,7 @@ bash_history_all_users() {
         if [ -d "$homedir" ]; then
             # Check bash history
             if [ -f "$homedir/.bash_history" ]; then
-                check_permissions "$homedir/.bash_history" "r"
+                check_perms "$homedir/.bash_history" "r"
                 if [ $? -eq 0 ]; then
                     echo "Found readable bash history for: $homedir"
                     cat "$homedir/.bash_history"
@@ -248,7 +247,7 @@ bash_history_all_users() {
 
             # Check zsh history
             if [ -f "$homedir/.zsh_history" ]; then
-                check_permissions "$homedir/.zsh_history" "r"
+                check_perms "$homedir/.zsh_history" "r"
                 if [ $? -eq 0 ]; then
                     echo "Found readable zsh history for: $homedir"
                     cat "$homedir/.zsh_history"
@@ -263,7 +262,7 @@ bash_history_all_users() {
     if [ "$(id -u)" -eq 0 ]; then
         # Check root's bash history
         if [ -f "/var/root/.bash_history" ]; then
-            check_permissions "/var/root/.bash_history" "r"
+            check_perms "/var/root/.bash_history" "r"
             if [ $? -eq 0 ]; then
                 echo "Found readable bash history for root"
                 cat /var/root/.bash_history
@@ -274,7 +273,7 @@ bash_history_all_users() {
 
         # Check root's zsh history
         if [ -f "/var/root/.zsh_history" ]; then
-            check_permissions "/var/root/.zsh_history" "r"
+            check_perms "/var/root/.zsh_history" "r"
             if [ $? -eq 0 ]; then
                 echo "Found readable zsh history for root"
                 cat /var/root/.zsh_history
@@ -287,7 +286,7 @@ bash_history_all_users() {
     fi
 }
 
-check_permissions() {
+check_perms() {
     file_path="$1"
     permission="$2"
     
@@ -343,6 +342,7 @@ security_tools() {
       "KnockKnock"
       "OverSight"
       "WhatsYourSign"
+      "redcanary"
     )
 
     # List of vendor file paths to check
@@ -364,6 +364,7 @@ security_tools() {
       "/Applications/KnockKnock.app"
       "/Applications/OverSight.app"
       "/Applications/WhatsYourSign.app"
+      "/Applications/Red Canary Mac Monitor.app"
     )
 
     # Check for running security tool processes
@@ -399,7 +400,7 @@ security_tools() {
     # Check Firewall configuration and permissions
     firewall_file="/Library/Preferences/com.apple.alf.plist"
     if [ "$(defaults read /Library/Preferences/com.apple.alf globalstate)" == "1" ]; then
-        if check_permissions "$firewall_file" "r"; then
+        if check_perms "$firewall_file" "r"; then
             echo "$(date) - ALERT - Firewall is enabled"
             active_tools=$((active_tools+1))
             echo "Firewall Configuration:"
@@ -419,7 +420,7 @@ security_tools() {
     # Check XProtect configuration
     xprotect_file="/System/Library/CoreServices/XProtect.bundle/Contents/Resources/XProtect.meta.plist"
     if pgrep XProtectService > /dev/null; then
-        if check_permissions "$xprotect_file" "r"; then
+        if check_perms "$xprotect_file" "r"; then
             echo "$(date) - ALERT - XProtect is running"
             active_tools=$((active_tools+1))
             echo "XProtect Configuration:"
@@ -431,7 +432,7 @@ security_tools() {
     # Check MRT configuration
     mrt_file="/System/Library/CoreServices/MRT.app/Contents/Info.plist"
     if pgrep MRT > /dev/null; then
-        if check_permissions "$mrt_file" "r"; then
+        if check_perms "$mrt_file" "r"; then
             echo "$(date) - ALERT - Malware Removal Tool (MRT) is running"
             active_tools=$((active_tools+1))
             echo "MRT Configuration:"
@@ -443,7 +444,7 @@ security_tools() {
     # Check TCC configuration
     tcc_file="/Library/Application Support/com.apple.TCC/TCC.db"
     if pgrep syspolicyd > /dev/null; then
-        if check_permissions "$tcc_file" "r"; then
+        if check_perms "$tcc_file" "r"; then
             echo "$(date) - ALERT - TCC (Transparency, Consent, and Control) is active"
             active_tools=$((active_tools+1))
             echo "TCC Configuration:"
@@ -468,7 +469,7 @@ slack_tokens() {
     fi
 
     # Check permissions to read the cookies file
-    check_permissions "$slack_cookies_file" "r"
+    check_perms "$slack_cookies_file" "r"
     if [ $? -ne 0 ]; then
         echo "Error: No read permission for $slack_cookies_file."
         return 1
@@ -490,7 +491,7 @@ slack_preferences() {
     # Target the preferences file
     preferences_file=$(find "$slack_data_dir" -name "Preferences" 2>/dev/null)
     if [ -f "$preferences_file" ]; then
-        check_permissions "$preferences_file" "r"
+        check_perms "$preferences_file" "r"
         if [ $? -eq 0 ]; then
             cat "$preferences_file" 2>/dev/null
         else
@@ -512,7 +513,7 @@ slack_cache() {
     # Target the cache directory
     cache_dir=$(find "$slack_data_dir" -type d -name "Cache" 2>/dev/null)
     if [ -d "$cache_dir" ]; then
-        check_permissions "$cache_dir" "r"
+        check_perms "$cache_dir" "r"
         if [ $? -eq 0 ]; then
             find "$cache_dir" -type f -exec cat {} + 2>/dev/null
         else
@@ -538,7 +539,7 @@ slack_shared_files() {
     fi
 
     # Check permissions and read the shared storage file
-    check_permissions "$shared_storage_file" "r"
+    check_perms "$shared_storage_file" "r"
     if [ $? -eq 0 ]; then
         cat "$shared_storage_file" 2>/dev/null
     else
@@ -557,7 +558,7 @@ slack_websocket() {
     # If there's any WebSocket-related file (adjust as needed)
     websocket_file=$(find "$slack_data_dir" -name "TransportSecurity" 2>/dev/null)
     if [ -f "$websocket_file" ]; then
-        check_permissions "$websocket_file" "r"
+        check_perms "$websocket_file" "r"
         if [ $? -eq 0 ]; then
             cat "$websocket_file" 2>/dev/null
         else

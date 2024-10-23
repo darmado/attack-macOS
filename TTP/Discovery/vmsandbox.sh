@@ -265,7 +265,7 @@ exfiltrate_dns() {
 }
 
 # Detection functions (implementations)
-detect_hardware_model() {
+discover_hardware_model() {
     model=$(sysctl -n hw.model)
     if echo "$model" | grep -qiE "virtualbox|vmware|parallels|qemu|xen"; then
         output="$output\nHardware Model: $model"
@@ -275,19 +275,19 @@ detect_hardware_model() {
     fi
 }
 
-detect_hyperthreading() {
+discover_hyperthreading() {
     ht=$(sysctl -n machdep.cpu.thread_count)
     output="$output\nHyper-Threading: $ht"
     virtualization_indicators+=("Hyper-Threading: $ht")
 }
 
-detect_memory_size() {
+discover_memory_size() {
     mem=$(sysctl -n hw.memsize)
     output="$output\nMemory Size: $mem"
     virtualization_indicators+=("Memory Size: $mem")
 }
 
-detect_iokit_registry() {
+discover_iokit_registry() {
     iokit=$(ioreg -rd1 -c IOPlatformExpertDevice)
     if echo "$iokit" | grep -qiE "virtualbox|vmware|parallels|qemu|xen"; then
         output="$output\nIOKit Registry: $iokit"
@@ -297,7 +297,7 @@ detect_iokit_registry() {
     fi
 }
 
-detect_usb_vendor_name() {
+discover_usb_vendor_name() {
     usb=$(ioreg -rd1 -c IOUSBHostDevice | grep "USB Vendor Name")
     if echo "$usb" | grep -qiE "virtualbox|vmware|parallels|qemu|xen"; then
         output="$output\nUSB Vendor Name: $usb"
@@ -307,7 +307,7 @@ detect_usb_vendor_name() {
     fi
 }
 
-detect_boot_rom_version() {
+discover_boot_rom_version() {
     bootrom=$(system_profiler SPHardwareDataType | grep "Boot ROM Version")
     if echo "$bootrom" | grep -qiE "virtualbox|vmware|parallels|qemu|xen"; then
         output="$output\nBoot ROM Version: $bootrom"
@@ -317,19 +317,19 @@ detect_boot_rom_version() {
     fi
 }
 
-detect_system_integrity_protection() {
+discover_system_integrity_protection() {
     sip=$(csrutil status)
     output="$output\nSystem Integrity Protection: $sip"
     virtualization_indicators+=("System Integrity Protection: $sip")
 }
 
-detect_cpu_core_count() {
+discover_cpu_core_count() {
     cores=$(sysctl -n hw.physicalcpu)
     output="$output\nCPU Core Count: $cores"
     virtualization_indicators+=("CPU Core Count: $cores")
 }
 
-detect_virtualization_processes() {
+discover_virtualization_processes() {
     processes=$(ps aux | grep -iE "vmware|virtualbox|parallels|qemu|xen" | grep -v "grep")
     if [ -n "$processes" ]; then
         output="$output\nVirtualization Processes: $processes"
@@ -339,7 +339,7 @@ detect_virtualization_processes() {
     fi
 }
 
-detect_virtualization_files() {
+discover_virtualization_files() {
     files=$(ls /dev | grep -iE "vbox|vmware|parallels|qemu|xen")
     if [ -n "$files" ]; then
         output="$output\nVirtualization Files: $files"
@@ -349,13 +349,13 @@ detect_virtualization_files() {
     fi
 }
 
-detect_network_adapters() {
+discover_network_adapters() {
     adapters=$(networksetup -listallhardwareports)
     output="$output\nNetwork Adapters: $adapters"
     virtualization_indicators+=("Network Adapters: $adapters")
 }
 
-detect_disk_drive_names() {
+discover_disk_drive_names() {
     disks=$(diskutil list)
     if echo "$disks" | grep -qiE "vbox|vmware|parallels|qemu|xen"; then
         output="$output\nDisk Drive Names: $disks"
@@ -368,40 +368,40 @@ detect_disk_drive_names() {
 # Main function to call all detection functions and handle encoding
 main() {
     if [ "$ALL" = true ] || [ "$CHECK_BOOT_ROM_VERSION" = true ]; then
-        detect_boot_rom_version
+        discover_boot_rom_version
     fi
     if [ "$ALL" = true ] || [ "$CHECK_CPU_CORE_COUNT" = true ]; then
-        detect_cpu_core_count
+        discover_cpu_core_count
     fi
     if [ "$ALL" = true ] || [ "$CHECK_DISKS" = true ]; then
-        detect_disk_drive_names
+        discover_disk_drive_names
     fi
     if [ "$ALL" = true ] || [ "$CHECK_FILES" = true ]; then
-        detect_virtualization_files
+        discover_virtualization_files
     fi
     if [ "$ALL" = true ] || [ "$CHECK_HARDWARE_MODEL" = true ]; then
-        detect_hardware_model
+        discover_hardware_model
     fi
     if [ "$ALL" = true ] || [ "$CHECK_HYPERTHREADING" = true ]; then
-        detect_hyperthreading
+        discover_hyperthreading
     fi
     if [ "$ALL" = true ] || [ "$CHECK_IOKIT_REGISTRY" = true ]; then
-        detect_iokit_registry
+        discover_iokit_registry
     fi
     if [ "$ALL" = true ] || [ "$CHECK_MEMORY_SIZE" = true ]; then
-        detect_memory_size
+        discover_memory_size
     fi
     if [ "$ALL" = true ] || [ "$CHECK_NETWORK" = true ]; then
-        detect_network_adapters
+        discover_network_adapters
     fi
     if [ "$ALL" = true ] || [ "$CHECK_PROCESSES" = true ]; then
-        detect_virtualization_processes
+        discover_virtualization_processes
     fi
     if [ "$ALL" = true ] || [ "$CHECK_SYSTEM_INTEGRITY_PROTECTION" = true ]; then
-        detect_system_integrity_protection
+        discover_system_integrity_protection
     fi
     if [ "$ALL" = true ] || [ "$CHECK_USB_VENDOR_NAME" = true ]; then
-        detect_usb_vendor_name
+        discover_usb_vendor_name
     fi
 
     if [ "$LOG" = true ]; then

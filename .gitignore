@@ -98,9 +98,12 @@ dist/
 .env
 .env.*
 
-# Backup files
+# Random files
 *~
 *.bak
+*.bak.*
+*BAK.*
+*.txt
 *.backup
 
 # Script output files

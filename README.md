@@ -5,22 +5,19 @@
 </h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Shell-Script-green?style=for-the-badge&logo=shell" alt="Shell"/>
+  <img src="https://img.shields.io/badge/Shell-Script-green?style=for-the-badge&logo=gnu-bash" alt="Shell"/>
   <img src="https://img.shields.io/badge/STIX-2.1-blue?style=for-the-badge" alt="STIX"/>
   <img src="https://img.shields.io/badge/MITRE-ATT%26CK-red?style=for-the-badge" alt="MITRE ATT&CK"/>
-  <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge" alt="License"/>
+  <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge&logo=apache" alt="License"/>
   <img src="https://img.shields.io/badge/macOS-10.15%2B-lightgrey?style=for-the-badge&logo=apple" alt="macOS Compatibility"/>
-  <img src="https://img.shields.io/badge/Join-Community-blue?style=for-the-badge" alt="Join Community"/>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Join-Community-blue?style=for-the-badge&logo=discord" alt="Join Community"/>
   <a href="https://x.com/attackmacos">
     <img src="https://img.shields.io/badge/X-Follow-000000?style=for-the-badge&logo=x&logoColor=white" alt="X"/>
   </a>
 </p>
-
-<p align="center">
-  <a href="https://github.com/armadoinc/attack-macOS">
-    <img src="https://img.shields.io/github/v/release/armadoinc/attack-macOS.svg" alt="Release">
-</p>
-
 <p align="center">
   <a href="#key-features">Key Features</a> •
   <a href="#dependencies">Dependencies</a> •
@@ -31,20 +28,13 @@
 
 ##
 
+
 ### Overview
 Attack-macOS is a library of scripts mapped to MITRE ATT&CK. Security teams can use Attack-macOS to execute techniques and discover new detection opportunities in macOS environments.
 
-##
-
-### Problem
-
-Security teams struggle to verify endpoint detection and response (EDR) tools for macOS effectively and at scale.
-
-##
-
-### Motivation
-
-The collection of macOS-specific security resources and tools available to discover better detection opportunities is limited to projects like [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) and other standalone open-source projects. In both cases, test coverage is limited. On the compliance side, there's the [macos_security](https://github.com/usnistgov/macos_security) security compliance project.
+| Problem | Challenge | Solution |
+|---------|-----------|----------|
+| • Limited macOS-specific security tools<br>• Insufficient testing coverage in existing projects<br>• Compliance tools inadequately address detection requirements | • Insufficient capabilities to evaluate macOS defenses<br>• Inadequate detection exposes systems to potential risks<br>• Limited tooling hinders proactive security measures |Build a library of macOS specific attack scripts dedicated to help <br>2. that identify better detection opportunities and in macOS specific endpoint security solutions. |
 
 ##
 
@@ -117,9 +107,9 @@ This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE
 
 ##
 
-### Disclaimer
+## Credits and References
 
-All scripts, written in sh, Swift, and AppleScript, are security testing tools. They undergo thorough testing prior to each public release. Currently, there's no official release as development is ongoing. Use only in controlled lab environments. We are not responsible for any damage caused by these scripts.
+### Credits and References
 
-** MITRE ATT&CK Disclaimer**
-The MITRE ATT&CK® framework is used in this project for reference and educational purposes. MITRE ATT&CK® is a registered trademark of The MITRE Corporation. The use of the MITRE ATT&CK® framework in this project does not imply endorsement by MITRE of this project or its creators. For more information about MITRE ATT&CK®, please visit https://attack.mitre.org/.
+Refer to the [Tools Index](_DOCS/References/Tools%20Index.md) in the References directory.
+

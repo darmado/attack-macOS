@@ -389,7 +389,7 @@ list_dscacheutil_users() {
     $CMD_LIST_DSCACHEUTIL_USERS
 }
 
-setup_log() {
+create_log() {
     local script_name=$(basename "$0" .sh)
     touch "$LOG_FILE"
 }
@@ -399,7 +399,7 @@ log_output() {
     local max_size=$((5 * 1024 * 1024))  # 5MB in bytes
     
     if [ ! -f "$LOG_FILE" ] || [ $(stat -f%z "$LOG_FILE") -ge $max_size ]; then
-        setup_log
+        create_log
     fi
     
     echo "$output" >> "$LOG_FILE"
@@ -407,7 +407,7 @@ log_output() {
     # Rotate log if it exceeds 5MB
     if [ $(stat -f%z "$LOG_FILE") -ge $max_size ]; then
         mv "$LOG_FILE" "${LOG_FILE}.old"
-        setup_log
+        create_log
     fi
 }
 
@@ -428,7 +428,7 @@ main() {
 
     # Setup logging if enabled
     if [ "$LOG_ENABLED" = true ]; then
-        setup_log
+        create_log
     fi
 
     # Handle all the invocations and capture output
