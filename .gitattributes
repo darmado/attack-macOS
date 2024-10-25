@@ -1,0 +1,23 @@
+# JavaScript
+*.js linguist-language=JavaScript
+
+# Swift
+*.swift linguist-language=Swift
+
+# Python
+*.py linguist-language=Python
+
+# TypeScript
+*.ts linguist-language=TypeScript
+
+# Go
+*.go linguist-language=Go
+
+
+# YAML
+*.yml linguist-language=YAML
+*.yaml linguist-language=YAML
+
+
+*.min.js linguist-vendored
+*.log linguist-detectable=false
