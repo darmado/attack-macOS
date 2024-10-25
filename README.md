@@ -4,33 +4,33 @@
   <br>
 </h1>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Shell-Script-green?style=for-the-badge&logo=gnu-bash" alt="Shell"/>
-  <img src="https://img.shields.io/badge/STIX-2.1-blue?style=for-the-badge" alt="STIX"/>
-  <img src="https://img.shields.io/badge/MITRE-ATT%26CK-red?style=for-the-badge" alt="MITRE ATT&CK"/>
-  <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge&logo=apache" alt="License"/>
-  <img src="https://img.shields.io/badge/macOS-10.15%2B-lightgrey?style=for-the-badge&logo=apple" alt="macOS Compatibility"/>
-</p>
+<div align="center">
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Join-Community-blue?style=for-the-badge&logo=discord" alt="Join Community"/>
-  <a href="https://x.com/attackmacos">
-    <img src="https://img.shields.io/badge/X-Follow-000000?style=for-the-badge&logo=x&logoColor=white" alt="X"/>
-  </a>
-</p>
-<p align="center">
+  ![Shell](https://img.shields.io/badge/Shell-grey?style=for-the-badge&logo=gnu-bash)
+  ![JXA](https://img.shields.io/badge/JXA-grey?style=for-the-badge)
+  ![Swift](https://img.shields.io/badge/Swift-grey?style=for-the-badge&logo=swift)
+  ![STIX](https://img.shields.io/badge/STIX%202.1-grey?style=for-the-badge)
+  [![MITRE ATT&CK](https://img.shields.io/badge/%20ATT%26CK%20v15-red?style=for-the-badge)](_DOCS/Procedures/Procedure%20Matrix.md)
+  ![License](https://img.shields.io/badge/Apache%202.0-grey.svg?style=for-the-badge&logo=apache)
+  ![macOS Compatibility](https://img.shields.io/badge/-blue?style=for-the-badge&logo=apple)
+  
+  ![Join Community](https://img.shields.io/badge/Coming%20Soon-grey?style=for-the-badge&logo=discord)
+  [![X Follow](https://img.shields.io/badge/-000000?style=for-the-badge&labelColor=black&logo=x&logoColor=white)](https://x.com/attackmacos)
+</br>
+</br>
+# **MITRE ATT&CK Coverage Matrix**
+  <a href="#MacOS Attack Procedure Matrix">ATT&CK Coverage</a> •
   <a href="#key-features">Key Features</a> •
-  <a href="#dependencies">Dependencies</a> •
   <a href="#compatibility">Compatibility</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#license">License</a>
-</p>
+  </div>
 
-## Coverage Map
-<details>
+
+<details align="center">
+
+
 <div align="center">
-
-# **MacOS Attack Procedure Matrix**
 
 <p>The Matrix contains information for the macOS platform</br>The number of possible procedures per technique is vast. These statistics use conservative estimates for coverage calculations.</p>
 
@@ -146,12 +146,14 @@
 
 </details>
 
+##
+
 ### Overview
 Attack-macOS is a library of scripts mapped to MITRE ATT&CK. Security teams can use Attack-macOS to execute techniques and discover new detection opportunities in macOS environments.
 
 | Problem | Challenge | Solution |
 |---------|-----------|----------|
-| • Limited macOS-specific security tools<br>• Insufficient testing coverage in existing projects<br>• Compliance tools inadequately address detection requirements | • Insufficient capabilities to evaluate macOS defenses<br>• Inadequate detection exposes systems to potential risks<br>• Limited tooling hinders proactive security measures |Build a library of macOS specific attack scripts dedicated to help <br>2. that identify better detection opportunities and in macOS specific endpoint security solutions. |
+| • Limited opensource security tools<br>• Technique procedures primarily focused on </br>**tier I/II** *(advanced)* [Tool Index](_DOCS/Tool%20Index.md)<br>• Most commercial tools primarily focused on hardening and MDM | • Insufficient capabilities to evaluate macOS defenses<br>• Inadequate detection exposes systems to potential risks<br>• Limited tooling hinders proactive security measures | Build a library of macOS specific attack scripts dedicated to help identify better detection opportunities in macOS specific endpoint security solutions. |
 
 ##
 
@@ -224,9 +226,8 @@ This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE
 
 ##
 
-## Credits and References
 
 ### Credits and References
-
-Refer to the [Tools Index](_DOCS/References/Tools%20Index.md) in the References directory.
+In short, every macOS focused opensoruce security project, blog post, CTI, Apple Dev Docs,  especially the archived docs, and MITRE ATT&CK.
+ -- **Full list hhere: -->** [Acknoledgements](_DOCS/Acknowledgements.md) 
 

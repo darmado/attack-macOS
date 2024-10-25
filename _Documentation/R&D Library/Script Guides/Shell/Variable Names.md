@@ -29,7 +29,7 @@ This document outlines the naming conventions and standards for variables used i
 - Persistence: `persist_`
 - Privilege Escalation: `escalate_`
 - Defense Evasion: `evade_`
-- Credential Access: `access_cred_`
+- Credential Access: `credential_access_`
 - Discovery: `discover_`
 - Lateral Movement: `move_`
 - Collection: `collect_`
@@ -76,7 +76,7 @@ This document outlines the naming conventions and standards for variables used i
 - Examples:
   ```
   # Technique function
-  access_cred_keychain()
+  credential_access_keychain()
   discover_network_shares()
   
   # Utility function

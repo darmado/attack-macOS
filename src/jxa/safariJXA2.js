@@ -1,6 +1,12 @@
 ObjC.import('Cocoa');
 ObjC.import('CoreGraphics');
 ObjC.import('AppKit');
+ObjC.import('Security');
+ObjC.import('AppleScriptObjC');
+ObjC.bindFunction('CFMakeCollectable', ['id', ['void *']]);
+
+// Set includeStandardAdditions for the entire script
+Application.currentApplication().includeStandardAdditions = true;
 
 // display help information
 function displayHelp() {
@@ -19,8 +25,9 @@ DISCOVER:
 
 OPEN:
     -launch                      Launch Safari with a 1x1 window
-    -newWindow                   Open a new Safari window with a 1x1 size
-    -mailto <email>              Open the default email client with the specified email
+    -openWIndow                   Open a new Safari window with a 1x1 size
+    -openURL <url>               Open a URL in Safari
+    -mailto <email>              Uses mail.app to open the default email client with the specified email
     -sms <number>                Open the default SMS app with the specified number
     -tel <number>                Open the default phone app with the specified number
     -openTab <url1> [url2] ...   Open one or more new tabs with the specified URLs (max 25)
@@ -106,7 +113,9 @@ function isSafariOpen() {
     }
 }
 
-// launch Safari with a 1x1 window and return details
+// Mark functions that likely need admin privileges
+
+// [ADMIN] This function may require admin privileges
 function launchSafari() {
     try {
         if (!isSafariOpen()) {
@@ -129,26 +138,57 @@ function launchSafari() {
                 console.log("Safari launched, but unable to control it. Please grant automation permissions and try again.");
             }
         } else {
-            console.log("Safari is already running. Did you mean to open a new window? [-newWindow].");
+            console.log("Safari is already running. Did you mean to open a new window? [-openWIndow].");
         }
     } catch (error) {
         console.log('Error launching Safari: ' + error);
     }
 }
 
-// handle mailto protocol.
+// [ADMIN] This function may require admin privileges
 function handleMailto(email) {
-    try {
-        const safariApp = Application('Safari');
-        safariApp.includeStandardAdditions = true;
-        safariApp.doShellScript(`open "mailto:${email}"`);
-        console.log(`Opened mail client for: ${email}`);
-    } catch (error) {
-        console.log('Error handling mailto: ' + error);
-    }
+    return executeNonInteractive(() => {
+        try {
+            const mailApp = Application('Mail');
+            
+            // Check if Mail.app is installed
+            if (!mailApp.exists()) {
+                throw new Error("Mail.app is not installed on this system.");
+            }
+            
+            // Launch Mail.app in the background
+            mailApp.launch();
+            delay(1); // Give Mail a moment to launch
+            
+            // Check if Mail.app is running
+            if (!mailApp.running()) {
+                throw new Error("Failed to launch Mail.app.");
+            }
+            
+            // Create a new message
+            const newMessage = mailApp.OutgoingMessage().make();
+            if (!newMessage) {
+                throw new Error("Failed to create a new message.");
+            }
+            
+            newMessage.toRecipients.push(mailApp.Recipient({address: email}));
+            
+            // Don't make the message visible
+            newMessage.visible = false;
+            
+            console.log(`Created new email draft for: ${email}`);
+            
+            // Return the message ID
+            return newMessage.id();
+        } catch (error) {
+            console.log(`Error handling mailto: ${error.message}`);
+            console.log(`Stack trace: ${error.stack}`);
+            return null;
+        }
+    });
 }
 
-// handle sms protocol.
+// [ADMIN] This function may require admin privileges
 function handleSms(number) {
     try {
         const safariApp = Application('Safari');
@@ -160,7 +200,7 @@ function handleSms(number) {
     }
 }
 
-// handle tel protocol.
+// [ADMIN] This function may require admin privileges
 function handleTel(number) {
     try {
         const safariApp = Application('Safari');
@@ -235,8 +275,9 @@ function navigateToURL(url) {
             const currentWindow = safariApp.windows[0];
             if (currentWindow.tabs.length > 0) {
                 const currentTab = currentWindow.currentTab();
-                currentTab.url = validatedUrl;
-                console.log(`Navigated to ${validatedUrl}`);
+                //currentTab.url = validatedUrl;
+                //console.log(`Navigated to ${validatedUrl}`);
+                
             } else {
                 console.log("No tabs are open. Please open a tab first.");
             }
@@ -300,18 +341,20 @@ function openTab(...urls) {
 
 // validate and format a URL.
 function validateAndFormatURL(url) {
-    const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
-    if (!urlPattern.test(url)) {
-        if (!/^([a-z][a-z\d+\-.]*:)?\/\//i.test(url)) {
-            // Check if the URL has a valid domain structure
-            const domainPattern = /^[\da-z]+([\-\.]{1}[\da-z]+)*\.[a-z]{2,6}$/i;
-            if (domainPattern.test(url)) {
-                return 'https://' + url;
-            } else {
-                throw new Error(`Invalid URL: ${url}`);
-            }
-        }
+    // Regular expression to match a domain name
+    const domainRegex = /^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-zA-Z]{2,}$/;
+    
+    // If the input is just a domain name, prepend 'http://'
+    if (domainRegex.test(url)) {
+        return 'http://' + url;
     }
+    
+    // If the URL doesn't start with a protocol, assume 'http://'
+    if (!/^[a-zA-Z]+:\/\//.test(url)) {
+        return 'http://' + url;
+    }
+    
+    // If it's already a full URL, return it as is
     return url;
 }
 
@@ -517,114 +560,46 @@ function listExtensions() {
     }
 }
 
-// execute commands based on the parsed arguments.
-function executeCommands(commands) {
-    const functionMap = {
-        //listW: getOpenWindows,
-        listtabs: listTabs,
-        launch: launchSafari,
-        opentab: openTab,
-        mailto: handleMailto,
-        sms: handleSms,
-        tel: handleTel,
-        listurls: listURLs, // Renamed from getCurrentURLs
-        closetab: closeTab,
-        reloadtab: reloadTab,
-        listwindows: listWindows,
-        navigatetourl: navigateToURL,
-        listpagetitles: listPageTitles, // Renamed from getPageTitles
-        listreadinglist: listReadingList, // Renamed from getReadingList
-        listdownloads: listDownloads,
-        listextensions: listExtensions, // Renamed from getExtensions
-        listhistory: listHistory, // Renamed from getHistory
-        newwindow: openNewWindow,
-        closesafari: closeSafari,
-        closewindow: closeWindow
-    };
+// Add this new function to query Safari history
+function queryHistory(limit = 25) {
+    const homeDir = $.NSHomeDirectory().js;
+    const historyDbPath = `${homeDir}/Library/Safari/History.db`;
+    const query = `SELECT history_items.id, history_items.url, history_visits.visit_time 
+                   FROM history_items 
+                   JOIN history_visits ON history_items.id = history_visits.history_item 
+                   ORDER BY history_visits.visit_time DESC 
+                   LIMIT ${limit};`;
 
-    Object.keys(commands).forEach(cmd => {
-        const lowerCmd = cmd.toLowerCase();
-        if (functionMap.hasOwnProperty(lowerCmd)) {
-            const value = commands[cmd];
-            if (lowerCmd === 'opentab') {
-                // Handle multiple URLs for openTab
-                const urls = Array.isArray(value) ? value : [value];
-                functionMap[lowerCmd](...urls);
-            } else {
-                functionMap[lowerCmd](value);
-            }
-        } else {
-            console.log(`Unknown command: ${cmd}`);
-        }
-    });
+    console.log("Querying Safari history:");
+    console.log(`Database path: ${historyDbPath}`);
+    console.log(`Query: ${query}`);
+
+    let task = $.NSTask.alloc.init;
+    task.launchPath = '/usr/bin/sqlite3';
+    task.arguments = [historyDbPath, query];
+
+    let pipe = $.NSPipe.pipe;
+    task.standardOutput = pipe;
+    task.standardError = pipe;
+
+    task.launch;
+    task.waitUntilExit;
+
+    let data = pipe.fileHandleForReading.readDataToEndOfFile;
+    let output = $.NSString.alloc.initWithDataEncoding(data, $.NSUTF8StringEncoding).js;
+
+    return output;
 }
 
-// open a new Safari window with a 1x1 size.
-function openNewWindow() {
-    try {
-        const safariApp = Application('Safari');
-        safariApp.includeStandardAdditions = true;
-
-        console.log("Attempting to create a new Safari window...");
-
-        // Try to create a new document (window)
-        let newDocument;
-        try {
-            newDocument = safariApp.Document().make();
-            console.log("New document created successfully.");
-        } catch (docError) {
-            throw new Error(`Failed to create new document: ${docError.message}`);
-        }
-
-        // Wait a moment for the window to open
-        delay(1);
-
-        // Find the newly created window
-        const windows = safariApp.windows();
-        const newWindow = windows[0];
-
-        if (!newWindow) {
-            throw new Error("Failed to locate the newly created window.");
-        }
-
-        console.log("Attempting to resize and reposition the new window...");
-
-        // Try to set the window bounds
-        try {
-            newWindow.bounds = {x: 0, y: 0, width: 1, height: 1};
-            console.log("Window resized successfully.");
-        } catch (boundsError) {
-            throw new Error(`Failed to set window bounds: ${boundsError.message}`);
-        }
-
-        // Try to move the window to the background
-        try {
-            newWindow.index = windows.length;
-            console.log("Window moved to the background successfully.");
-        } catch (indexError) {
-            throw new Error(`Failed to move window to background: ${indexError.message}`);
-        }
-
-        console.log("New Safari window created successfully with a 1x1 size and moved to the background.");
-    } catch (error) {
-        console.log(`Error in openNewWindow: ${error.message}`);
-        if (error.stack) {
-            console.log(`Stack trace: ${error.stack}`);
-        }
-    }
-}
-
-// access Safari's browsing history.
+// Modify the existing listHistory function to use the new queryHistory function
 function listHistory() {
     try {
-        const homeDir = ObjC.unwrap($.NSHomeDirectory());
-        const historyDbPath = `${homeDir}/Library/Safari/History.db`;
-
-        if ($.NSFileManager.defaultManager.fileExistsAtPath(historyDbPath)) {
-            console.log(`History database found at: ${historyDbPath}`);
-            // Further processing would require SQLite access, which JXA doesn't natively support.
+        const historyData = queryHistory();
+        if (historyData) {
+            console.log("Safari browsing history:");
+            console.log(historyData);
         } else {
-            console.log("Safari history database not found.");
+            console.log("No history data found or unable to access the history database.");
         }
     } catch (error) {
         console.log('Error accessing history: ' + error);
@@ -706,18 +681,109 @@ function closeWindow(...windowIndices) {
     }
 }
 
-// Main function to execute the script based on parsed arguments.
-function main() {
-    try {
-        const commands = parseArguments();
-        if (Object.keys(commands).length === 0 || commands.help) {
-            displayHelp();
-            return;
+// Add this function to execute commands based on the parsed arguments
+function executeCommands(commands) {
+    const functionMap = {
+        listtabs: listTabs,
+        launch: launchSafari,
+        opentab: openTab,
+        mailto: handleMailto,
+        sms: handleSms,
+        tel: handleTel,
+        listurls: listURLs,
+        closetab: closeTab,
+        reloadtab: reloadTab,
+        listwindows: listWindows,
+        navigatetourl: navigateToURL,
+        listpagetitles: listPageTitles,
+        listreadinglist: listReadingList,
+        listdownloads: listDownloads,
+        listextensions: listExtensions,
+        listhistory: listHistory,
+        openwindow: openWindow,
+        closesafari: closeSafari,
+        closewindow: closeWindow,
+        openurl: openURL,  // Add this line
+        readurl: (url) => readURLContent(url).then(console.log).catch(console.error),
+        readtabs: readOpenTabsContent,
+    };
+
+    Object.keys(commands).forEach(cmd => {
+        const lowerCmd = cmd.toLowerCase();
+        if (functionMap.hasOwnProperty(lowerCmd)) {
+            const value = commands[cmd];
+            if (lowerCmd === 'opentab') {
+                // Handle multiple URLs for openTab
+                const urls = Array.isArray(value) ? value : [value];
+                functionMap[lowerCmd](...urls);
+            } else {
+                functionMap[lowerCmd](value);
+            }
+        } else {
+            console.log(`Unknown command: ${cmd}`);
         }
-        executeCommands(commands);
+    });
+}
+
+// Check permissions for the current app (the one running osascript)
+function checkCurrentAppPermissions() {
+    try {
+        const currentApp = Application.currentApplication();
+        currentApp.includeStandardAdditions = true;
+
+        // Try to get a property from the current application
+        const name = currentApp.name();
+        
+        console.log("Current app automation permissions are granted.");
+        return true;
     } catch (error) {
-        console.log('An error occurred: ' + error);
+        console.log("Current app automation permissions are not granted.");
+        console.log("Error details: " + error);
+        return false;
     }
+}
+
+// Check permissions specifically for Safari
+function checkSafariPermissions() {
+    try {
+        // Try to create a Safari application object and access a property
+        const safariApp = Application('Safari');
+        const name = safariApp.name();
+        
+        console.log("Safari automation permissions are granted.");
+        return true;
+    } catch (error) {
+        console.log("Safari automation permissions are not granted.");
+        console.log("Error details: " + error);
+        return false;
+    }
+}
+
+// Modify the main function to use both permission checks
+function main() {
+    if (!checkCurrentAppPermissions()) {
+        console.log("Cannot proceed due to lack of automation permissions for the current app.");
+        console.log("Please grant automation permissions to the app running this script (likely Terminal or your script editor).");
+        return;
+    }
+
+    const commands = parseArguments();
+    if (Object.keys(commands).length === 0 || commands.help) {
+        displayHelp();
+        return;
+    }
+
+    // Check Safari permissions only if Safari-related commands are being used
+    const safariCommands = ['listtabs', 'launch', 'opentab', 'listurls', 'closetab', 'reloadtab', 'listwindows', 'navigatetourl', 'listpagetitles', 'listreadinglist', 'listextensions', 'listhistory', 'openwindow', 'closesafari', 'closewindow', 'openurl'];
+    const needsSafariPermissions = Object.keys(commands).some(cmd => safariCommands.includes(cmd.toLowerCase()));
+
+    if (needsSafariPermissions && !checkSafariPermissions()) {
+        console.log("Cannot proceed due to lack of Safari automation permissions.");
+        console.log("Please grant Safari automation permissions in System Preferences > Security & Privacy > Privacy > Automation.");
+        return;
+    }
+
+    executeCommands(commands);
 }
 
 // determine if the script is being run directly
@@ -749,7 +815,7 @@ if (isRunningDirectly()) {
     this.listURLs = listURLs;
     this.listWindows = listWindows;
     this.navigateToURL = navigateToURL;
-    this.openNewWindow = openNewWindow;
+    this.openWindow = openWindow;
     this.openTab = openTab;
     this.reloadTab = reloadTab;
     this.closeWindow = closeWindow;
@@ -766,3 +832,217 @@ function someFunction() {
     // ... rest of the function
 }
 
+function getScreenDimensions() {
+    const mainScreen = $.NSScreen.mainScreen;
+    const frame = mainScreen.frame;
+    return {
+        width: frame.size.width,
+        height: frame.size.height
+    };
+}
+
+// [ADMIN] This function may require admin privileges
+function openWindow(width = 10, height = 10) {
+    return executeNonInteractive(() => {
+        try {
+            const safariApp = Application('Safari');
+            safariApp.includeStandardAdditions = true;
+
+            if (!safariApp.running()) {
+                safariApp.launch();
+                delay(1);
+            }
+
+            const screen = getScreenDimensions();
+            const x = screen.width + 1; // Position just beyond the right edge of the screen
+            const y = screen.height - height; // Keep at the bottom of the screen
+
+            safariApp.Document().make();
+            delay(1);
+
+            const openWIndow = safariApp.windows[0];
+            openWIndow.bounds = {x: x, y: y, width: width, height: height};
+            openWIndow.visible = false; // Hide the window
+            openWIndow.index = safariApp.windows.length; // Move to the background
+
+            // Double-check visibility
+            if (openWIndow.visible()) {
+                console.log("Window is still visible. Attempting to hide again.");
+                openWIndow.visible = false;
+            }
+
+            console.log(`Opened a new hidden Safari window at (${x}, ${y}) with size ${width}x${height}.`);
+            return openWIndow;
+        } catch (error) {
+            console.log('Error opening new window: ' + error);
+            return null;
+        }
+    });
+}
+
+// [ADMIN] This function may require admin privileges
+function openURL(url) {
+    return executeNonInteractive(() => {
+        try {
+            const validatedUrl = validateAndFormatURL(url);
+            const openWIndow = openWindow();
+            
+            if (openWIndow) {
+                openWIndow.currentTab.url = validatedUrl;
+                console.log(`Opened URL in a hidden Safari window: ${validatedUrl}`);
+            } else {
+                console.log('Failed to open new window');
+            }
+        } catch (error) {
+            console.log('Error opening URL: ' + error);
+        }
+    });
+}
+
+// Modify this function to return a boolean indicating success
+function disableAutomationPrompts() {
+    try {
+        $.NSUserDefaults.standardUserDefaults.setBoolForKey(false, 'AppleScriptDisableAEDebug');
+        return true;
+    } catch (error) {
+        console.log('Error disabling automation prompts: ' + error);
+        return false;
+    }
+}
+
+// Modify this function to return a boolean indicating success
+function enableAutomationPrompts() {
+    try {
+        $.NSUserDefaults.standardUserDefaults.setBoolForKey(true, 'AppleScriptDisableAEDebug');
+        return true;
+    } catch (error) {
+        console.log('Error enabling automation prompts: ' + error);
+        return false;
+    }
+}
+
+// Add this wrapper function for all operations that might trigger prompts
+function executeNonInteractive(operation) {
+    const wasDisabled = disableAutomationPrompts();
+    try {
+        return operation();
+    } finally {
+        if (wasDisabled) {
+            enableAutomationPrompts();
+        }
+    }
+}
+
+// Keep this function separate as originally intended
+function checkAutomationPermissions() {
+    return executeNonInteractive(() => {
+        try {
+            const currentApp = Application.currentApplication();
+            currentApp.includeStandardAdditions = true;
+
+            // Try to get a property from the current application
+            const name = currentApp.name();
+            
+            // Try to create a Safari application object without accessing its properties
+            Application('Safari');
+            
+            console.log("Automation permissions are granted.");
+            return true;
+        } catch (error) {
+            console.log("Automation permissions are not granted.");
+            console.log("Error details: " + error);
+            return false;
+        }
+    });
+}
+
+function checkAutomationPermissions() {
+    return executeNonInteractive(() => {
+        try {
+            const currentApp = Application.currentApplication();
+            currentApp.includeStandardAdditions = true;
+
+            // Try to get a property from the current application
+            const name = currentApp.name();
+            
+            // Try to create a Safari application object without accessing its properties
+            Application('Safari');
+            
+            console.log("Automation permissions are granted.");
+            return true;
+        } catch (error) {
+            console.log("Automation permissions are not granted.");
+            console.log("Error details: " + error);
+            return false;
+        }
+    });
+}
+
+ObjC.import('Foundation');
+
+function readURLContent(url) {
+    return new Promise((resolve, reject) => {
+        const request = $.NSMutableURLRequest.alloc.initWithURL($.NSURL.URLWithString(url));
+        const configuration = $.NSURLSessionConfiguration.defaultSessionConfiguration;
+        const session = $.NSURLSession.sessionWithConfiguration(configuration);
+
+        const completionHandler = $((data, response, error) => {
+            try {
+                if (error) {
+                    reject(ObjC.unwrap(error.localizedDescription));
+                } else {
+                    const httpResponse = response;
+                    const statusCode = httpResponse.statusCode;
+                    const content = $.NSString.alloc.initWithDataEncoding(data, $.NSUTF8StringEncoding).js;
+                    resolve({ statusCode, content });
+                }
+            } catch (e) {
+                reject(`Error in completion handler: ${e}`);
+            }
+        }).js;
+
+        const task = session.dataTaskWithRequestCompletionHandler(request, completionHandler);
+        task.resume;
+    });
+}
+
+function readOpenTabsContent() {
+    if (!isSafariOpen()) {
+        console.log("Safari is not open. Please launch Safari first.");
+        return;
+    }
+
+    const safariApp = Application('Safari');
+    safariApp.includeStandardAdditions = true;
+
+    const windows = safariApp.windows();
+    const tabContents = [];
+
+    windows.forEach((window, windowIndex) => {
+        window.tabs().forEach((tab, tabIndex) => {
+            const url = tab.url();
+            const title = tab.name();
+            
+            readURLContent(url)
+                .then(({ statusCode, content }) => {
+                    tabContents.push({
+                        windowIndex,
+                        tabIndex,
+                        url,
+                        title,
+                        statusCode,
+                        content: content.substring(0, 500) // Limit content to first 500 characters
+                    });
+                    console.log(`Read content from Window ${windowIndex}, Tab ${tabIndex}: ${url}`);
+                })
+                .catch(error => {
+                    console.log(`Error reading content from ${url}: ${error}`);
+                });
+        });
+    });
+
+    // Wait for all requests to complete
+    delay(5); // Adjust this delay based on the number of tabs and network speed
+
+    return tabContents;
+}

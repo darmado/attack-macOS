@@ -1,7 +1,7 @@
 //  Script Name: swiftbelt2.js
 //  MITRE ATT&CK Technique: [TTP_ID]
 //  Author: @darmado | https://x.com/darmad0
-//  Original Author: hhttps://github.com/cedowens
+//  Original Author: https://github.com/cedowens
 //  Date: Thu Oct 17 15:57:59 PDT 2024
 //  Version: 1.1
 
@@ -18,6 +18,7 @@ ObjC.import('Foundation');
 ObjC.import('stdlib');
 ObjC.import('sys/stat');
 ObjC.import('unistd');
+
 
 var currentApp = Application.currentApplication();
 currentApp.includeStandardAdditions = true;

@@ -1,5 +1,9 @@
-### Objective
-Develop scripts executing macOS-specific techniques attributed to threat actors. Key principles:
+# Shell Script Blueprint
+ 
+## Objective
+Develop scripts executing macOS-specific techniques attributed to threat actors. 
+
+Key principles:
 
 1. Minimize user input dependency using defaults and environment variables.
 2. Implement robust error handling and fallbacks.
@@ -19,8 +23,7 @@ Develop scripts executing macOS-specific techniques attributed to threat actors.
 ##
 
 ### Purpose
-Create consistent, modular, interoperable scripts for macOS-specific attack techniques. This blueprint guides development, ensuring uniform design, implementation, and documentation across all project scripts. The primary focus is on building a comprehensive library of macOS-specific attack scripts to help security teams execute techniques and discover new detection opportunities in macOS environments.
-
+To guide the development of consistent, modular, and interoperable shell scripts for emulating macOS-specific attack procedures attributed to threat actors. This blueprint ensures uniform design, implementation, and documentation across all project scripts. The primary focus is on building a library of macOS-specific attack scripts to help security teams execute attack procedures and discover new detection opportunities in macOS environments.
 ##
 
 ### Requirements
@@ -42,7 +45,8 @@ Create consistent, modular, interoperable scripts for macOS-specific attack tech
 ### Input Handling Strategy
 
 Our input handling strategy focuses on centralization, separation of concerns, flexibility, consistent sanitization, and easier pattern management. This approach provides a maintainable and secure method for handling inputs across all scripts in the project.
- Key aspects include:
+
+Key aspects include:
 
 1. **Centralized Input Handling**: 
    - Use a centralized `input_handler` function for all input strings
@@ -143,22 +147,24 @@ This map outlines conditional function execution based on global variables.
 - `discover_ost()`: **depends_on**: `OST`
 - `discover_hids()`: **depends_on**: `HIDS`
 
+##
 
+## Logging Logic
 
-GENERIC NOTES
+Log events 
+The general structure of a log entry is:
+```sh
+[TIMESTAMP]: user: USER; ttp_id: TTP_ID; tactic: TACTIC; msg: MESSAGE; function: FUNCTION_NAME; command: "COMMAND"
+```
 
-### Logging Logic
 The logging system in our scripts follows these rules:
+
 1. If LOG_ENABLED is true, all log messages are written to the log file.
 2. If VERBOSE is true, all log messages are also printed to stdout.
 3. Log messages include a timestamp, user, TTP ID, tactic, message content, function name, and command (if applicable).
 4. Log files are automatically rotated when they reach 5MB in size.
 5. Logging can occur at various points in the script execution, not just in the main function.
 
-The general structure of a log entry is:
-[TIMESTAMP]: user: USER; ttp_id: TTP_ID; tactic: TACTIC; msg: MESSAGE; function: FUNCTION_NAME; command: "COMMAND"
-
-This logging system ensures comprehensive tracking of script activities while providing flexibility in output verbosity and log management.
 
 ### Output Handling
 
