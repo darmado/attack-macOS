@@ -1,5 +1,3 @@
-#!/usr/bin/env sh
-
 DB_PATH="/Users/darmado/Library/Containers/com.apple.Safari"
 OUTPUT_FILE="safari_all_dbs_data_all.txt"
 

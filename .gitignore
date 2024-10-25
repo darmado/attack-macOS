@@ -9,8 +9,8 @@ yaml/
 
 
 # DEV files
-*.dev.js
-*.DEV.js
+*.dev.*
+*.DEV.*
 
 # Backup files
 *.bak
