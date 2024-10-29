@@ -5,71 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Pre-release]
 
-### Added
-- ATT&CK Coverage Map generation script (`build_coverage_map.py`)
-  - Generates a comprehensive markdown table of MITRE ATT&CK techniques for macOS
-  - Uses color-coded badges to indicate implementation status (red, yellow, green)
-  - Includes procedure counts for implemented techniques
-  - Provides statistics on technique and procedure coverage
-- Browser history extraction functionality in `browser_history.sh`
-  - Added support for Safari, Chrome, Firefox, and Brave browsers
-  - Implemented SQLite queries for each browser's history database
-- Data exfiltration capabilities in `browser_history.sh`
-  - Added HTTP POST exfiltration method
-  - Added DNS query exfiltration method
-- Encoding and encryption functions in `browser_history.sh`
-  - Implemented various encoding methods (base64, hex, uuencode, perl_b64, perl_utf8)
-  - Added encryption options (AES, Blowfish, GPG)
-- Debug logging functionality across multiple scripts
-- ShellCheck integration for bash script validation
-  - Added ShellCheck binary to the repository
-  - Implemented `run_shellcheck.sh` script for automated validation
+### Core Framework & Scripts
+| Component | Type | Description |
+|-----------|------|-------------|
+| attackmacos.sh | Changed | - Optimized banner display logic<br>- Enhanced argument parsing<br>- Improved script execution methods (curl, wget, osascript, local) |
+| build_coverage_map.py | Updated | - ATT&CK technique table generation<br>- Color-coded implementation status<br>- Technique/procedure coverage statistics<br>- Procedure counts for implemented techniques |
+| Utility Functions | Updated | - Initial project structure<br>- Core script templates<br>- Utility script template (`utility_functions.sh`)<br>- Standardized script headers |
+| Logging System | Changed | - Deprecated verbose logging<br>- Implemented granular debug logging<br>- Centralized logging architecture<br>- Improved error message formatting |
 
-### Changed
-- Updated `SecurityToolsCheck` function in `security_software.sh`
-  - Improved detection methods for various security tools
-  - Added checks for additional EDR and antivirus solutions
-- Enhanced `Discover` function in multiple scripts with more comprehensive checks
-- Improved error handling and input validation across all scripts
-- Modified `parseArguments` function for better flexibility and robustness
-- Restructured project documentation
-  - Updated README.md with more detailed usage instructions
-  - Reorganized `_DOCS` folder structure
-- Updated Procedure Index (`_DOCS/Procedures/Procedure Index.md`)
-  - Added links to actual scripts in the repository
-  - Included new columns for Data Source, Data Component, and Detections
-- Refactored `browser_history.sh` to use functions for each browser query
-- Improved code comments and documentation within scripts
+### Browser & Privacy Analysis
+| Component | Type | Description |
+|-----------|------|-------------|
+| safariJXA2.js | Updated | - Browser automation core functions<br>- Hidden window support<br>- TCC permission checks<br>- SIP warning system<br>- URL/tab content extraction<br>- Multi-browser operations (mail, SMS, tel)<br>- Screen dimension detection<br>- Modular export system |
+| browser_history.sh | Updated | - Multi-browser support (Safari, Chrome, Firefox, Brave)<br>- SQLite query implementation<br>- HTTP POST/DNS exfiltration<br>- Multiple encoding methods<br>- Encryption options (AES, Blowfish, GPG) |
 
-### Fixed
-- Corrected code signing status reporting in various scripts
-- Improved error message formatting for better readability
-- Fixed Red Canary Mac Monitor detection in `SecurityToolsCheck` function
-- Resolved issues with argument parsing, particularly for the --help flag
-- Addressed potential file permission issues in scripts accessing system files
+### Security Tools & Analysis
+| Component | Type | Description |
+|-----------|------|-------------|
+| security_software.sh | Changed | - Enhanced SecurityToolsCheck function<br>- Improved EDR/AV detection<br>- Additional security tool checks<br>- Enhanced Discover function |
+| dump_keys.sh | Updated | - Keychain analysis capabilities<br>- Secure data extraction<br>- Code signing verification |
+| SecurityToolsCheck | Changed | - Red Canary Mac Monitor detection<br>- Improved detection methods<br>- Additional EDR solution checks |
 
-### Removed
-- Deprecated verbose logging in favor of more granular debug logging
-- Removed outdated and unused functions from legacy scripts
+### Documentation & Infrastructure
+| Component | Type | Description |
+|-----------|------|-------------|
+| ShellCheck | Updated | - Repository binary integration<br>- Automated validation script<br>- Code quality checks |
+| Project Docs | Changed | - Enhanced README.md with usage instructions<br>- Reorganized _DOCS structure<br>- Updated Procedure Index<br>- Updated data source documentation |
+| YAML Templates | Updated | - Script creation templates<br>- Standardized formatting<br>- Utility schema definitions |
+| Build System | Updated | - Coverage map generation<br>- Automated validation<br>- Performance benchmarks |
 
-## [0.1.0] - 2024-03-20
+### Bug Fixes & Optimizations
+| Component | Issue | Resolution |
+|-----------|--------|------------|
+| Safari Automation | Permission Issues | - Fixed automation permissions<br>- Resolved window visibility<br>- Addressed SIP restrictions<br>- Improved error handling |
+| TikTok Analysis | Performance | - Fixed race conditions<br>- Resolved memory leaks<br>- Corrected DOM timing<br>- Enhanced async operations |
+| Core Scripts | General | - Fixed code signing reporting<br>- Improved error messages<br>- Resolved file permissions<br>- Enhanced input validation |
+| Data Collection | Reliability | - Fixed selector specificity<br>- Improved retry mechanisms<br>- Enhanced error boundaries<br>- Optimized memory usage |
 
-### Added
-- Initial project structure and core scripts
-- Basic README.md with project overview and usage guide
-- Utility script template (`utility_functions.sh`)
-- Security software discovery script (`security_software.sh`)
-- Keychain dumping script (`dump_keys.sh`)
-- YAML template for creating new scripts
-
-### Changed
-- Implemented centralized logging system
-- Standardized script headers and naming conventions
-
-### Fixed
-- Resolved issues with log file creation paths
-
-[Unreleased]: https://github.com/yourusername/yourrepository/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/yourusername/yourrepository/releases/tag/v0.1.0
+[Pre-release]: https://github.com/yourusername/yourrepository/tree/main
