@@ -3,7 +3,7 @@
 ### Description
 This document outlines the coding guide and best practices for developing Bash scripts for MacOS security tools. It provides guidelines to ensure consistency, readability, and maintainability across the project.
 
-> **Note:** The code in `util/_templates/utility.sh` serves as a template and should not be modified. The guide below apply to new scripts created from this template.
+> **Note:** The code in `util/_templates/utility_functions.sh` serves as a template and should not be modified. The guide below apply to new scripts created from this template.
 
 ##
 
@@ -83,7 +83,7 @@ The purpose of these guide is to:
    ```
 
 6. Use the template for new scripts
-   Example: `cp util/_templates/utility.sh new_script.sh`
+   Example: `cp util/_templates/utility_functions.sh new_script.sh`
 
 7. Use descriptive names for variables and functions
    Example: `KEYCHAIN_PATH` instead of `kp`, `validate_keychain_input()` instead of `vki()`

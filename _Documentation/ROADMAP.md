@@ -15,7 +15,7 @@ This document outlines the planned features and improvements for the attack-macO
 |---------|--------|----------|-------------|-------------------|
 | MITRE ATT&CK Mapping | 🔧 | 🔥 | Map all scripts to MITRE ATT&CK techniques | Throughout all script files |
 | Modular Script Design | 🔧 | 🔥 | Create self-contained, modular scripts | All scripts in `ttp/` directory |
-| Utility Functions | 🔧 | 🔥 | Implement common utility functions | `util/_templates/utility.sh` |
+| Utility Functions | 🔧 | 🔥 | Implement common utility functions | `util/_templates/utility_functions.sh` |
 | Logging Capability | 🔧 | 🔥 | Consistent logging across all scripts | Implemented in each script |
 | Data Encoding Options | 🔧 | 🔥 | Multiple data encoding options | `encode_output()` function |
 | Data Encryption | 🔧 | 🔥 | Integrated encryption functions | `encrypt_output()` function |

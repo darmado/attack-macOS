@@ -59,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial project structure and core scripts
 - Basic README.md with project overview and usage guide
-- Utility script template (`utility.sh`)
+- Utility script template (`utility_functions.sh`)
 - Security software discovery script (`security_software.sh`)
 - Keychain dumping script (`dump_keys.sh`)
 - YAML template for creating new scripts

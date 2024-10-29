@@ -1,6 +1,6 @@
-# Tools Index
+# R& D Sources
 
-This document provides a list of tools and references used for macOS security research required to build the Attack MacOS project.
+This document provides a list of R&D sources used for macOS security research required to build the Attack MacOS project.
 
 ##  Tools
 External tools were integrated through porting, modification, referencing, or direct embedding, based on the Attack-MacOS objctives and specific use cases.
@@ -35,4 +35,5 @@ This table lists key tools and resources for macOS security research and develop
 | Security | cssmerr.h | Apple | Open source security error codes | [Source](https://opensource.apple.com/source/Security/Security-57336.1.9/OSX/libsecurity_cssm/lib/cssmerr.h.auto.html) | N/A |
 | Security | Security Framework | Apple | Documentation for Security framework | [Website](https://developer.apple.com/documentation/security) | N/A |
 | Securiry | macOS TCC.db Deep Dive | Rainforest QA | Analysis of macOS TCC.db file | [Blog Post](https://www.rainforestqa.com/blog/macos-tcc-db-deep-dive) | N/A |
+| MacOS Internals | macOS Privacy Preferences | Kevin Conner | List of macOS privacy preference identifiers | [GitHub Gist](https://gist.github.com/kconner/cff08fe3e0bb857ea33b47d965b3e19f) | N/A |
 

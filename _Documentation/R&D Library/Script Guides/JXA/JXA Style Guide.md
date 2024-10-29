@@ -3,7 +3,7 @@
 ### Description
 This document outlines the coding guide and best practices for developing Bash scripts for MacOS security tools. It provides guidelines to ensure consistency, readability, and maintainability across the project.
 
-> **Note:** The code in `util/_templates/utility.sh` serves as a template and should not be modified. The guide below apply to new scripts created from this template.
+> **Note:** The code in `util/_templates/utility_functions.sh` serves as a template and should not be modified. The guide below apply to new scripts created from this template.
 
 ##
 
@@ -118,6 +118,30 @@ The purpose of these guide is to:
        print("Error reading file: \(error.localizedDescription)")
    }
    ```
+
+6. TCC (Transparency, Consent, and Control) Permission Checking:
+   When checking for Full Disk Access (FDA) or other TCC-related permissions, use the MDQuery API instead of directly accessing the TCC database files. This method is more reliable and less likely to trigger security alerts.
+
+   Example:
+   ```javascript
+   function checkFullDiskAccess() {
+       ObjC.import('CoreServices');
+       const homeDir = $.NSHomeDirectory().js;
+       const tccDbPath = `${homeDir}/Library/Application Support/com.apple.TCC/TCC.db`;
+       const queryString = "kMDItemDisplayName = *TCC.db";
+       let query = $.MDQueryCreate($(), $(queryString), $(), $());
+       
+       if ($.MDQueryExecute(query, 1)) {
+           let resultCount = $.MDQueryGetResultCount(query);
+           if (resultCount === 2) {
+               return true; // Full Disk Access is granted
+           }
+       }
+       return false; // No Full Disk Access
+   }
+   ```
+
+   Note: A result count of 2 indicates that both the user and system TCC databases are visible, which implies Full Disk Access.
 
 These guide aim to leverage the full power of macOS while maintaining efficiency, reliability, and stealth in your JXA and Swift code for security tools.
 

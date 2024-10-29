@@ -5,12 +5,15 @@
 *.log.*
 
 # yaml
-yaml/
+#yaml/
 
 
 # DEV files
 *.dev.*
 *.DEV.*
+
+# Test Tools
+.tools/
 
 # Backup files
 *.bak

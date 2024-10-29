@@ -3,6 +3,7 @@ ObjC.import('CoreGraphics');
 ObjC.import('AppKit');
 ObjC.import('Security');
 ObjC.import('AppleScriptObjC');
+ObjC.import('CoreServices');
 ObjC.bindFunction('CFMakeCollectable', ['id', ['void *']]);
 
 // Set includeStandardAdditions for the entire script
@@ -361,13 +362,18 @@ function validateAndFormatURL(url) {
 // list all open Safari windows and their tabs.
 function listWindows() {
     try {
-        if (isSafariOpen()) {
-            const safariApp = Application('Safari');
-            safariApp.includeStandardAdditions = true;
+        const safariApp = Application('Safari');
+        safariApp.includeStandardAdditions = true;
 
-            let windowInfo = [];
+        if (!safariApp.running()) {
+            console.log("Safari is not running. Please launch Safari first.");
+            return;
+        }
 
-            safariApp.windows().forEach((window, index) => {
+        let windowInfo = [];
+
+        safariApp.windows().forEach((window, index) => {
+            if (window.tabs) {
                 let tabs = [];
                 window.tabs().forEach(tab => {
                     tabs.push({
@@ -379,13 +385,13 @@ function listWindows() {
                     windowIndex: index,
                     tabs: tabs
                 });
-            });
+            } else {
+                console.log(`Window ${index} has no tabs or is inaccessible.`);
+            }
+        });
 
-            console.log(JSON.stringify(windowInfo, null, 2));
-            return windowInfo;
-        } else {
-            console.log("No Safari windows are open. Please launch Safari first.");
-        }
+        console.log(JSON.stringify(windowInfo, null, 2));
+        return windowInfo;
     } catch (error) {
         console.log('Error listing windows: ' + error);
     }
@@ -610,7 +616,7 @@ function listHistory() {
 function listDownloads() {
     try {
         const homeDir = ObjC.unwrap($.NSHomeDirectory());
-        const downloadsPath = `${homeDir}/Downloads`;
+        const downloadsPath = `${homeDir}/Desktop`;
 
         const fileManager = $.NSFileManager.defaultManager;
         const files = ObjC.deepUnwrap(fileManager.contentsOfDirectoryAtPathError(downloadsPath, $()));
@@ -759,8 +765,33 @@ function checkSafariPermissions() {
     }
 }
 
-// Modify the main function to use both permission checks
+function checkTCCPermissions() {
+    const username = $.NSUserName().js;
+    const queryString = "kMDItemDisplayName = *TCC.db";
+    const query = $.MDQueryCreate($(), $(queryString), $(), $());
+
+    if ($.MDQueryExecute(query, 1)) {
+        for (let i = 0; i < $.MDQueryGetResultCount(query); i++) {
+            const mdItem = $.MDQueryGetResultAtIndex(query, i);
+            const mdAttrs = ObjC.deepUnwrap($.MDItemCopyAttribute($.CFMakeCollectable(mdItem), $.kMDItemPath));
+
+            if (mdAttrs.endsWith(`/Users/${username}/Library/Application Support/com.apple.TCC/TCC.db`)) {
+                console.log("[+] This app context has full disk access (can see the user's TCC.db file)");
+                return true;
+            }
+        }
+    }
+
+    console.log("[-] This app context does NOT have full disk access. Some operations may fail.");
+    return false;
+}
+
+// Modify the main function to include the TCC check
 function main() {
+    if (!checkTCCPermissions()) {
+        console.log("Warning: Limited permissions may restrict some functionality.");
+    }  
+
     if (!checkCurrentAppPermissions()) {
         console.log("Cannot proceed due to lack of automation permissions for the current app.");
         console.log("Please grant automation permissions to the app running this script (likely Terminal or your script editor).");
@@ -1046,3 +1077,5 @@ function readOpenTabsContent() {
 
     return tabContents;
 }
+
+

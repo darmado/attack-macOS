@@ -1,23 +1,34 @@
 # JavaScript
 *.js linguist-language=JavaScript
+*.js linguist-detectable=true
 
 # Swift
 *.swift linguist-language=Swift
+*.swift linguist-detectable=true
 
 # Python
 *.py linguist-language=Python
+*.py linguist-detectable=true
 
 # TypeScript
 *.ts linguist-language=TypeScript
+*.ts linguist-detectable=true
 
 # Go
 *.go linguist-language=Go
-
+*.go linguist-detectable=true
 
 # YAML
 *.yml linguist-language=YAML
+*.yml linguist-detectable=true
 *.yaml linguist-language=YAML
+*.yaml linguist-detectable=true
 
+# Ensure minified JavaScript is not counted
+*.min.js linguist-vendored=true
 
-*.min.js linguist-vendored
+# Exclude log files from language statistics
 *.log linguist-detectable=false
+
+# Ensure all other files are detected
+* linguist-detectable=true

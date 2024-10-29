@@ -1,7 +1,7 @@
 //  Script Name: swiftbelt2.js
 //  MITRE ATT&CK Technique: [TTP_ID]
 //  Author: @darmado | https://x.com/darmad0
-//  Original Author: https://github.com/cedowens
+//  Credit: https://github.com/cedowens
 //  Date: Thu Oct 17 15:57:59 PDT 2024
 //  Version: 1.1
 
@@ -112,30 +112,30 @@ const CSSM_ERROR_CODES = {
 };
 
 function printHelp() {
-    console.log("SwiftBelt Usage:");
-    console.log("  -all                 Run all checks");
-    console.log("  -tcc                 Run TCC check");
-    console.log("  -securitytools       Discover security tools and related information");
-    console.log("  -sysinfo             Run system info check");
-    console.log("  -clipboard           Dump clipboard contents");
-    console.log("  -running             List running applications");
-    console.log("  -listusers           List local user accounts");
-    console.log("  -launchagents        List launch agents and daemons");
-    console.log("  -history             Check command history");
-    console.log("  -slack               Search Slack data");
-    console.log("  -installed           List installed applications");
-    console.log("  -firefox             Check Firefox cookies");
-    console.log("  -lock                Check screen lock status");
-    console.log("  -sticky              Check Sticky Notes");
-    console.log("  -textedit            Check TextEdit autosave");
-    console.log("  -cred                Search for credentials"); 
-    console.log("  -help                Print this help message");
-    console.log("  -debug               Enable debug logging");
-    console.log("  -codesign            Check code signing for all apps in /Applications/");
-    console.log("  -codesignapp <path>  Check code signing for a specific app");
-    console.log("  -safarihistory       Retrieve Safari browser history (may require Full Disk Access)");
-    console.log("  -safaridbs           List Safari-related databases");
-}
+    console.log(`SwiftBelt Usage:
+        -all                 Run all checks
+        -tcc                 Run TCC check
+        -securitytools       Discover security tools and related information
+        -sysinfo             Run system info check
+        -clipboard           Dump clipboard contents
+        -running             List running applications
+        -listusers           List local user accounts
+        -launchagents        List launch agents and daemons
+        -history             Check command history
+        -slack               Search Slack data
+        -installed           List installed applications
+        -firefox             Check Firefox cookies
+        -lock                Check screen lock status
+        -sticky              Check Sticky Notes
+        -textedit            Check TextEdit autosave
+        -cred                Search for credentials
+        -help                Print this help message
+        -debug               Enable debug logging
+        -codesign            Check code signing for all apps in /Applications/
+        -codesignapp <path>  Check code signing for a specific app
+        -safarihistory       Retrieve Safari browser history (may require Full Disk Access)
+        -safaridbs           List Safari-related databases`);
+        }
 
 
 // Arg Map
