@@ -1,14 +1,58 @@
+
+
 # Logs
 *.log
 *.log.*
+
+# yaml
+#yaml/
+
+
+# DEV files
+*.dev.*
+*.DEV.*
+
+# Test Tools
+.tools/
 
 # Backup files
 *.bak
 *.backup
 *.backup.*
 
+# Go build files
+asf.go
+*.go
+*.out
+*.exe
+*.app
+*.pkg
+*.dmg
+*.zip
+*.tar
+*.tar.gz
+
 # PID files
 *.pid
+
+# Python virtual environment
+venv/
+env/
+.venv/
+.env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# pip files
+pip-log.txt
+pip-delete-this-directory.txt
+
+# pyenv
+.python-version
 
 # Keys and sensitive data
 *.key
@@ -64,9 +108,12 @@ dist/
 .env
 .env.*
 
-# Backup files
+# Random files
 *~
 *.bak
+*.bak.*
+*BAK.*
+*.txt
 *.backup
 
 # Script output files
