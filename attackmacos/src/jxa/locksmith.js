@@ -228,11 +228,11 @@ list_all_attr_of_key_by_label_key = function(label){
 	process_query(query);
 }
 
-//list_all_key_of_type($.kSecClassGenericPassword);
-//list_all_key_of_type($.kSecClassKey);
-//list_all_key_of_type($.kSecClassInternetPassword);
-//list_all_key_of_type($.kSecClassCertificate);
-//list_all_attr_of_key_by_account("test account");
+list_all_key_of_type($.kSecClassGenericPassword);
+list_all_key_of_type($.kSecClassKey);
+list_all_key_of_type($.kSecClassInternetPassword);
+list_all_key_of_type($.kSecClassCertificate);
+list_all_attr_of_key_by_account("test account");
 list_all_attr_of_key_by_label_genp("Slack Safe Storage");
 
 function main() {

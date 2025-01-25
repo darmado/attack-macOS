@@ -422,7 +422,7 @@ check_perms() {
     fi
 }
 
-# Function to check TCC permissions
+# Function to check TCC permissions based on TCC.db size 
 check_perms_tcc() {
     local tcc_db="/Library/Application Support/com.apple.TCC/TCC.db"
     local file_size=$(stat -f%z "$tcc_db" 2>/dev/null)
