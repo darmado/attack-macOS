@@ -101,7 +101,7 @@
                     handle_id: msg.handle_id
                 } : {
                     phone_number: isEmail(msg.destination_caller_id) ? null : msg.destination_caller_id,
-                    email: isEmail(msg.destination_caller_id) ? msg.destination_caller_id : null,
+                    email: msg.destination_caller_id?.includes('@') ? msg.destination_caller_id : null,
                     country: destHandleData?.country,
                     handle_id: null
                 }
@@ -1232,10 +1232,6 @@
 
     // 1. Create dedicated Handles class for listing
     class Handles extends BaseDB {
-        constructor() {
-            super(MsgIntelUtils.DBS.chat);
-        }
-
         getAll(format = 'json') {
             debug("Entering getAll");
             
