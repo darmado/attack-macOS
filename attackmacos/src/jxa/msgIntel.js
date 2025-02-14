@@ -100,10 +100,10 @@
                     country: handleData?.country,
                     handle_id: msg.handle_id
                 } : {
-                    phone_number: isEmail(msg.destination_caller_id) ? null : msg.destination_caller_id,
-                    email: msg.destination_caller_id?.includes('@') ? msg.destination_caller_id : null,
-                    country: destHandleData?.country,
-                    handle_id: null
+                    phone_number: isEmail(msg.destination_caller_id) ? null : msg.destination_caller_id || handleData?.id,
+                    email: isEmail(msg.destination_caller_id) ? msg.destination_caller_id : null,
+                    country: destHandleData?.country || handleData?.country,
+                    handle_id: msg.handle_id
                 }
             };
         }
@@ -149,6 +149,217 @@
                     timestamp: new Date().toISOString(),
                     source_db: dbPath,
                     type: type
+                }
+            };
+        }
+
+        static getHandles(db) {
+            const sql = `SELECT ROWID, id, country FROM handle;`;
+            const results = db.query(sql);
+            return {
+                byRowId: new Map(results.map(h => [h.ROWID, h])),
+                byId: new Map(results.map(h => [h.id, h]))
+            };
+        }
+
+        static processDraftOutput(results, options = {}) {
+            const {
+                dbPath = this.DBS.chat,
+                format = 'json'
+            } = options;
+
+            if (format !== 'json') return results;
+            if (!results) return { data: { drafts: {} }};
+
+            return {
+                job: this.createJobMetadata(dbPath, "drafts"),
+                drafts: results.reduce((acc, draft) => {
+                    const draftId = `DRAFT-${$.NSUUID.UUID.UUIDString.js}`;
+                    
+                    // Get intended recipient from directory name
+                    const recipientId = draft.directory !== 'Pending' ? draft.directory : null;
+                    const recipientHandle = recipientId ? this.handles?.byId?.get(recipientId) : null;
+
+                    acc[draftId] = {
+                        job_id: `JOB-${$.NSUUID.UUID.UUIDString.js}`,
+                        source: {
+                            type: 'plist',
+                            directory: draft.directory || 'Pending',
+                            path: draft.path || `${MsgIntelUtils.USER_INFO.homeDir}/Library/Messages/Drafts/Pending/composition.plist`
+                        },
+                        communication: {
+                            channel: {
+                                service: recipientHandle?.service || 'SMS',
+                                version: 0,
+                                is_from_me: 1,
+                                chat_identifier: recipientId || 'Pending',
+                                thread: {
+                                    reply_to_guid: null,
+                                    originator_guid: null,
+                                    associated_guid: null
+                                }
+                            },
+                            sender: {
+                                phone_number: null,
+                                email: null,
+                                country: null,
+                                handle_id: null
+                            },
+                            receiver: {
+                                phone_number: recipientId?.includes('@') ? null : recipientId,
+                                email: recipientId?.includes('@') ? recipientId : null,
+                                country: recipientHandle?.country,
+                                handle_id: recipientHandle?.ROWID
+                            }
+                        },
+                        content: {
+                            data: {
+                                text: this.decodeDraftText(draft.text),
+                                format: 'NSKeyedArchiver',
+                                encoding_method: 'base64',
+                                mime_type: 'application/x-plist',
+                                data_length: draft.text?.length || 0,
+                                encoded_data: draft.text
+                            },
+                            attachments: draft.attachments || []
+                        },
+                        status: {
+                            delivery: {
+                                is_pending: true,
+                                is_delivered: false,
+                                is_sent: false,
+                                is_read: false,
+                                is_played: false,
+                                is_prepared: false,
+                                is_finished: false,
+                                was_delivered_quietly: false,
+                                did_notify_recipient: false,
+                                was_downgraded: false,
+                                was_detonated: false,
+                                is_delayed: false
+                            },
+                            state: {
+                                has_attachments: Boolean(draft.has_attachments),
+                                created: this.convertAppleDate(draft.created_date),
+                                last_modified: this.convertAppleDate(draft.modified_date)
+                            }
+                        }
+                    };
+                    return acc;
+                }, {})
+            };
+        }
+
+        // Helper to decode draft text from base64 plist
+        static decodeDraftText(base64Text) {
+            if (!base64Text) return '';
+            try {
+                const data = $.NSData.alloc.initWithBase64EncodedStringOptions(base64Text, 0);
+                const plist = $.NSPropertyListSerialization.propertyListWithDataOptionsFormatError(
+                    data, 0, null, null
+                );
+                const rawContent = ObjC.deepUnwrap(plist);
+                return rawContent.$objects.find(obj => obj?.['NS.string'])?.['NS.string'] || '';
+            } catch (e) {
+                return base64Text;
+            }
+        }
+
+        static processMessageOutput(results, options = {}) {
+            const {
+                dbPath = this.DBS.chat,
+                format = 'json',
+                handles = null  // Pass handles cache from Messages class
+            } = options;
+
+            if (format !== 'json') return results;
+            if (!results) return { data: { messages: [] }};
+
+            return {
+                job: this.createJobMetadata(dbPath, "messages"),
+                data: {
+                    messages: results.map(msg => ({
+                        message: {
+                            guid: msg.guid,
+                            timestamps: {
+                                date: this.convertAppleDate(msg.date),
+                                date_read: this.convertAppleDate(msg.date_read),
+                                date_delivered: this.convertAppleDate(msg.date_delivered),
+                                date_played: this.convertAppleDate(msg.date_played),
+                                date_retracted: this.convertAppleDate(msg.date_retracted),
+                                date_edited: this.convertAppleDate(msg.date_edited)
+                            },
+                            type: {
+                                is_empty: Boolean(msg.is_empty),
+                                is_archive: Boolean(msg.is_archive),
+                                is_spam: Boolean(msg.is_spam),
+                                is_corrupt: Boolean(msg.is_corrupt),
+                                is_expirable: Boolean(msg.is_expirable),
+                                is_system: Boolean(msg.is_system_message),
+                                is_service: Boolean(msg.is_service_message),
+                                is_forward: Boolean(msg.is_forward),
+                                is_audio: Boolean(msg.is_audio_message),
+                                is_emote: Boolean(msg.is_emote)
+                            },
+                            state: {
+                                is_delivered: Boolean(msg.is_delivered),
+                                is_read: Boolean(msg.is_read),
+                                is_sent: Boolean(msg.is_sent),
+                                is_played: Boolean(msg.is_played),
+                                is_prepared: Boolean(msg.is_prepared),
+                                is_finished: Boolean(msg.is_finished),
+                                is_empty: Boolean(msg.is_empty),
+                                was_data_detected: Boolean(msg.was_data_detected),
+                                was_delivered_quietly: Boolean(msg.was_delivered_quietly),
+                                was_detonated: Boolean(msg.was_detonated)
+                            },
+                            communication: {
+                                channel: {
+                                    service: msg.service,
+                                    version: msg.version,
+                                    is_from_me: msg.is_from_me,
+                                    chat_identifier: msg.chat_identifier,
+                                    thread: {
+                                        reply_to_guid: msg.reply_to_guid,
+                                        originator_guid: msg.thread_originator_guid,
+                                        associated_guid: msg.associated_message_guid
+                                    }
+                                },
+                                sender: msg.is_from_me === 0 ? {
+                                    phone_number: handles?.byRowId.get(msg.handle_id)?.id.includes('@') ? null : handles?.byRowId.get(msg.handle_id)?.id,
+                                    email: handles?.byRowId.get(msg.handle_id)?.id.includes('@') ? handles?.byRowId.get(msg.handle_id)?.id : null,
+                                    country: handles?.byRowId.get(msg.handle_id)?.country,
+                                    handle_id: msg.handle_id
+                                } : {
+                                    phone_number: msg.destination_caller_id?.includes('@') ? null : msg.destination_caller_id,
+                                    email: msg.destination_caller_id?.includes('@') ? msg.destination_caller_id : null,
+                                    country: handles?.byId.get(msg.destination_caller_id)?.country,
+                                    handle_id: null
+                                },
+                                receiver: msg.is_from_me === 1 ? {
+                                    phone_number: handles?.byRowId.get(msg.handle_id)?.id.includes('@') ? null : handles?.byRowId.get(msg.handle_id)?.id,
+                                    email: handles?.byRowId.get(msg.handle_id)?.id.includes('@') ? handles?.byRowId.get(msg.handle_id)?.id : null,
+                                    country: handles?.byRowId.get(msg.handle_id)?.country,
+                                    handle_id: msg.handle_id
+                                } : {
+                                    phone_number: msg.destination_caller_id?.includes('@') ? null : msg.destination_caller_id,
+                                    email: msg.destination_caller_id?.includes('@') ? msg.destination_caller_id : null,
+                                    country: handles?.byId.get(msg.destination_caller_id)?.country,
+                                    handle_id: null
+                                }
+                            },
+                            content: {
+                                text: msg.text,
+                                subject: msg.subject,
+                                group_title: msg.group_title
+                            },
+                            icloud: {
+                                ck_sync_state: msg.ck_sync_state,
+                                ck_record_id: msg.ck_record_id,
+                                ck_record_change_tag: msg.ck_record_change_tag
+                            }
+                        }
+                    }))
                 }
             };
         }
@@ -232,18 +443,7 @@
     class Messages extends BaseDB {
         constructor() {
             super(MsgIntelUtils.DBS.chat);
-            // Cache handles on init for faster lookups
-            this.handles = this.getHandles();
-        }
-
-        // Cache handles for faster lookups
-        getHandles() {
-            const sql = `SELECT ROWID, id, country FROM handle;`;
-            const results = this.query(sql);
-            return {
-                byRowId: new Map(results.map(h => [h.ROWID, h])),
-                byId: new Map(results.map(h => [h.id, h]))
-            };
+            this.handles = MsgIntelUtils.getHandles(this);
         }
 
         getMessages(format = 'json') {
@@ -265,114 +465,16 @@
             LEFT JOIN chat c ON cmj.chat_id = c.ROWID
             WHERE m.text IS NOT NULL;`;
 
-            // For non-JSON formats, return raw sqlite output
             if (format !== 'json') {
                 return this.query(sql, format);
             }
 
             const messages = this.query(sql);
-            if (!messages) return { data: { messages: [] }};
-
-            return {
-                job: {
-                    job_id: `JOB-${$.NSProcessInfo.processInfo.processIdentifier}`,
-                    user: MsgIntelUtils.USER_INFO.username,
-                    executor: "osascript", // TODO: get executor value from current app
-                    language: "jxa",
-                    imports: ["Foundation", "CoreServices"],
-                    binaries: ["sqlite3"], // TODO: get binaries from the const 
-                    pid: $.NSProcessInfo.processInfo.processIdentifier,
-                    query: {
-                        timestamp: new Date().toISOString(),
-                        source_db: this.dbPath,
-                        type: "messages"
-                    }
-                },
-                data: {
-                    messages: messages.map(msg => ({
-                        message: {
-                            guid: msg.guid,
-                            timestamps: {
-                                date: MsgIntelUtils.convertAppleDate(msg.date),
-                                date_read: MsgIntelUtils.convertAppleDate(msg.date_read),
-                                date_delivered: MsgIntelUtils.convertAppleDate(msg.date_delivered),
-                                date_played: MsgIntelUtils.convertAppleDate(msg.date_played),
-                                date_retracted: MsgIntelUtils.convertAppleDate(msg.date_retracted),
-                                date_edited: MsgIntelUtils.convertAppleDate(msg.date_edited)
-                            },
-                            type: {
-                                is_empty: Boolean(msg.is_empty),
-                                is_archive: Boolean(msg.is_archive),
-                                is_spam: Boolean(msg.is_spam),
-                                is_corrupt: Boolean(msg.is_corrupt),
-                                is_expirable: Boolean(msg.is_expirable),
-                                is_system: Boolean(msg.is_system_message),
-                                is_service: Boolean(msg.is_service_message),
-                                is_forward: Boolean(msg.is_forward),
-                                is_audio: Boolean(msg.is_audio_message),
-                                is_emote: Boolean(msg.is_emote)
-                            },
-                            state: {
-                                is_delivered: Boolean(msg.is_delivered),
-                                is_read: Boolean(msg.is_read),
-                                is_sent: Boolean(msg.is_sent),
-                                is_played: Boolean(msg.is_played),
-                                is_prepared: Boolean(msg.is_prepared),
-                                is_finished: Boolean(msg.is_finished),
-                                is_empty: Boolean(msg.is_empty),
-                                was_data_detected: Boolean(msg.was_data_detected),
-                                was_delivered_quietly: Boolean(msg.was_delivered_quietly),
-                                was_detonated: Boolean(msg.was_detonated)
-                            },
-                            communication: {
-                                channel: {
-                                    service: msg.service,
-                                    version: msg.version,
-                                    is_from_me: msg.is_from_me,
-                                    chat_identifier: msg.chat_identifier,
-                                    thread: {
-                                        reply_to_guid: msg.reply_to_guid,
-                                        originator_guid: msg.thread_originator_guid,
-                                        associated_guid: msg.associated_message_guid
-                                    }
-                                },
-                                sender: msg.is_from_me === 0 ? {
-                                    phone_number: this.handles.byRowId.get(msg.handle_id)?.id.includes('@') ? null : this.handles.byRowId.get(msg.handle_id)?.id,
-                                    email: this.handles.byRowId.get(msg.handle_id)?.id.includes('@') ? this.handles.byRowId.get(msg.handle_id)?.id : null,
-                                    country: this.handles.byRowId.get(msg.handle_id)?.country,
-                                    handle_id: msg.handle_id
-                                } : {
-                                    phone_number: msg.destination_caller_id?.includes('@') ? null : msg.destination_caller_id,
-                                    email: msg.destination_caller_id?.includes('@') ? msg.destination_caller_id : null,
-                                    country: this.handles.byId.get(msg.destination_caller_id)?.country,
-                                    handle_id: null
-                                },
-                                receiver: msg.is_from_me === 1 ? {
-                                    phone_number: this.handles.byRowId.get(msg.handle_id)?.id.includes('@') ? null : this.handles.byRowId.get(msg.handle_id)?.id,
-                                    email: this.handles.byRowId.get(msg.handle_id)?.id.includes('@') ? this.handles.byRowId.get(msg.handle_id)?.id : null,
-                                    country: this.handles.byRowId.get(msg.handle_id)?.country,
-                                    handle_id: msg.handle_id
-                                } : {
-                                    phone_number: msg.destination_caller_id?.includes('@') ? null : msg.destination_caller_id,
-                                    email: msg.destination_caller_id?.includes('@') ? msg.destination_caller_id : null,
-                                    country: this.handles.byId.get(msg.destination_caller_id)?.country,
-                                    handle_id: null
-                                }
-                            },
-                            content: {
-                                text: msg.text,
-                                subject: msg.subject,
-                                group_title: msg.group_title,
-                            },
-                            icloud: {
-                                ck_sync_state: msg.ck_sync_state,
-                                ck_record_id: msg.ck_record_id,
-                                ck_record_change_tag: msg.ck_record_change_tag
-                            }
-                        }
-                    }))
-                }
-            };
+            return MsgIntelUtils.processMessageOutput(messages, {
+                dbPath: this.dbPath,
+                format,
+                handles: this.handles
+            });
         }
 
         getContacts() {
@@ -390,16 +492,7 @@
     class Attachments extends BaseDB {
         constructor() {
             super(MsgIntelUtils.DBS.chat);
-            this.handles = this.getHandles();
-        }
-
-        getHandles() {
-            const sql = `SELECT ROWID, id, country FROM handle;`;
-            const results = this.query(sql);
-            return {
-                byRowId: new Map(results.map(h => [h.ROWID, h])),
-                byId: new Map(results.map(h => [h.id, h]))
-            };
+            this.handles = MsgIntelUtils.getHandles(this);
         }
 
         getAttachments(format = 'json') {
@@ -510,16 +603,7 @@
     class Search extends BaseDB {
         constructor() {
             super(MsgIntelUtils.DBS.chat);
-            this.handles = this.getHandles();  // Initialize handles cache like Messages class
-        }
-
-        getHandles() {
-            const sql = `SELECT ROWID, id, country FROM handle;`;
-            const results = this.query(sql);
-            return {
-                byRowId: new Map(results.map(h => [h.ROWID, h])),
-                byId: new Map(results.map(h => [h.id, h]))
-            };
+            this.handles = MsgIntelUtils.getHandles(this);
         }
 
         searchAll(inputStr, format = 'json') {
@@ -670,41 +754,23 @@
     // Drafts Class
     class Drafts extends BaseDB {
         constructor() {
-            super(MsgIntelUtils.DBS.prewarmsg);
+            super(MsgIntelUtils.DBS.chat);
             this.fileManager = $.NSFileManager.defaultManager;
+            this.draftsPath = `${MsgIntelUtils.USER_INFO.homeDir}/Library/Messages/Drafts`;
         }
 
-        getDrafts() {
+        getDrafts(format = 'json') {
             try {
-                const draftsPath = `${MsgIntelUtils.USER_INFO.homeDir}/Library/Messages/Drafts`;
-                
-                if (!this.fileManager.fileExistsAtPath(draftsPath)) {
-                    return { drafts: [] };
+                if (!this.fileManager.fileExistsAtPath(this.draftsPath)) {
+                    return MsgIntelUtils.processDraftOutput([], {format});
                 }
 
-                const accounts = ObjC.deepUnwrap(this.fileManager.contentsOfDirectoryAtPathError(draftsPath, null));
-                let messages = {};
-                
-                // Create single job object for this PID
-                const jobId = `JOB-${$.NSUUID.UUID.UUIDString.js}`;
-                const job = {
-                    job_id: jobId,
-                    user: MsgIntelUtils.USER_INFO.username,
-                    executor: 'osascript',
-                    language: 'jxa',
-                    imports: ['Foundation'],
-                    binaries: ['plutil'],
-                    pid: $.NSProcessInfo.processInfo.processIdentifier,
-                    query: {
-                        timestamp: new Date().toISOString(),
-                        type: 'draft'
-                    }
-                };
+                const accounts = ObjC.deepUnwrap(this.fileManager.contentsOfDirectoryAtPathError(this.draftsPath, null));
+                const drafts = [];
 
                 accounts.forEach(account => {
-                    const plistPath = `${draftsPath}/${account}/composition.plist`;
+                    const plistPath = `${this.draftsPath}/${account}/composition.plist`;
                     if (this.fileManager.fileExistsAtPath(plistPath)) {
-                        // Get file attributes with proper timestamps
                         const stat = $.NSFileManager.defaultManager.attributesOfItemAtPathError(plistPath, null);
                         const modDate = ObjC.deepUnwrap(stat.fileModificationDate);
                         const creationDate = ObjC.deepUnwrap(stat.creationDate);
@@ -726,76 +792,22 @@
                         const dataMatch = output.match(/<data>\s*(.*?)\s*<\/data>/s);
                         const base64Data = dataMatch ? dataMatch[1].replace(/\s+/g, '') : '';
 
-                        // Decode the content first
-                        const decodedData = $.NSData.alloc.initWithBase64EncodedStringOptions(base64Data, 0);
-                        const plist = $.NSPropertyListSerialization.propertyListWithDataOptionsFormatError(
-                            decodedData,
-                            0,
-                            null,
-                            null
-                        );
-                        const rawContent = ObjC.deepUnwrap(plist);
-
-                        const messageId = `DRAFT-${$.NSUUID.UUID.UUIDString.js}`;
-                        messages[messageId] = {
-                            job_id: jobId,
-                            source: {
-                                type: 'plist',
-                                directory: account,
-                                path: plistPath,
-                            },
-                            communication: {
-                                receiver: {
-                                    account: account,
-                                    service: account.includes('@') ? 'iMessage' : 'SMS'
-                                }
-                            },
-                            content: {
-                                data: {
-                                    text: rawContent.$objects.find(obj => obj?.['NS.string'])?.['NS.string'] || '',
-                                    format: 'NSKeyedArchiver',
-                                    encoding_method: 'base64',
-                                    mime_type: 'application/x-plist',
-                                    data_length: base64Data.length,
-                                    encoded_data: base64Data
-                                },
-                                attachments: rawContent.$objects.find(obj => obj === 'CKCompositionFileURL') 
-                                    ? [rawContent.$objects.find(obj => obj.startsWith && obj.startsWith('file://'))]
-                                    : []
-                            },
-                            status: {
-                                delivery: {
-                                    is_pending: account === 'Pending' && plistPath.includes('/Pending/composition.plist'),
-                                    is_delivered: false,
-                                    is_sent: false,
-                                    is_read: false,
-                                    is_played: false,
-                                    is_prepared: false,
-                                    is_finished: false,
-                                    was_delivered_quietly: false,
-                                    did_notify_recipient: false,
-                                    was_downgraded: false,
-                                    was_detonated: false,
-                                    is_delayed: false
-                                },
-                                state: {
-                                    has_attachments: this.fileManager.fileExistsAtPath(`${draftsPath}/${account}/Attachments`),
-                                    created: creationDate,
-                                    last_modified: modDate
-                                },
-                            }
-                        };
+                        drafts.push({
+                            guid: `DRAFT-${$.NSUUID.UUID.UUIDString.js}`,
+                            created_date: creationDate,
+                            modified_date: modDate,
+                            text: base64Data,
+                            is_audio_message: false,
+                            is_empty: base64Data.length === 0
+                        });
                     }
                 });
 
-                return {
-                    job,  // Single job object at top level
-                    drafts: messages  // All messages under drafts
-                };
+                return MsgIntelUtils.processDraftOutput(drafts, {format});
 
             } catch (error) {
                 console.log(`Error reading drafts: ${error}`);
-                return { drafts: {} };
+                return MsgIntelUtils.processDraftOutput([], {format});
             }
         }
     }
@@ -804,16 +816,7 @@
     class HiddenMessages extends BaseDB {
         constructor() {
             super(MsgIntelUtils.DBS.chat);
-            this.handles = this.getHandles();
-        }
-
-        getHandles() {
-            const sql = `SELECT ROWID, id, country FROM handle;`;
-            const results = this.query(sql);
-            return {
-                byRowId: new Map(results.map(h => [h.ROWID, h])),
-                byId: new Map(results.map(h => [h.id, h]))
-            };
+            this.handles = MsgIntelUtils.getHandles(this);
         }
 
         getHiddenMessages(format = 'json') {
@@ -1152,23 +1155,13 @@
             const handles = this.query(sql);
             if (!handles) return { handles: [] };
 
+            // Add message search
+            const search = new Search();
+            const messages = search.searchAll(inputStr);
+
             debug("Exiting getAnalytics");
             return {
-                job: {
-                    job_id: `JOB-${$.NSProcessInfo.processInfo.processIdentifier}`,
-                    user: MsgIntelUtils.USER_INFO.username,
-                    executor: "osascript",
-                    language: "jxa",
-                    imports: ["Foundation", "CoreServices"],
-                    binaries: ["sqlite3"],
-                    pid: $.NSProcessInfo.processInfo.processIdentifier,
-                    query: {
-                        timestamp: new Date().toISOString(),
-                        source_db: this.dbPath,
-                        type: "analyze_contact",
-                        input: inputStr
-                    }
-                },
+                job: MsgIntelUtils.createJobMetadata(this.dbPath, "analyze_contact"),
                 data: {
                     handles: handles.map(h => ({
                         handle: {
@@ -1210,13 +1203,330 @@
                                     expirable: h.expirable_count
                                 }
                             },
-                            relationships: {
-                                shared_chats: h.shared_chats ? h.shared_chats.split(',') : [],
-                                chat_styles: h.chat_styles ? h.chat_styles.split(',').map(Number) : [],
-                                services_used: h.services_used ? h.services_used.split(',') : [],
-                                group_chats: h.group_chats ? h.group_chats.split(',').filter(Boolean) : [],
-                                blocked_count: h.blocked_count,
-                                archived_count: h.archived_count
+                            messages: messages.data.messages
+                        }
+                    }))
+                }
+            };
+        }
+    }
+
+    // 1. Rename class to Contacts
+    class Contacts extends BaseDB {
+        constructor() {
+            super(MsgIntelUtils.DBS.chat);
+        }
+
+        getAll(format = 'json') {
+            debug("Entering getAll");
+            
+            const sql = `
+                SELECT 
+                    h.id as contact_id,
+                    h.service,
+                    h.country,
+                    COUNT(DISTINCT m.ROWID) as message_count,
+                    MIN(datetime(m.date/1000000000 + 978307200, 'unixepoch')) as first_seen,
+                    MAX(datetime(m.date/1000000000 + 978307200, 'unixepoch')) as last_seen,
+                    COUNT(DISTINCT c.ROWID) as chat_count,
+                    COUNT(DISTINCT CASE WHEN c.style = 43 THEN c.ROWID END) as group_chat_count
+                FROM handle h
+                LEFT JOIN message m ON h.ROWID = m.handle_id
+                LEFT JOIN chat_handle_join chj ON h.ROWID = chj.handle_id
+                LEFT JOIN chat c ON chj.chat_id = c.ROWID
+                GROUP BY h.id
+                ORDER BY message_count DESC;`;
+
+            try {
+                if (format !== 'json') {
+                    return this.query(sql, format);
+                }
+
+                const contacts = this.query(sql);
+                if (!contacts || contacts.length === 0) {
+                    debug("No contacts found");
+                    return {
+                        job: MsgIntelUtils.createJobMetadata(this.dbPath, "list_contacts"),
+                        data: { contacts: [] }
+                    };
+                }
+
+                return {
+                    job: MsgIntelUtils.createJobMetadata(this.dbPath, "list_contacts"),
+                    data: {
+                        contacts: contacts.map(c => ({
+                            id: c.contact_id,
+                            service: c.service,
+                            country: c.country,
+                            activity: {
+                                messages: c.message_count,
+                                chats: c.chat_count,
+                                groups: c.group_chat_count,
+                                first_seen: c.first_seen,
+                                last_seen: c.last_seen
+                            }
+                        }))
+                    }
+                };
+            } catch (error) {
+                debug(`Error in getAll: ${error}`);
+                return {
+                    job: MsgIntelUtils.createJobMetadata(this.dbPath, "list_contacts"),
+                    data: { contacts: [] },
+                    error: error.toString()
+                };
+            }
+        }
+    }
+
+    // Deleted Class
+    class Deleted extends BaseDB {
+        constructor() {
+            super(MsgIntelUtils.DBS.chat);
+            this.handleCache = {};
+        }
+
+        getDeletedMessages(format = 'json') {
+            const sql = `
+                SELECT 
+                    d.ROWID,
+                    d.guid,
+                    d.recordID,
+                    h.id as handle_id,
+                    h.service,
+                    h.country
+                FROM sync_deleted_messages d
+                LEFT JOIN handle h ON d.handle_id = h.ROWID
+                UNION ALL
+                SELECT 
+                    d.ROWID,
+                    d.guid,
+                    NULL as recordID,
+                    h.id as handle_id,
+                    h.service,
+                    h.country
+                FROM deleted_messages d
+                LEFT JOIN handle h ON d.handle_id = h.ROWID;`;
+
+            return this.query(sql, format);
+        }
+
+        getDeletedChats(format = 'json') {
+            const sql = `
+                SELECT c.ROWID, c.guid, c.recordID
+                FROM sync_deleted_chats c;`;
+
+            return this.query(sql, format);
+        }
+
+        getDeletedAttachments(format = 'json') {
+            const sql = `
+                SELECT a.ROWID, a.guid, a.recordID
+                FROM sync_deleted_attachments a;`;
+
+            return this.query(sql, format);
+        }
+
+        getAll(format = 'json') {
+            debug("Entering Deleted.getAll");
+
+            try {
+                if (format !== 'json') {
+                    return this.query(sql, format);
+                }
+
+                const results = {
+                    job: MsgIntelUtils.createJobMetadata(this.dbPath, "list_deleted"),
+                    data: {
+                        deleted: {
+                            messages: [],
+                            chats: [],
+                            attachments: []
+                        }
+                    }
+                };
+
+                // Get deleted messages with handle info
+                const messages = this.getDeletedMessages();
+                if (messages && messages.length > 0) {
+                    results.data.deleted.messages = messages.map(m => ({
+                        rowid: m.ROWID,
+                        guid: m.guid,
+                        record_id: m.recordID,
+                        handle: m.handle_id ? {
+                            id: m.handle_id,
+                            service: m.service,
+                            country: m.country
+                        } : null
+                    }));
+                }
+
+                // Get deleted chats
+                const chats = this.getDeletedChats();
+                if (chats && chats.length > 0) {
+                    results.data.deleted.chats = chats.map(c => ({
+                        rowid: c.ROWID,
+                        guid: c.guid,
+                        record_id: c.recordID
+                    }));
+                }
+
+                // Get deleted attachments
+                const attachments = this.getDeletedAttachments();
+                if (attachments && attachments.length > 0) {
+                    results.data.deleted.attachments = attachments.map(a => ({
+                        rowid: a.ROWID,
+                        guid: a.guid,
+                        record_id: a.recordID
+                    }));
+                }
+
+                return results;
+
+            } catch (error) {
+                debug(`Error in getAll: ${error.toString()}`);
+                return {
+                    job: MsgIntelUtils.createJobMetadata(this.dbPath, "list_deleted"),
+                    data: { deleted: { messages: [], chats: [], attachments: [] } },
+                    error: error.toString()
+                };
+            }
+        }
+    }
+
+    // SearchMsg Class
+    class SearchMsg extends BaseDB {
+        constructor() {
+            super(MsgIntelUtils.DBS.chat);
+            this.handles = MsgIntelUtils.getHandles(this);
+        }
+
+        searchAll(inputStr, format = 'json') {
+            const escapedInputStr = inputStr.replace(/_/g, '\\_').replace(/%/g, '\\%');
+
+            const msgSql = `SELECT 
+                m.ROWID, m.guid, m.text, m.service, m.handle_id,
+                m.is_from_me, m.destination_caller_id,
+                m.service_center, m.version,
+                m.date, m.date_read, m.date_delivered, m.date_played, m.date_retracted, m.date_edited,
+                m.subject, m.group_title,
+                m.associated_message_guid, m.reply_to_guid, m.thread_originator_guid,
+                m.is_delivered, m.is_read, m.is_sent, m.is_played, m.is_prepared, m.is_finished,
+                m.is_empty, m.is_archive, m.is_spam, m.is_corrupt, m.is_expirable,
+                m.is_system_message, m.is_service_message, m.is_forward, m.is_audio_message, m.is_emote,
+                m.was_data_detected, m.was_delivered_quietly, m.was_detonated,
+                m.ck_sync_state, m.ck_record_id, m.ck_record_change_tag,
+                c.chat_identifier
+            FROM message m 
+            LEFT JOIN chat_message_join cmj ON m.ROWID = cmj.message_id
+            LEFT JOIN chat c ON cmj.chat_id = c.ROWID
+            LEFT JOIN handle h ON m.handle_id = h.ROWID
+            WHERE m.text LIKE '%${escapedInputStr}%'`;
+
+            // For non-JSON formats, return raw sqlite output
+            if (format !== 'json') {
+                return this.query(msgSql, format);
+            }
+
+            const messages = this.query(msgSql);
+            if (!messages) return { data: { messages: [] }};
+
+            return {
+                job: {
+                    job_id: `JOB-${$.NSProcessInfo.processInfo.processIdentifier}`,
+                    user: MsgIntelUtils.USER_INFO.username,
+                    executor: "osascript",
+                    language: "jxa",
+                    imports: ["Foundation", "CoreServices"],
+                    binaries: ["sqlite3"],
+                    pid: $.NSProcessInfo.processInfo.processIdentifier,
+                    query: {
+                        timestamp: new Date().toISOString(),
+                        source_db: this.dbPath,
+                        type: "searchMsg",
+                        inputStr: inputStr
+                    }
+                },
+                data: {
+                    messages: messages.map(msg => ({
+                        message: {
+                            guid: msg.guid,
+                            timestamps: {
+                                date: MsgIntelUtils.convertAppleDate(msg.date),
+                                date_read: MsgIntelUtils.convertAppleDate(msg.date_read),
+                                date_delivered: MsgIntelUtils.convertAppleDate(msg.date_delivered),
+                                date_played: MsgIntelUtils.convertAppleDate(msg.date_played),
+                                date_retracted: MsgIntelUtils.convertAppleDate(msg.date_retracted),
+                                date_edited: MsgIntelUtils.convertAppleDate(msg.date_edited)
+                            },
+                            type: {
+                                is_empty: Boolean(msg.is_empty),
+                                is_archive: Boolean(msg.is_archive),
+                                is_spam: Boolean(msg.is_spam),
+                                is_corrupt: Boolean(msg.is_corrupt),
+                                is_expirable: Boolean(msg.is_expirable),
+                                is_system: Boolean(msg.is_system_message),
+                                is_service: Boolean(msg.is_service_message),
+                                is_forward: Boolean(msg.is_forward),
+                                is_audio: Boolean(msg.is_audio_message),
+                                is_emote: Boolean(msg.is_emote)
+                            },
+                            state: {
+                                is_delivered: Boolean(msg.is_delivered),
+                                is_read: Boolean(msg.is_read),
+                                is_sent: Boolean(msg.is_sent),
+                                is_played: Boolean(msg.is_played),
+                                is_prepared: Boolean(msg.is_prepared),
+                                is_finished: Boolean(msg.is_finished),
+                                is_empty: Boolean(msg.is_empty),
+                                was_data_detected: Boolean(msg.was_data_detected),
+                                was_delivered_quietly: Boolean(msg.was_delivered_quietly),
+                                was_detonated: Boolean(msg.was_detonated)
+                            },
+                            communication: {
+                                channel: {
+                                    service: msg.service,
+                                    version: msg.version,
+                                    is_from_me: msg.is_from_me,
+                                    chat_identifier: msg.chat_identifier,
+                                    thread: {
+                                        reply_to_guid: msg.reply_to_guid,
+                                        originator_guid: msg.thread_originator_guid,
+                                        associated_guid: msg.associated_message_guid
+                                    }
+                                },
+                                sender: msg.is_from_me === 0 ? {
+                                    phone_number: this.handles.byRowId.get(msg.handle_id)?.id.includes('@') ? null : this.handles.byRowId.get(msg.handle_id)?.id,
+                                    email: this.handles.byRowId.get(msg.handle_id)?.id.includes('@') ? this.handles.byRowId.get(msg.handle_id)?.id : null,
+                                    country: this.handles.byRowId.get(msg.handle_id)?.country,
+                                    handle_id: msg.handle_id
+                                } : {
+                                    phone_number: msg.destination_caller_id?.includes('@') ? null : msg.destination_caller_id,
+                                    email: msg.destination_caller_id?.includes('@') ? msg.destination_caller_id : null,
+                                    country: this.handles.byId.get(msg.destination_caller_id)?.country,
+                                    handle_id: null
+                                },
+                                receiver: msg.is_from_me === 1 ? {
+                                    phone_number: this.handles.byRowId.get(msg.handle_id)?.id.includes('@') ? null : this.handles.byRowId.get(msg.handle_id)?.id,
+                                    email: this.handles.byRowId.get(msg.handle_id)?.id.includes('@') ? this.handles.byRowId.get(msg.handle_id)?.id : null,
+                                    country: this.handles.byRowId.get(msg.handle_id)?.country,
+                                    handle_id: msg.handle_id
+                                } : {
+                                    phone_number: msg.destination_caller_id?.includes('@') ? null : msg.destination_caller_id,
+                                    email: msg.destination_caller_id?.includes('@') ? msg.destination_caller_id : null,
+                                    country: this.handles.byId.get(msg.destination_caller_id)?.country,
+                                    handle_id: null
+                                }
+                            },
+                            content: {
+                                text: msg.text,
+                                subject: msg.subject,
+                                group_title: msg.group_title
+                            },
+                            icloud: {
+                                ck_sync_state: msg.ck_sync_state,
+                                ck_record_id: msg.ck_record_id,
+                                ck_record_change_tag: msg.ck_record_change_tag
                             }
                         }
                     }))
@@ -1224,91 +1534,14 @@
             };
         }
 
-        searchAll(inputStr, format = 'json') {
-            const escapedInputStr = inputStr.replace(/_/g, '\\_').replace(/%/g, '\\%');
-            // Rest of the method...
+        searchByDate(startDate, endDate) {
+            const sql = `SELECT m.ROWID, m.text, m.date, m.service, h.id as contact_id 
+                FROM message m 
+                LEFT JOIN handle h ON m.handle_id = h.ROWID 
+                WHERE m.date BETWEEN ${startDate} AND ${endDate};`;
+            return this.query(sql);
         }
     }
-
-    // 1. Create dedicated Handles class for listing
-    class Handles extends BaseDB {
-        getAll(format = 'json') {
-            debug("Entering getAll");
-            
-            // Enhanced SQL query to get more handle details
-            const sql = `
-                SELECT 
-                    h.ROWID,
-                    h.id,
-                    h.service,
-                    h.country,
-                    h.uncanonicalized_id,
-                    h.person_centric_id,
-                    -- Message stats
-                    COUNT(DISTINCT m.ROWID) as message_count,
-                    COUNT(DISTINCT c.ROWID) as chat_count,
-                    MIN(datetime(m.date/1000000000 + 978307200, 'unixepoch')) as first_seen,
-                    MAX(datetime(m.date/1000000000 + 978307200, 'unixepoch')) as last_seen,
-                    -- Service info
-                    GROUP_CONCAT(DISTINCT c.service_name) as services_used,
-                    -- Status flags
-                    MAX(c.is_blackholed) as is_blocked,
-                    MAX(c.is_archived) as is_archived,
-                    -- Chat types
-                    GROUP_CONCAT(DISTINCT c.style) as chat_styles,
-                    -- Group participation
-                    COUNT(DISTINCT CASE WHEN c.style = 43 THEN c.ROWID END) as group_chat_count,
-                    -- Additional flags
-                    MAX(h.account_login) as account_login,
-                    MAX(h.account_id) as account_id
-                FROM handle h
-                LEFT JOIN message m ON h.ROWID = m.handle_id
-                LEFT JOIN chat_handle_join chj ON h.ROWID = chj.handle_id
-                LEFT JOIN chat c ON chj.chat_id = c.ROWID
-                GROUP BY h.ROWID
-                ORDER BY h.id;`;
-
-            if (format !== 'json') {
-                return this.query(sql, format);
-            }
-
-            const handles = this.query(sql);
-            if (!handles) return { handles: [] };
-
-            debug("Exiting getAll");
-            return {
-                job: MsgIntelUtils.createJobMetadata(this.dbPath, "list_handles"),
-                data: {
-                    handles: handles.map(h => ({
-                        id: h.id,
-                        rowid: h.ROWID,
-                        contact_info: {
-                            service: h.service,
-                            country: h.country,
-                            uncanonicalized_id: h.uncanonicalized_id,
-                            person_centric_id: h.person_centric_id,
-                            account_login: h.account_login,
-                            account_id: h.account_id
-                        },
-                        activity: {
-                            message_count: h.message_count,
-                            chat_count: h.chat_count,
-                            first_seen: h.first_seen,
-                            last_seen: h.last_seen,
-                            group_chat_count: h.group_chat_count
-                        },
-                        status: {
-                            is_blocked: Boolean(h.is_blocked),
-                            is_archived: Boolean(h.is_archived),
-                            services_used: h.services_used ? h.services_used.split(',') : [],
-                            chat_styles: h.chat_styles ? h.chat_styles.split(',').map(Number) : []
-                        }
-                    }))
-                }
-            };
-        }
-    }
-
     // After the class definitions but before the main execution:
 
     function parseArgs() {
@@ -1325,8 +1558,10 @@
             drafts: false,
             all: false,
             output: null,
-            handles: false,
-            analyzeContact: null
+            contacts: false,  // Rename from handles
+            analyzeContact: null,
+            deleted: false,  // Add deleted option
+            searchMsg: null,  // Add new option
         };
 
         for (let i = 2; i < args.count; i++) {
@@ -1376,8 +1611,16 @@
                         };
                     }
                     break;
-                case '--handles':
-                    options.handles = true;
+                case '--contacts':  // Rename from --handles
+                    options.contacts = true;
+                    break;
+                case '--deleted':
+                    options.deleted = true;
+                    break;
+                case '--searchmsg':
+                    if (i + 1 < args.count) {
+                        options.searchMsg = ObjC.unwrap(args.objectAtIndex(++i));
+                    }
                     break;
                 case '--help':
                     showHelp();
@@ -1414,23 +1657,28 @@ Usage: osascript -l JavaScript msgIntel.js [options]
 Options:
     --messages       Get all messages
     --attachments   Get all attachments
-    --analyze      Get handle analytics
+    --analyze       Get message analytics
     --threads       Get all chat threads
     --hidden        Get hidden/recoverable messages
+    --deleted       List deleted items
     --search <term> Search messages
     --date <start> <end> Get messages between dates
-    --analyzeContact <handleId> Get analytics for specific contact
+    --contacts      List all contacts
+    --analyzeContact <contactId> Get analytics for specific contact
+    --drafts        Get draft messages
+    --output <format> Output format (json, csv, etc)
+    --debug         Enable debug output
     --help         Show this help
+    --searchMsg <text>  Search message text content
     `);
-        return;
     }
 
     // Main execution
     if (typeof $ !== 'undefined') {
         const options = parseArgs();
-        console.log("DEBUG 2: After parseArgs - options:", JSON.stringify(options, null, 2));
+        // TODO: add to --debug
+        // console.log("DEBUG 2: After parseArgs - options:", JSON.stringify(options, null, 2));
         
-        // If showing help, return early
         if (options.help) {
             return;
         }
@@ -1440,7 +1688,7 @@ Options:
         // Add drafts handler
         if (options.drafts) {
             const drafts = new Drafts();
-            const results = drafts.getDrafts();
+            const results = drafts.getDrafts(format);
             console.log(JSON.stringify(results, null, 2));
             return;
         }
@@ -1448,15 +1696,18 @@ Options:
         // Main block with access check
         if (options.messages || options.attachments || options.analyze || 
             options.threads || options.search || options.date || options.all ||
-            options.analyzeContact || options.handles) {
+            options.analyzeContact || options.contacts || options.deleted) {
             
-            console.log("DEBUG 3: Before main block - analyzeContact:", options.analyzeContact);
+            // TODO: add to --debug
+            // console.log("DEBUG 3: Before main block - analyzeContact:", options.analyzeContact);
             
             const access = Check();
-            console.log("DEBUG 5: Access check result:", access);
+            // TODO: add to --debug
+            // console.log("DEBUG 5: Access check result:", access);
             
             if (access) {
-                console.log("DEBUG 6: Inside access block");
+                // TODO: add to --debug
+                // console.log("DEBUG 6: Inside access block");
                 
                 const messages = new Messages();
                 const attachments = new Attachments();
@@ -1474,13 +1725,15 @@ Options:
                     return;
                 }
 
-                // AnalyzeContact handler - use getAnalytics not searchAll
+                // AnalyzeContact handler
                 if (options.analyzeContact) {
-                    console.log("DEBUG 7: Inside analyzeContact handler");
-                    console.log("DEBUG 8: analyzeContact value:", options.analyzeContact);
+                    // TODO: add to --debug
+                    // debug("Inside analyzeContact handler");
+                    // debug(`Contact value: ${options.analyzeContact}`);
                     
                     const analyzeResults = analytics.getAnalytics(options.analyzeContact, format);
-                    console.log("DEBUG 9: analyzeResults:", JSON.stringify(analyzeResults, null, 2));
+                    // TODO: add to --debug
+                    // debug(`Results: ${JSON.stringify(analyzeResults, null, 2)}`);
                     
                     if (format !== 'json') {
                         console.log(analyzeResults);
@@ -1490,15 +1743,28 @@ Options:
                     return;
                 }
 
-                // Move handles handler here with other handlers
-                if (options.handles) {
-                    debug("Listing all handles");
-                    const handles = new Handles();
-                    const handlesList = handles.getAll(format);
+                // Move contacts handler here with other handlers
+                if (options.contacts) {
+                    debug("Listing all contacts");
+                    const contacts = new Contacts();
+                    const contactList = contacts.getAll(format);
                     if (format !== 'json') {
-                        console.log(handlesList);
+                        console.log(contactList);
                     } else {
-                        console.log(JSON.stringify(handlesList, null, 2));
+                        console.log(JSON.stringify(contactList, null, 2));
+                    }
+                    return;
+                }
+
+                // Add deleted handler
+                if (options.deleted) {
+                    debug("Listing deleted items");
+                    const deleted = new Deleted();
+                    const deletedList = deleted.getAll(format);
+                    if (format !== 'json') {
+                        console.log(deletedList);
+                    } else {
+                        console.log(JSON.stringify(deletedList, null, 2));
                     }
                     return;
                 }
@@ -1549,6 +1815,18 @@ Options:
             }
         }
 
+        // Add searchMsg handler
+        if (options.searchMsg) {
+            const msgSearch = new SearchMsg();
+            const results = msgSearch.searchAll(options.searchMsg, format);
+            if (format !== 'json') {
+                console.log(results);
+            } else {
+                console.log(JSON.stringify(results, null, 2));
+            }
+            return;
+        }
+
         // Move class exports here
         return { 
             MsgIntelUtils, 
@@ -1560,7 +1838,9 @@ Options:
             HiddenMessages,
             Analyze,
             AnalyzeContact,
-            Handles
+            Contacts,
+            Deleted,
+            SearchMsg
         };
     }
 })();
