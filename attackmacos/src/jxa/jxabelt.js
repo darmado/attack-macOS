@@ -1,4 +1,4 @@
-//  Script Name: swiftbelt2.js
+//  Script Name: jxabelt.js
 //  MITRE ATT&CK Technique: [TTP_ID]
 //  Author: @darmado | https://x.com/darmad0
 //  Credit: https://github.com/cedowens
@@ -6,9 +6,9 @@
 //  Version: 1.1
 
 //  Description:
-//  Inspired by cedowen's orignial work. This is a more modular version of Swiftbelt.js. 
-//  Uses POSIX when interacting with the file system, does a decemnt job at error handling, literally  
-//  Revised a handful of functions  - slightly oudated. 
+//  Inspired by cedowen's original work. This is a more modular version of Swiftbelt.js. 
+//  Uses POSIX when interacting with the file system, does a decent job at error handling, literally  
+//  Revised a handful of functions  - slightly outdated. 
 //  Added more vendors 
 //  Can be used with Mythic C2 without making mods. 
 

