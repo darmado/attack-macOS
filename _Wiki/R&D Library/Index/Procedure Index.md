@@ -176,4 +176,23 @@ The commands listed here are for reference only. Always refer to the actual scri
 |-------------|-----------|-------------|----------------|------------|
 | Encode output using Perl | ```perl -e 'use MIME::Base64; print encode_base64(join("", <STDIN>));'``` | Process | Process Creation | Monitor for execution of Perl with encoding commands |
 
+### T1046 - Network Service Discovery
+
+**Source: [network_service.sh](../../ttp/discovery/network_service.sh)**
+
+| Description | Command | Data Source | Data Component | Detections |
+|-------------|---------|-------------|----------------|------------|
+| List network services | `launchctl list \| grep -i "net\|web\|ftp\|ssh\|smb\|afp"` | Process | Process Creation | Monitor for launchctl list commands |
+| Network service states | `scutil --nc list` | Process | Process Creation | Monitor for scutil network commands |
+| Bonjour service discovery | `dns-sd -B _service._tcp .` | Process | Process Creation | Monitor for dns-sd commands |
+| mDNS service status | `ps aux \| grep mDNSResponder` | Process | Process Creation | Monitor for mDNS process queries |
+| Network memory analysis | `vmmap $PID \| grep -iE 'network\|socket'` | Process | Process Creation | Monitor for vmmap commands |
+| Network connections | `lsof -i -n -P` | Process | Process Creation | Monitor for lsof network commands |
+| Network syscalls | `dtrace -n 'syscall::socket*:entry'` | Process | Process Creation | Monitor for dtrace network syscall tracing |
+| Network shares | `mdfind 'kMDItemFSType == "smbfs"'` | Process | Process Creation | Monitor for mdfind network share queries |
+| Sharing services | `sharing -l` | Process | Process Creation | Monitor for sharing command usage |
+| Network routes | `route -n get default` | Process | Process Creation | Monitor for route command usage |
+| ARP cache | `arp -a` | Process | Process Creation | Monitor for arp command usage |
+| Network quality | `networkQuality -v` | Process | Process Creation | Monitor for networkQuality command usage |
+
 

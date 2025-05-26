@@ -227,38 +227,36 @@ encode_output() {
     local original_tactic=$TACTIC
 
     case $ENCODE in
-        b64)
+        b64|base64)
             TTP_ID=$TTP_ID_ENCODE_BASE64
             TACTIC=$TACTIC_ENCODE
             log_to_stdout "Encoded output using Base64" "encode_output" "base64"
             echo "$data" | base64
             ;;
-        hex)
-            TTP_ID=$TTP_ID_ENCODE
+        hex|xxd)
+            TTP_ID=$TTP_ID_ENCODE_HEX
             TACTIC=$TACTIC_ENCODE
             log_to_stdout "Encoded output using Hex" "encode_output" "xxd -p"
             echo "$data" | xxd -p
             ;;
         perl_b64)
             TTP_ID=$TTP_ID_ENCODE_PERL
-            TACTIC="Execution"
-            log_to_stdout "Encoded output using Perl Base64" "encode_output" "perl -MMIME::Base64 -e 'print encode_base64(\"$data\");'"
-            perl -MMIME::Base64 -e "print encode_base64(\"$data\");"
+            TACTIC=$TACTIC_ENCODE
+            log_to_stdout "Encoded output using Perl Base64" "encode_output" "perl -MMIME::Base64"
+            perl -MMIME::Base64 -e "print encode_base64('$data');"
             ;;
         perl_utf8)
-            TTP_ID=$TTP_ID_ENCODE_PERL
-            TACTIC="Execution"
-            log_to_stdout "Encoded output using Perl UTF-8" "encode_output" "perl -e 'print \"$data\".encode(\"UTF-8\");'"
-            perl -e "print \"$data\".encode(\"UTF-8\");"
+            TTP_ID=$TTP_ID_ENCODE_PERL_UTF8
+            TACTIC=$TACTIC_ENCODE
+            log_to_stdout "Encoded output using Perl UTF8" "encode_output" "perl -e utf8"
+            perl -e "use utf8; print '$data';"
             ;;
         *)
-            echo "Unknown encoding type: $ENCODE" >&2
-            return 1
+            TTP_ID=$original_ttp_id
+            TACTIC=$original_tactic
+            echo "$data"
             ;;
     esac
-
-    TTP_ID=$original_ttp_id
-    TACTIC=$original_tactic
 }
 
 #FunctionType: utility
@@ -459,7 +457,7 @@ while [ "$#" -gt 0 ]; do
             ;;
         --encode=*)
             ENCODE="${1#*=}"
-            if ! validate_input "$ENCODE" "^(b64|hex|perl_b64|perl_utf8)$"; then
+            if ! validate_input "$ENCODE" "^(b64|hex|perl_b64|perl_utf8|uuencode)$"; then
                 echo "Invalid encoding type: $ENCODE" >&2
                 exit 1
             fi

@@ -42,54 +42,91 @@ Always refer to the actual script implementations for the most up-to-date and co
 | `encrypt_data` | Encrypt data using specified method | `data`: str, `method`: str, `key`: str | str | None |
 | `encrypt_output` | Encrypt output using specified method | `data`: str, `method`: str, `key`: str | str | None |
 | `execute_command` | Execute a shell command | `cmd`: str | str | Executes shell command |
+| `exfiltrate_data` | Exfiltrate data via HTTP/DNS | `data`: str | None | Sends data to remote server |
 | `exfiltrate_dns` | Exfiltrate data via DNS queries | `data`: str, `domain`: str, `id`: str | None | Sends DNS queries |
 | `exfiltrate_http` | Exfiltrate data via HTTP POST | `data`: str, `uri`: str | None | Sends HTTP POST request |
 | `format_output` | Format output based on specified format | `output`: str | str | None |
 | `get_timestamp` | Get current timestamp | None | str | None |
+| `handle_error` | Handle and log error messages | `error_msg`: str, `error_code`: int | int | Logs error |
+| `isolate_process` | Run command in isolated process | `cmd`: str, `timeout`: int | str | Executes command |
 | `log` | Log messages with timestamp and user info | `message`: str, `command`: str, `output`: str | None | Logs to file if enabled |
+| `log_cmd_exec` | Log command execution | `cmd`: str, `purpose`: str | None | Logs to stderr if verbose |
 | `log_output` | Log output to file with rotation | `output`: str | None | Writes to log file |
+| `process_output` | Process output with encoding/encryption | `output`: str | str | Modifies output |
+| `rate_limit` | Implement rate limiting between operations | None | None | Sleeps for specified duration |
 | `sanitize_input` | Sanitize user input | `input`: str | str | None |
 | `validate_input` | Validate input against a regex pattern | `input`: str, `pattern`: str | bool | None |
 | `verbose` | Print verbose output if enabled | `message`: str | None | Prints to stderr and logs |
 
-## Procedure Functions
+## Discovery Functions
 
-| Function Name | Description | Parameters | Returns | Side Effects | Command/Target File |
-|---------------|-------------|------------|---------|--------------|---------------------|
-| `discover_boot_rom_version` | Discover Boot ROM versions associated with VMs | None | str | Executes `system_profiler SPHardwareDataType` | vmsandbox.sh |
-| `discover_cpu_core_count` | Check the number of CPU cores | None | str | Executes `sysctl -n hw.physicalcpu` | vmsandbox.sh |
-| `discover_disk_drive_names` | Discover disk drive names associated with VMs | None | str | Executes `diskutil list` | vmsandbox.sh |
-| `discover_hardware_model` | Discover hardware models associated with VMs | None | str | Executes `sysctl -n hw.model` | vmsandbox.sh |
-| `discover_hyperthreading` | Check if hyperthreading is enabled | None | str | Executes `sysctl -n machdep.cpu.thread_count` | vmsandbox.sh |
-| `discover_iokit_registry` | Discover IOKit registry entries associated with VMs | None | str | Executes `ioreg -rd1 -c IOPlatformExpertDevice` | vmsandbox.sh |
-| `discover_memory_size` | Check the total memory size | None | str | Executes `sysctl -n hw.memsize` | vmsandbox.sh |
-| `discover_network_adapters` | Discover network adapters associated with VMs | None | str | Executes `networksetup -listallhardwareports` | vmsandbox.sh |
-| `discover_system_integrity_protection` | Check the status of System Integrity Protection | None | str | Executes `csrutil status` | vmsandbox.sh |
-| `discover_usb_vendor_name` | Discover USB vendor names associated with VMs | None | str | Executes `ioreg -rd1 -c IOUSBHostDevice` | vmsandbox.sh |
-| `discover_virtualization_files` | Discover device files associated with VMs | None | str | Executes `ls /dev` | vmsandbox.sh |
-| `discover_virtualization_processes` | Discover running processes associated with VMs | None | str | Executes `ps aux` | vmsandbox.sh |
-| `discover_av` | Discover antivirus software | `av_tool`: str | str | Executes various commands to detect AV | discovery.sh |
-| `discover_edr` | Discover EDR software | `edr_tool`: str | str | Executes various commands to detect EDR | discovery.sh |
-| `discover_firewall` | Discover firewall status | None | str | Checks firewall configuration | discovery.sh |
-| `discover_gatekeeper` | Discover Gatekeeper status | None | str | Checks Gatekeeper configuration | discovery.sh |
-| `discover_mrt` | Discover Malware Removal Tool | `mrt_tool`: str | str | Checks for MRT presence and configuration | discovery.sh |
-| `discover_ost` | Discover Objective-See tools | `ost_tool`: str | str | Executes various commands to detect OST | discovery.sh |
-| `discover_tcc` | Discover TCC status | None | str | Checks TCC configuration | discovery.sh |
-| `discover_xprotect` | Discover XProtect status | None | str | Checks XProtect configuration | discovery.sh |
-| `extract_passwd_users` | Extract users from passwd file | None | str | Reads `/etc/passwd` | accounts.sh |
-| `list_dscacheutil_users` | List users using dscacheutil | None | str | Executes `dscacheutil -q user` | accounts.sh |
-| `list_dscl_users` | List users using dscl | None | str | Executes `dscl . -list /Users` | accounts.sh |
-| `list_groups_cmd` | List groups using groups command | None | str | Executes `groups` command | groups.sh |
-| `list_groups_dscacheutil` | List groups using dscacheutil | None | str | Executes `dscacheutil -q group` | groups.sh |
-| `list_groups_dscl` | List groups using dscl | None | str | Executes `dscl . -list /Groups` | groups.sh |
-| `list_groups_etc` | List groups from /etc/group | None | str | Reads `/etc/group` file | groups.sh |
-| `list_groups_id` | List groups using id command | None | str | Executes `id -G` command | groups.sh |
-| `list_logged_users` | List logged-in users | None | str | Executes `who` command | accounts.sh |
-| `list_user_dirs` | List user directories | None | str | Executes `ls -la /Users` | accounts.sh |
-| `main` | Main function to orchestrate script execution | None | None | Executes main script logic | Various scripts |
-| `query_brave_hdb` | Extract Brave browser history | None | str | Queries Brave history database | browser_history.sh |
-| `query_chrome_hdb` | Extract Chrome browser history | None | str | Queries Chrome history database | browser_history.sh |
-| `query_firefox_hdb` | Extract Firefox browser history | None | str | Queries Firefox history database | browser_history.sh |
-| `read_loginwindow_plist` | Read loginwindow plist | None | str | Reads loginwindow plist file | accounts.sh |
-| `safari_history` | Extract Safari browser history | None | str | Queries Safari history database | browser_history.sh |
-| `show_id_info` | Show current user info | None | str | Executes `id` command | accounts.sh |
+### Network Discovery
+| Function Name | Description | Parameters | Returns | Command/Target File |
+|---------------|-------------|------------|---------|---------------------|
+| `discover_arp_cache` | Discover ARP cache entries | None | str | `network_service.sh` |
+| `discover_bonjour_services` | Discover Bonjour/mDNS services | None | str | `network_service.sh` |
+| `discover_established_connections` | Discover established network connections | None | str | `network_service.sh` |
+| `discover_interface_details` | Discover network interface details | None | str | `network_service.sh` |
+| `discover_kernel_network` | Discover kernel-level network info | None | str | `network_service.sh` |
+| `discover_listening_ports` | Discover listening network ports | None | str | `network_service.sh` |
+| `discover_mdfind_shares` | Discover network shares using Spotlight | None | str | `network_service.sh` |
+| `discover_network_memory` | Analyze network-related memory mappings | None | str | `network_service.sh` |
+| `discover_network_quality` | Test network connection quality | None | str | `network_service.sh` |
+| `discover_network_services` | Discover running network services | None | str | `network_service.sh` |
+| `discover_network_syscalls` | Trace network-related syscalls | None | str | `network_service.sh` |
+| `discover_networksetup_config` | Discover network configuration | None | str | `network_service.sh` |
+| `discover_route_info` | Discover network routing information | None | str | `network_service.sh` |
+| `discover_sharing_services` | Discover file sharing services | None | str | `network_service.sh` |
+| `discover_stealthy_network` | Perform stealthy network discovery | None | str | `network_service.sh` |
+
+### Process Discovery
+| Function Name | Description | Parameters | Returns | Command/Target File |
+|---------------|-------------|------------|---------|---------------------|
+| `discover_basic_processes` | Get basic process listing | None | str | `process_discovery.sh` |
+| `discover_file_processes` | List processes with open files | None | str | `process_discovery.sh` |
+| `discover_filtered_processes` | Filter processes by pattern | `pattern`: str | str | `process_discovery.sh` |
+| `discover_launchd_services` | List launchd services | None | str | `process_discovery.sh` |
+| `discover_network_processes` | List processes with network connections | None | str | `process_discovery.sh` |
+| `discover_process_tree` | Get process hierarchy tree | None | str | `process_discovery.sh` |
+| `discover_processes_activity` | Discover process activity | None | str | `process_discovery.sh` |
+| `discover_processes_dtrace` | Discover processes using DTrace | None | str | `process_discovery.sh` |
+| `discover_processes_memory` | Discover process memory usage | None | str | `process_discovery.sh` |
+| `discover_processes_native` | Native process discovery | None | str | `process_discovery.sh` |
+| `discover_processes_power` | Discover power-related processes | None | str | `process_discovery.sh` |
+| `discover_processes_procinfo` | Discover process info using procinfo | None | str | `process_discovery.sh` |
+| `discover_processes_profiler` | Discover processes using profiler | None | str | `process_discovery.sh` |
+| `discover_processes_sample` | Sample process information | None | str | `process_discovery.sh` |
+| `discover_resource_usage` | Show process resource usage | None | str | `process_discovery.sh` |
+| `discover_sorted_processes` | Sort processes by field | `field`: str | str | `process_discovery.sh` |
+| `discover_user_processes` | List processes by user | `user`: str | str | `process_discovery.sh` |
+
+### System Information Discovery
+| Function Name | Description | Parameters | Returns | Command/Target File |
+|---------------|-------------|------------|---------|---------------------|
+| `check_basic_system_info` | Get basic system information | None | str | `system_info.sh` |
+| `check_boot_security` | Check boot and security settings | None | str | `system_info.sh` |
+| `check_environment_info` | Get environment information | None | str | `system_info.sh` |
+| `check_hardware_info` | Get hardware information | None | str | `system_info.sh` |
+| `check_network_config` | Get network configuration | None | str | `system_info.sh` |
+| `check_power_info` | Get power and battery information | None | str | `system_info.sh` |
+| `get_user` | Get current user information | None | str | `system_info.sh` |
+
+### Security Software Discovery
+| Function Name | Description | Parameters | Returns | Command/Target File |
+|---------------|-------------|------------|---------|---------------------|
+| `discover_av` | Discover antivirus software | `check_type`: str | str | `security_software.sh` |
+| `discover_edr` | Discover EDR software | `check_type`: str | str | `security_software.sh` |
+| `discover_firewall` | Discover firewall status | None | str | `security_software.sh` |
+| `discover_gatekeeper` | Discover Gatekeeper status | None | str | `security_software.sh` |
+| `discover_mrt` | Discover Malware Removal Tool | None | str | `security_software.sh` |
+| `discover_ost` | Discover Objective-See tools | `check_type`: str | str | `security_software.sh` |
+| `discover_tcc` | Discover TCC status | None | str | `security_software.sh` |
+| `discover_xprotect` | Discover XProtect status | None | str | `security_software.sh` |
+
+### Browser History Discovery
+| Function Name | Description | Parameters | Returns | Command/Target File |
+|---------------|-------------|------------|---------|---------------------|
+| `query_brave_hdb` | Extract Brave browser history | None | str | `browser_history.sh` |
+| `query_chrome_hdb` | Extract Chrome browser history | None | str | `browser_history.sh` |
+| `query_firefox_hdb` | Extract Firefox browser history | None | str | `browser_history.sh` |
+| `safari_history` | Extract Safari browser history | None | str | `browser_history.sh` |
