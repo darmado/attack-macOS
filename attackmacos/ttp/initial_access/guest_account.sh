@@ -1,4 +1,3 @@
-#!/bin/bash
 
 # Script Name: guest_account.sh
 # MITRE ATT&CK Technique: T1078

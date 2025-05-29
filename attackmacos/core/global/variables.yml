@@ -1,0 +1,230 @@
+---
+# Global Variables Registry for attackmacos Framework
+# 
+# This file contains all global variables used in base.sh that can be 
+# updated framework-wide. This allows for centralized command and configuration
+# management across all generated scripts.
+#
+# IMPORTANT: These variables are reserved by the framework. Do not modify
+# unless you understand the impact on all generated scripts.
+
+# Core System Commands
+# These variables define the native macOS commands used throughout the framework
+core_commands:
+  CMD_BASE64: "base64"
+  CMD_BASE64_OPTS: ""  # macOS base64 doesn't use -w option
+  CMD_CURL: "curl"
+  CMD_CURL_OPTS: "-L -s -X POST"
+  CMD_CURL_SECURITY: "--fail-with-body --insecure --location"
+  CMD_CURL_TIMEOUT: "--connect-timeout 5 --max-time 10 --retry 1 --retry-delay 0"
+  CMD_DATE: "date"
+  CMD_DATE_OPTS: "+%Y-%m-%d %H:%M:%S"
+  CMD_DEFAULTS: "defaults"
+  CMD_DIG: "dig"
+  CMD_DIG_OPTS: "+short"
+  CMD_FIND: "find"
+  CMD_LAUNCHCTL: "launchctl"
+  CMD_OPENSSL: "openssl"
+  CMD_PKGUTIL: "pkgutil"
+  CMD_PRINTF: "printf"
+  CMD_SPCTL: "spctl"
+  CMD_SYSTEM_PROFILER: "system_profiler"
+  CMD_XXD: "xxd"
+  CMD_PERL: "perl"
+  CMD_PS: "ps"
+  CMD_LOGGER: "logger"
+  CMD_AWK: "awk"
+  CMD_SED: "sed"
+  CMD_GREP: "grep"
+  CMD_TR: "tr"
+  CMD_HEAD: "head"
+  CMD_TAIL: "tail"
+  CMD_SLEEP: "sleep"
+  CMD_GPG: "gpg"
+  CMD_GPG_OPTS: "--batch --yes --symmetric --cipher-algo AES256 --armor"
+  CMD_STRINGS: "strings"
+  CMD_HOST: "host"
+  CMD_NSLOOKUP: "nslookup"
+  CMD_HOSTNAME: "hostname"
+  CMD_STAT: "stat"
+  CMD_SQLITE3: "sqlite3"
+  CMD_MKDIR: "mkdir"
+  CMD_MV: "mv"
+  CMD_CP: "cp"
+  CMD_LS: "ls"
+  CMD_WHOAMI: "whoami"
+  CMD_ID: "id"
+  CMD_WC: "wc"
+  CMD_CAT: "cat"
+  CMD_LSOF: "lsof"
+
+# Script Information Variables
+# These control script metadata and execution tracking
+script_info:
+  NAME: "base"  # Default name, scripts should override
+  SCRIPT_CMD: "$0 $*"
+  SCRIPT_STATUS: "running"
+  OWNER: "$USER"
+  PARENT_PROCESS: "$(ps -p $PPID -o comm=)"
+  JOB_ID: ""  # Generated at runtime
+
+# Logging Configuration
+# Controls how scripts handle logging and output
+logging:
+  HOME_DIR: "${HOME}"
+  LOG_DIR: "./logs"
+  LOG_MAX_SIZE: 5242880  # 5MB in bytes
+  LOG_ENABLED: false
+  SYSLOG_TAG: "${NAME}"
+  LOG_FILE_NAME: "${TTP_ID}_${NAME}.log"
+
+# Script Behavior Settings
+# Control script execution modes and features
+script_settings:
+  VERBOSE: false
+  DEBUG: false
+  ALL: false
+  SHOW_HELP: false
+  STEG_TRANSFORM: false
+  STEG_EXTRACT: false
+  STEG_EXTRACT_FILE: ""
+
+# Output Processing Configuration
+# Controls how script output is formatted, encoded, and transmitted
+output_config:
+  FORMAT: ""  # json, csv, or empty for raw
+  JSON_WRAP_LINES: true
+  JSON_DETECT_NUMBERS: true
+  ENCODE: "none"  # base64, hex, perl_b64, perl_utf8
+  ENCRYPT: "none"  # aes, gpg, none
+  EXFIL: false
+  EXFIL_METHOD: ""
+  EXFIL_URI: ""
+  EXFIL_START: ""
+  EXFIL_END: ""
+  CHUNK_SIZE: 50  # Default chunk size for DNS exfiltration (bytes)
+  PROXY_URL: ""
+  ENCODING_TYPE: "none"
+  ENCRYPTION_TYPE: "none"
+  EXFIL_TYPE: "none"
+
+# System Paths
+# Common macOS system paths used across scripts
+system_paths:
+  TCC_SYSTEM_DB: "/Library/Application Support/com.apple.TCC/TCC.db"
+  TCC_USER_DB: "$HOME/Library/Application Support/com.apple.TCC/TCC.db"
+  DEFAULT_STEG_CARRIER: "/System/Library/Desktop Pictures/Monterey Graphic.heic"
+
+# Application Database Paths
+# Common application databases frequently accessed in security procedures
+# Naming Convention: 
+#   DB_ = Database files (.db, .sqlite, etc.)
+#   FILE_ = Other files (.plist, .json, .binarycookies, etc.)
+#   DIR_ = Directories
+app_databases:
+  # Web Browsers - VERIFIED PATHS ONLY
+  DB_CHROME_HISTORY: "$HOME/Library/Application Support/Google/Chrome/Default/History"
+  DB_CHROME_COOKIES: "$HOME/Library/Application Support/Google/Chrome/Default/Cookies"
+  DB_CHROME_LOGIN_DATA: "$HOME/Library/Application Support/Google/Chrome/Default/Login Data"
+  FILE_CHROME_PREFERENCES: "$HOME/Library/Application Support/Google/Chrome/Default/Preferences"
+  
+  DB_SAFARI_HISTORY: "$HOME/Library/Safari/History.db"
+  FILE_SAFARI_COOKIES: "$HOME/Library/Cookies/Cookies.binarycookies"
+  
+  # Communication Apps - VERIFIED PATHS ONLY
+  DB_MESSAGES_CHAT: "$HOME/Library/Messages/chat.db"
+  DIR_MESSAGES_ATTACHMENTS: "$HOME/Library/Messages/Attachments"
+  
+  DIR_TELEGRAM_DATA: "$HOME/Library/Application Support/Telegram Desktop/tdata"
+  
+  # Apple System Apps
+  DB_NOTES: "$HOME/Library/Group Containers/group.com.apple.notes/NoteStore.sqlite"
+  
+  # Development Tools - VERIFIED PATHS ONLY
+  DIR_CURSOR_WORKSPACE: "$HOME/Library/Application Support/Cursor/User/workspaceStorage"
+  
+  DIR_VSCODE_WORKSPACE: "$HOME/Library/Application Support/Code/User/workspaceStorage"
+  DIR_VSCODE_DATABASES: "$HOME/Library/Application Support/Code/databases"
+  
+  DIR_XCODE_DERIVED_DATA: "$HOME/Library/Developer/Xcode/DerivedData"
+  
+  # Terminal Applications - VERIFIED PATHS ONLY  
+  DB_ITERM2_STATE: "$HOME/Library/Application Support/iTerm2/SavedState/restorable-state.sqlite"
+  FILE_ITERM2_CONFIG: "$HOME/Library/Preferences/com.googlecode.iterm2.plist"
+  
+  DIR_WARP_CONFIG: "$HOME/Library/Application Support/dev.warp.Warp-Stable"
+  
+  # Design and Productivity Tools - VERIFIED PATHS ONLY
+  DIR_FIGMA_DATABASES: "$HOME/Library/Application Support/Figma/DesktopProfile"
+  
+  DIR_OBSIDIAN_DATABASES: "$HOME/Library/Application Support/obsidian/databases"
+  DIR_OBSIDIAN_VAULTS: "$HOME/Library/Application Support/obsidian"
+  
+  DIR_GRAMMARLY_DATA: "$HOME/Library/Application Support/com.grammarly.ProjectLlama"
+  
+  # Video Conferencing - VERIFIED PATHS ONLY
+  DIR_ZOOM_CONFIG: "$HOME/Library/Application Support/zoom.us"
+  
+  # Gaming - VERIFIED PATHS ONLY
+  DIR_STEAM_CONFIG: "$HOME/Library/Application Support/Steam"
+  
+  # VPN and Network Tools - VERIFIED PATHS ONLY
+  DIR_CLOUDFLARE_WARP: "$HOME/Library/Application Support/com.cloudflare.1dot1dot1dot1.macos"
+  
+  # AI and LLM Tools - VERIFIED PATHS ONLY
+  DIR_ANYTHINGLLM_DATA: "$HOME/Library/Application Support/anythingllm-desktop"
+  
+  DIR_WISPR_FLOW_BACKUPS: "$HOME/Library/Application Support/Wispr Flow/backups"
+  
+  # Apple iCloud and Sync Services - VERIFIED PATHS ONLY
+  DIR_MOBILESYNC_BACKUP: "$HOME/Library/Application Support/MobileSync/Backup"
+  
+  # Other Applications
+  DIR_SPOTIFY_CACHE: "$HOME/Library/Application Support/Spotify"
+  DIR_DOCKER_DATA: "$HOME/Library/Application Support/Docker Desktop"
+  
+  # Security Tools
+  DIR_MACKEEPER_DATA: "$HOME/Library/Application Support/MacKeeper"
+  DIR_MALWAREBYTES_DATA: "$HOME/Library/Application Support/com.malwarebytes.mbam"
+  DIR_BLOCKBLOCK_CONFIG: "$HOME/Library/Application Support/com.objectiveSee.BlockBlock"
+
+# Usage Examples:
+# 
+# In a YAML procedure:
+# 
+# global_variables:
+#   - CMD_PS: "ps"
+#   - CMD_GREP: "grep" 
+#   - VERBOSE: false
+#   - LOG_ENABLED: true
+#   - DB_CHROME_HISTORY: "$HOME/Library/Application Support/Google/Chrome/Default/History"
+#   - DB_ITERM2_STATE: "$HOME/Library/Application Support/iTerm2/SavedState/restorable-state.sqlite"
+#
+# In generated script:
+# 
+# # Check processes using framework command variables
+# process_list=$($CMD_PS aux | $CMD_GREP -v grep | $CMD_GREP security)
+# 
+# # Access Chrome history database using global variable
+# if [ -f "$DB_CHROME_HISTORY" ]; then
+#     echo "Chrome history found at: $DB_CHROME_HISTORY"
+#     $CMD_SQLITE3 "$DB_CHROME_HISTORY" "SELECT url, title, visit_count FROM urls LIMIT 10;"
+# fi
+#
+# # Access iTerm2 session database
+# if [ -f "$DB_ITERM2_STATE" ]; then
+#     echo "iTerm2 session data found at: $DB_ITERM2_STATE"
+#     $CMD_SQLITE3 "$DB_ITERM2_STATE" ".tables"
+# fi
+#
+# # Access configuration files
+# if [ -f "$FILE_SAFARI_BOOKMARKS" ]; then
+#     echo "Safari bookmarks found at: $FILE_SAFARI_BOOKMARKS"
+#     $CMD_DEFAULTS read "$FILE_SAFARI_BOOKMARKS"
+# fi
+#
+# # Access directories
+# if [ -d "$DIR_MESSAGES_ATTACHMENTS" ]; then
+#     echo "Messages attachments directory: $DIR_MESSAGES_ATTACHMENTS"
+#     $CMD_LS -la "$DIR_MESSAGES_ATTACHMENTS" | $CMD_HEAD -10
+# fi

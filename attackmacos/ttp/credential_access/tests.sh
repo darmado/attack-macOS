@@ -1,4 +1,3 @@
-#!/bin/bash
 
 # Script Name: keychain_access_test
 # Description: This script sequentially runs all credential access commands from the keychain_credential_dump script to automate testing and debugging.

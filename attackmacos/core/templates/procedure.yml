@@ -1,0 +1,78 @@
+---
+# Required fields
+procedure_name: ""
+ttp_id: ""
+tactic: ""
+guid: ""
+intent: ""
+author: ""
+version: ""
+created: ""
+
+# Optional fields
+updated: ""
+platform: []
+
+# Optional detection section
+detection:
+  - ioc: ""
+    analysis: ""
+    rule_sigma: ""
+    rule_elastic: ""
+    rule_splunk: ""
+    rule_block: ""
+
+# Optional resources section  
+resources:
+  - link: ""
+    description: ""
+
+# Optional acknowledgement section
+acknowledgement:
+  - person: ""
+    handle: ""
+
+# Required procedure section
+procedure:
+  # Required arguments array
+  arguments:
+    - option: ""
+      description: ""
+      type: ""
+      option_required: false
+      input_required: false
+      input_values: []
+      argument_required: false
+      execute_function: []
+
+  # Required global_variable array
+  global_variable:
+    - name: ""
+      type: ""
+      default_value: ""
+      array_elements: []
+
+  # Required functions array
+  functions:
+    - name: ""
+      type: ""
+      execute_condition:
+        global_variable: ""
+        exists: false
+      opsec:
+        check_fda:
+          enabled: false
+          exit_on_failure: true
+        check_permission:
+          type: ""
+          path: ""
+          read: false
+          write: false
+          execute: false
+          exit_on_failure: true
+        check_db_lock:
+          enabled: false
+          database_path: ""
+          exit_on_failure: true
+          error_message: ""
+      code: |

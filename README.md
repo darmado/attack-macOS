@@ -26,17 +26,6 @@
   <a href="#license">License</a>
   </div>
 
-
-<details align="center">
-
-
-<div align="center">
-
-<p>The Matrix contains information for the macOS platform</br>The number of possible procedures per technique is vast. These statistics use conservative estimates for coverage calculations.</p>
-
-</div>
-
-
 <div align="center">
 
 ![Technique Coverage](https://img.shields.io/badge/Technique%20Coverage-11%20(3.43%25)-grey?style=for-the-badge)
@@ -45,6 +34,13 @@
 ![Estimated Known Procedures](https://img.shields.io/badge/Estimated%20Known%20Procedures-6420-grey?style=for-the-badge)
 
 </div>
+<div align="center">
+
+</div>
+
+<details align="center">
+
+
 <div align="center">
 
 </div>
@@ -149,19 +145,31 @@
 ##
 
 ### Overview
-Attack-macOS is a library of scripts mapped to MITRE ATT&CK. Security teams can use Attack-macOS to execute techniques and discover new detection opportunities in macOS environments.
+Attack-macOS is a library of scripts security teams can use to evaluate macOS endpoint detection and response capabilities. This project aims to simplify the execution of Living Off The Land (LOTL) techniques via standalone scripts with built-in ooutbound encoding, encryption, formating, logging, and exfiltratin over DNS and HTTP/S.
+
 
 | Problem | Challenge | Solution |
 |---------|-----------|----------|
-| • Limited opensource security tools<br>• Technique procedures primarily focused on </br>**tier I/II** *(advanced)* [Tool Index](_DOCS/Tool%20Index.md)<br>• Most commercial tools primarily focused on hardening and MDM | • Insufficient capabilities to evaluate macOS defenses<br>• Inadequate detection exposes systems to potential risks<br>• Limited tooling hinders proactive security measures | Build a library of macOS specific attack scripts dedicated to help identify better detection opportunities in macOS specific endpoint security solutions. |
+| • Limited opensource security tools<br>• Technique procedures primarily focused on </br>**tier I/II** *(advanced)* [Tool Index](_DOCS/Tool%20Index.md)<br>• Most commercial tools primarily focus on hardening and MDM | • Insufficient capabilities to evaluate macOS defenses<br>• The ratio of known to unknown risk<br>• Limited tooling hinders proactive security measures | Build a library of macOS specific attack scripts dedicated to help identify better detection opportunities in macOS specific endpoint security solutions. |
+
+##
+### Key Features
+
+| Feature | Description |
+|:--------|:------------|
+| **Builder Tool** | Includes a YAML template and builder tool for creating new scripts |
+| **Modular Design** | Self-contained scripts that can be used independently or combined, easily integrating with existing frameworks. |
+| **Customizable** | Easily modifiable and extendable, with centralized execution control via global variables and flags. |
+| **macOS Native** | Uses native tools and languages to emulate adversary techniques without external dependencies. |
+| **MITRE ATT&CK Mapped** | All scripts and arguments directly mapped to the MITRE ATT&CK framework. |
+| **Logging** | Consistent built-in logging capability across all scripts for output analysis. |
+| **Encoding and Encryption** | Multiple data encoding options and integrated encryption functions. |
+| **Exfiltration** | Simulates data exfiltration via HTTP/S or DNS protocols. |
+| **Integration** | Seamlessly integrates with existing security tools, automation pipelines, and CI/CD workflows. |
 
 ##
 
-### Objective
 
-This project aims to simplify the execution of Living Off The Land (LOTL) techniques via standalone, modular, flexible, interaperable, and easy-to-maintain scripts.
-
-##
 
 ### Dependencies
 
@@ -169,21 +177,7 @@ All Attack-macOS scripts use native macOS binaries, interpreters, playlists, lib
 
 ##
 
-### Key Features
 
-| Feature | Description |
-|:--------|:------------|
-| **Template** | Includes a YAML template for creating new scripts and dynamically generating scripts. |
-| **Modular Design** | Self-contained scripts that can be used independently or combined, easily integrating with existing frameworks. |
-| **Customizable** | Easily modifiable and extendable, with centralized execution control via global variables and flags. |
-| **macOS Native** | Uses native tools and languages to emulate adversary techniques without external dependencies. |
-| **MITRE ATT&CK Mapped** | All scripts and arguments directly mapped to the MITRE ATT&CK framework. |
-| **Logging** | Consistent built-in logging capability across all scripts for output analysis. |
-| **Encoding and Encryption** | Multiple data encoding options and integrated encryption functions. |
-| **Exfiltration** | Simulates data exfiltration via HTTP or DNS protocols. |
-| **Integration** | Seamlessly integrates with existing security tools, automation pipelines, and CI/CD workflows. |
-
-##
 
 ### Compatibility
 
@@ -230,4 +224,14 @@ This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE
 ### Credits and References
 In short, every macOS focused opensoruce security project, blog post, CTI, Apple Dev Docs,  especially the archived docs, and MITRE ATT&CK.
  -- **Full list hhere: -->** [Acknoledgements](_DOCS/Acknowledgements.md) 
+
+##
+
+
+**Quick Start with GitHub Actions:**
+1. Copy `attackmacos/tools/template_example.yaml` to create your technique
+2. Push changes to trigger automatic script generation
+3. Find generated scripts in `attackmacos/ttp/{tactic}/{technique}/`
+
+📖 **Documentation:** [GitHub Actions Guide](docs/quick-start-github-actions.md) | [Full Documentation](docs/github-actions-build.md)
 

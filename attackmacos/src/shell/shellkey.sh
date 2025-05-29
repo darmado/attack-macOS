@@ -1,4 +1,3 @@
-#!/bin/bash
 
 # Script Name: Keychain Snoop
 # MITRE ATT&CK Technique: T1555.001

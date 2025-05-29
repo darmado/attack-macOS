@@ -2,7 +2,6 @@
 
 
 >[!NOTE]
-> We extend our sincere gratitude to the following individuals and organizations for their invaluable contributions to the field of macOS security research and development. Their tools, resources, and insights have significantly enhanced our project.
 
 | Author | Tool/Resource | Description | URL | License |
 |--------|---------------|-------------|-----|---------|

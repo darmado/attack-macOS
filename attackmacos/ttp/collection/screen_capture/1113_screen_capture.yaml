@@ -1,0 +1,75 @@
+---
+procedure_name: 1113_screen_capture
+ttp_id: T1113
+tactic: Collection
+guid: 12345678-1234-5678-9abc-123456789013
+intent: Capture screenshots of the desktop for reconnaissance and data collection
+author: "@darmado | https://x.com/darmad0"
+version: "1.0.0"
+created: "2025-05-28"
+
+procedure:
+  arguments:
+    - option: "-s|--screenshot"
+      description: "Capture a silent screenshot"
+      execute_function:
+        - capture_screenshot
+
+    - option: "-d|--display"
+      description: "Capture screenshot and display info"
+      execute_function:
+        - capture_screenshot_with_info
+
+  global_variable:
+    - name: SCREENSHOT_PATH
+      type: string
+      default_value: "/tmp/ss.jpg"
+
+  functions:
+    - name: capture_screenshot
+      type: main
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_screenshot() {
+            printf "SCREENSHOT|capturing|Silent screenshot\\n"
+            
+            # Capture screenshot silently (no sound, no UI)
+            screencapture -x "$SCREENSHOT_PATH"
+            
+            if [ -f "$SCREENSHOT_PATH" ]; then
+                file_size=$(stat -f%z "$SCREENSHOT_PATH")
+                printf "SCREENSHOT|captured|%s (%s bytes)\\n" "$SCREENSHOT_PATH" "$file_size"
+            else
+                printf "SCREENSHOT|failed|Could not capture screenshot\\n"
+            fi
+        }
+
+    - name: capture_screenshot_with_info
+      type: main
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_screenshot_with_info() {
+            printf "SCREENSHOT|capturing|Screenshot with display info\\n"
+            
+            # Get display information first
+            display_count=$(system_profiler SPDisplaysDataType | grep -c "Resolution:")
+            printf "SCREENSHOT|displays|%s\\n" "$display_count"
+            
+            # Capture screenshot
+            screencapture -x "$SCREENSHOT_PATH"
+            
+            if [ -f "$SCREENSHOT_PATH" ]; then
+                file_size=$(stat -f%z "$SCREENSHOT_PATH")
+                printf "SCREENSHOT|captured|%s (%s bytes)\\n" "$SCREENSHOT_PATH" "$file_size"
+                
+                # Get image dimensions
+                image_info=$(file "$SCREENSHOT_PATH")
+                printf "SCREENSHOT|info|%s\\n" "$image_info"
+            else
+                printf "SCREENSHOT|failed|Could not capture screenshot\\n"
+            fi
+        } 

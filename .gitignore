@@ -1,12 +1,15 @@
 
 
 # Logs
+logs
 *.log
 *.log.*
 
 # yaml
 #yaml/
 
+# Docs
+docs
 
 # DEV files
 *.dev.*
@@ -14,6 +17,9 @@
 
 # Test Tools
 .tools/
+
+#Versioned scripts
+*_v*.sh 
 
 # Backup files
 *.bak

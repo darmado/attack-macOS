@@ -19,7 +19,7 @@ This document outlines the planned features and improvements for the attack-macO
 | Logging Capability | 🔧 | 🔥 | Consistent logging across all scripts | Implemented in each script |
 | Data Encoding Options | 🔧 | 🔥 | Multiple data encoding options | `encode_output()` function |
 | Data Encryption | 🔧 | 🔥 | Integrated encryption functions | `encrypt_output()` function |
-| Exfiltration | 🔧 | 🔥 | HTTP and DNS exfiltration options | `exfil_http()` and `exfil_dns()` functions |
+| Exfiltration | 🔧 | 🔥 | HTTP and DNS exfiltration options | `exfiltrate_http()` and `exfiltrate_dns()` functions |
 | Command-line Interface | 🔧 | 🔥 | Consistent CLI across all scripts | Argument parsing in each script |
 | Error Handling | 🔧 | 🔥 | Robust error handling and reporting | Throughout all script files |
 | Documentation | 🔧 | 🔥 | Comprehensive documentation for all scripts | README.md, inline comments |

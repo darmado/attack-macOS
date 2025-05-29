@@ -6,7 +6,7 @@
 # Platform: macOS
 # MITRE ATT&CK Techniques: Various (depends on the command invoked)
 # Author: @darmado | x.com/darmad0
-# Original Author: @cedowens | https://github.com/cedowens/
+# Credited Author: @cedowens | https://github.com/cedowens/
 # Date: 16OCT2024
 # Version: 0.8 alpha
 
@@ -372,7 +372,7 @@ security_tools() {
         total_checks=$((total_checks+1))
         if pgrep -f "$process" > /dev/null; then
             active_tools=$((active_tools+1))
-            echo "$(date) - ALERT - Active security tool found: $process"
+            echo "$(date): Active security tool found: $process"
             echo "Details:"
             ps aux | grep -i "$process" | grep -v grep
             echo "" # Add spacing between results
@@ -390,7 +390,7 @@ security_tools() {
 
     # Check for macOS built-in security tools and show configurations if active
     if spctl --status | grep -q enabled; then
-        echo "$(date) - ALERT - Gatekeeper is enabled"
+        echo "$(date): Gatekeeper is enabled"
         active_tools=$((active_tools+1))
         echo "Gatekeeper Configuration:"
         spctl --assess --verbose /Applications/Safari.app
@@ -401,7 +401,7 @@ security_tools() {
     firewall_file="/Library/Prefs/com.apple.alf.plist"
     if [ "$(defaults read /Library/Prefs/com.apple.alf globalstate)" == "1" ]; then
         if check_perms "$firewall_file" "r"; then
-            echo "$(date) - ALERT - Firewall is enabled"
+            echo "$(date): Firewall is enabled"
             active_tools=$((active_tools+1))
             echo "Firewall Configuration:"
             sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
@@ -412,7 +412,7 @@ security_tools() {
 
     # Check File Quarantine (Placeholder for checking file attributes)
     if [ "$(xattr -l /path/to/quarantined/file | grep com.apple.quarantine)" ]; then
-        echo "$(date) - ALERT - File Quarantine is enabled"
+        echo "$(date): File Quarantine is enabled"
         active_tools=$((active_tools+1))
         echo "" # Add spacing between results
     fi
@@ -421,7 +421,7 @@ security_tools() {
     xprotect_file="/System/Library/CoreServices/XProtect.bundle/Contents/Resources/XProtect.meta.plist"
     if pgrep XProtectService > /dev/null; then
         if check_perms "$xprotect_file" "r"; then
-            echo "$(date) - ALERT - XProtect is running"
+            echo "$(date): XProtect is running"
             active_tools=$((active_tools+1))
             echo "XProtect Configuration:"
             defaults read "$xprotect_file"
@@ -433,7 +433,7 @@ security_tools() {
     mrt_file="/System/Library/CoreServices/MRT.app/Contents/Info.plist"
     if pgrep MRT > /dev/null; then
         if check_perms "$mrt_file" "r"; then
-            echo "$(date) - ALERT - Malware Removal Tool (MRT) is running"
+            echo "$(date): Malware Removal Tool (MRT) is running"
             active_tools=$((active_tools+1))
             echo "MRT Configuration:"
             defaults read "$mrt_file"
@@ -445,7 +445,7 @@ security_tools() {
     tcc_file="/Library/Application Support/com.apple.TCC/TCC.db"
     if pgrep syspolicyd > /dev/null; then
         if check_perms "$tcc_file" "r"; then
-            echo "$(date) - ALERT - TCC (Transparency, Consent, and Control) is active"
+            echo "$(date): TCC (Transparency, Consent, and Control) is active"
             active_tools=$((active_tools+1))
             echo "TCC Configuration:"
             sqlite3 "$tcc_file" "SELECT client, service, allowed, prompt_count FROM access"

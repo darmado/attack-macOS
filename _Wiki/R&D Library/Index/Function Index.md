@@ -33,30 +33,26 @@ Always refer to the actual script implementations for the most up-to-date and co
 | `check_perms` | Check file permissions | `file`: str, `permission`: str | bool | Logs permission status |
 | `check_perms_tcc` | Check if the app has Full Disk Access | None | bool | Logs FDA status |
 | `chunk_data` | Split data into chunks | `data`: str, `chunk_size`: int | str | None |
-| `cmd_query_browser_db` | Execute an SQLite query | `db`: str, `query`: str | str | Executes SQLite query |
-| `create_log_file` | Set up the log file | None | None | Creates/touches log file |
-| `debug` | Print debug information if enabled | `message`: str | None | Prints debug info to stderr |
+| `query_browser_db` | Execute an SQLite query | `db`: str, `query`: str | str | Executes SQLite query |
+| `debug_print` | Print debug information if enabled | `message`: str | None | Prints debug info to stderr |
 | `display_help` | Display help information | None | None | Prints help message |
 | `encode_input` | Encode input for RFC-3996 compliance | `input`: str | str | None |
 | `encode_output` | Encode output using various methods | `output`: str | str | None |
 | `encrypt_data` | Encrypt data using specified method | `data`: str, `method`: str, `key`: str | str | None |
-| `encrypt_output` | Encrypt output using specified method | `data`: str, `method`: str, `key`: str | str | None |
-| `execute_command` | Execute a shell command | `cmd`: str | str | Executes shell command |
-| `exfiltrate_data` | Exfiltrate data via HTTP/DNS | `data`: str | None | Sends data to remote server |
 | `exfiltrate_dns` | Exfiltrate data via DNS queries | `data`: str, `domain`: str, `id`: str | None | Sends DNS queries |
-| `exfiltrate_http` | Exfiltrate data via HTTP POST | `data`: str, `uri`: str | None | Sends HTTP POST request |
+| `exfiltrate_http` | Exfiltrate data via HTTP POST | `data`: str, `url`: str | None | Sends data to remote server via HTTP POST |
 | `format_output` | Format output based on specified format | `output`: str | str | None |
+| `generate_job_id` | Generate unique job identifier | None | str | None |
+| `generate_random_key` | Generate random encryption key | None | str | None |
 | `get_timestamp` | Get current timestamp | None | str | None |
-| `handle_error` | Handle and log error messages | `error_msg`: str, `error_code`: int | int | Logs error |
-| `isolate_process` | Run command in isolated process | `cmd`: str, `timeout`: int | str | Executes command |
-| `log` | Log messages with timestamp and user info | `message`: str, `command`: str, `output`: str | None | Logs to file if enabled |
-| `log_cmd_exec` | Log command execution | `cmd`: str, `purpose`: str | None | Logs to stderr if verbose |
-| `log_output` | Log output to file with rotation | `output`: str | None | Writes to log file |
-| `process_output` | Process output with encoding/encryption | `output`: str | str | Modifies output |
-| `rate_limit` | Implement rate limiting between operations | None | None | Sleeps for specified duration |
+| `get_user` | Get current user information | None | str | None |
+| `init_logging` | Initialize logging system | None | int | Creates log directory and file |
+| `log_output` | Log output with metadata | `output`: str, `status`: str, `skip_data`: bool | None | Writes to log file and syslog |
+| `prepare_encryption` | Setup encryption system | `method`: str | int | Sets encryption key |
+| `rate_limit` | Implement rate limiting | None | None | Sleeps for specified duration |
 | `sanitize_input` | Sanitize user input | `input`: str | str | None |
-| `validate_input` | Validate input against a regex pattern | `input`: str, `pattern`: str | bool | None |
-| `verbose` | Print verbose output if enabled | `message`: str | None | Prints to stderr and logs |
+| `validate_encryption_method` | Validate encryption method | `method`: str | bool | None |
+| `validate_input` | Validate input against pattern | `input`: str, `pattern`: str | bool | None |
 
 ## Discovery Functions
 
@@ -109,7 +105,6 @@ Always refer to the actual script implementations for the most up-to-date and co
 | `check_hardware_info` | Get hardware information | None | str | `system_info.sh` |
 | `check_network_config` | Get network configuration | None | str | `system_info.sh` |
 | `check_power_info` | Get power and battery information | None | str | `system_info.sh` |
-| `get_user` | Get current user information | None | str | `system_info.sh` |
 
 ### Security Software Discovery
 | Function Name | Description | Parameters | Returns | Command/Target File |

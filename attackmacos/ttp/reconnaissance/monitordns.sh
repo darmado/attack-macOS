@@ -1,4 +1,3 @@
-#!/bin/bash
 # settings start
 email="root@localhost"
 pin="*/1 * * * *"

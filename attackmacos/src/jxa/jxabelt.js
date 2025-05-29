@@ -772,8 +772,7 @@ function LockCheck(){
     var results = "";
     try {
         var script = `
-        #!/bin/bash
-        p=$(ioreg -n Root -d1 -a | grep CGSSession)
+                p=$(ioreg -n Root -d1 -a | grep CGSSession)
         if [[ "$p" == *"CGSSessionScreenIsLocked"* ]]; then
             echo "[+] Screen is currently LOCKED"
         else
