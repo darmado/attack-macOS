@@ -33,7 +33,7 @@ error() {
 # Configuration
 #------------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-GIT_URL="https://raw.githubusercontent.com/darmado/attack-macOS/main/ttp/{tactic}/{ttp}"
+GIT_URL="https://raw.githubusercontent.com/darmado/attack-macOS/main/attackmacos/ttp/{tactic}/{ttp}/{ttp}.sh"
 DEFAULT_METHOD="curl"
 VERBOSE="${ATTACKMACOS_VERBOSE:-false}"
 LOG_ENABLED="${ATTACKMACOS_LOG:-false}"
@@ -265,9 +265,14 @@ execute_local() {
     validate_input "$ttp" "TTP" || return 1
     [ -n "$args" ] && validate_input "$args" "arguments" || return 1
 
-    # Find script path
+    # Find script path - try multiple patterns
     [ -f "$base_path/$ttp.sh" ] && script_path="$base_path/$ttp.sh"
     [ -f "$base_path/$ttp/$ttp.sh" ] && script_path="$base_path/$ttp/$ttp.sh"
+    
+    # If not found, look for any .sh file in the TTP directory
+    if [ -z "$script_path" ] && [ -d "$base_path/$ttp" ]; then
+        script_path=$(find "$base_path/$ttp" -maxdepth 1 -name "*.sh" -type f | head -1)
+    fi
 
     [ -z "$script_path" ] && {
         echo "Script not found: $ttp" >&2
