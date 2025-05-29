@@ -140,11 +140,11 @@ test_output_processing() {
     
     print_status "INFO" "=== PHASE 2: Testing Output Processing ==="
     echo ""
-    
+        
     # Get one working technique option for testing output processing
     local technique_options=$(extract_technique_options "$script")
     local test_option=$(echo "$technique_options" | head -1)
-    
+        
     if [ -z "$test_option" ]; then
         print_status "WARN" "No technique option available for output testing"
         return 1
