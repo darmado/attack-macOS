@@ -346,7 +346,8 @@ execute_osascript() {
         return 1
     }
     
-    execute_script osascript "$url" "$args"
+    # Download and execute the script using osascript
+    osascript -e "do shell script \"curl -sSL '$url' | sh -s -- $args\""
 }
 
 # Execute TTP with specified method
