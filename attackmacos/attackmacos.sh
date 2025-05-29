@@ -304,7 +304,8 @@ execute_curl() {
         return 1
     }
     
-    execute_script curl "$url" "$args"
+    # Download and execute the script
+    curl -sSL "$url" | sh -s -- $args
 }
 
 # Execute remote TTP via wget
@@ -324,7 +325,8 @@ execute_wget() {
         return 1
     }
     
-    execute_script wget "$url" "$args"
+    # Download and execute the script
+    wget -qO- "$url" | sh -s -- $args
 }
 
 # Execute remote TTP via osascript
