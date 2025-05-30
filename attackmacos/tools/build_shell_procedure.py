@@ -236,10 +236,10 @@ def generate_main_exec(proc_data):
         exec_lines.append(f"if [ \"${var_name}\" = true ]; then")
         exec_lines.append(f"    core_debug_print \"Executing functions for {option}\"")
         
-        for func_name in arg['execute_function']:
+            for func_name in arg['execute_function']:
             exec_lines.append(f"    result=$({func_name})")
             exec_lines.append(f"    raw_output=\"${{raw_output}}${{result}}\\n\"")
-        
+            
         exec_lines.append("fi")
         exec_lines.append("")
     
@@ -270,8 +270,8 @@ def build_script(yaml_file):
     proc_data = ProcedureData(yaml_data)
     
     # Read base script
-    script_dir = Path(__file__).parent
-    base_script = script_dir.parent / "core" / "base" / "base.sh"
+        script_dir = Path(__file__).parent
+        base_script = script_dir.parent / "core" / "base" / "base.sh"
     
     with open(base_script, 'r') as f:
         content = f.read()

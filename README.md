@@ -9,34 +9,145 @@
   ![Shell](https://img.shields.io/badge/Shell-grey?style=for-the-badge&logo=gnu-bash)
   ![JXA](https://img.shields.io/badge/JXA-grey?style=for-the-badge)
   ![Swift](https://img.shields.io/badge/Swift-grey?style=for-the-badge&logo=swift)
-  ![STIX](https://img.shields.io/badge/STIX%202.1-grey?style=for-the-badge)
   [![MITRE ATT&CK](https://img.shields.io/badge/%20ATT%26CK%20v15-red?style=for-the-badge)](_DOCS/Procedures/Procedure%20Matrix.md)
   ![License](https://img.shields.io/badge/Apache%202.0-grey.svg?style=for-the-badge&logo=apache)
   ![macOS Compatibility](https://img.shields.io/badge/-blue?style=for-the-badge&logo=apple)
-  
   ![Join Community](https://img.shields.io/badge/Coming%20Soon-grey?style=for-the-badge&logo=discord)
   [![X Follow](https://img.shields.io/badge/-000000?style=for-the-badge&labelColor=black&logo=x&logoColor=white)](https://x.com/attackmacos)
-</br>
-</br>
-# **MITRE ATT&CK Coverage Matrix**
-  <a href="#MacOS Attack Procedure Matrix">ATT&CK Coverage</a> •
-  <a href="#key-features">Key Features</a> •
-  <a href="#compatibility">Compatibility</a> •
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#license">License</a>
-  </div>
-
-<div align="center">
-
+<br>
 ![Technique Coverage](https://img.shields.io/badge/Technique%20Coverage-11%20(3.43%25)-grey?style=for-the-badge)
 ![Known Techniques](https://img.shields.io/badge/Known%20Techniques-321-red?style=for-the-badge)
 ![Procedure Coverage](https://img.shields.io/badge/Procedure%20Coverage-45%20(0.70%25)-grey?style=for-the-badge)
 ![Estimated Known Procedures](https://img.shields.io/badge/Estimated%20Known%20Procedures-6420-grey?style=for-the-badge)
+<br>
+<br>
+  <a href="#MacOS Attack Procedure Matrix">ATT&CK Coverage</a> •
+  <a href="#key-features">Key Features</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#license">License</a>
+<br>
+<br>
 
-</div>
+Attack-macOS is a library of scripts that security teams can use to evaluate macOS endpoint detection and response capabilities. This project aims to simplify the execution of Living Off The Land (LOTL) techniques via standalone scripts with built-in encoding, encryption, formatting, logging, and exfiltration over DNS and HTTP/S.
+
+
+##
+
+
+
+
+```mermaid
+flowchart TD
+    A[Step 1: Choose your procedure] --> A1["🐚 Shell Scripts"]
+    A --> A2["🟡 JXA Scripts"]
+    A --> A3["🐍 Python Scripts"]
+    A --> A4["🦉 Swift Scripts"]
+    
+    A1 --> B[Step 2: Choose Execution Type]
+    A2 --> B
+    A3 --> B
+    A4 --> B
+    
+    B --> B1["🏠 Local Execution"]
+    B --> B2["☁️ Remote Execution"]
+    
+    B1 --> C[Step 3: Execute with Built-in Capabilities]
+    B2 --> C
+    
+    C --> C1["🔧 Native macOS Tools"]
+    C --> C2["🔐 Encode & Encrypt"]
+    C --> C3["📡 Exfiltrate Data"]
+    C --> C4["📝 Log Results"]
+    
+    C1 --> D[Step 4: Analyze Results]
+    C2 --> D
+    C3 --> D
+    C4 --> D
+    
+    D --> D1["✅ Test Detection Capabilities<br/>📊 Evaluate Security Controls<br/>🎯 Identify Coverage Gaps"]
+    
+    style A fill:#e84393,stroke:#d63031,stroke-width:2px,color:#fff
+    style B fill:#6c5ce7,stroke:#5f3dc4,stroke-width:2px,color:#fff
+    style B1 fill:#74b9ff,stroke:#0984e3,stroke-width:2px,color:#fff
+    style C fill:#6c5ce7,stroke:#5f3dc4,stroke-width:2px,color:#fff
+    style D fill:#00b894,stroke:#00a085,stroke-width:2px,color:#fff
+    style D1 fill:#74b9ff,stroke:#0984e3,stroke-width:2px,color:#fff
+```
+##
+
+## Key Features
+
+| Feature | Description |
+|:--------|:------------|
+| **Builder Tool** | Includes a YAML template, schema, and builder tool for creating new scripts with built-in argument parsing and validation. [Parse Args](wiki/R&D%20Library/Functions/Shell/Parse%20Args.md) |
+| **Modular Design** | Self-contained scripts that can be used independently or combined, easily integrating with existing security test frameworks. |
+| **Customizable** | Easily modifiable and extendable, with centralized execution control via global variables and flags. [Input Validation](wiki/R&D%20Library/Functions/Shell/Input%20Validation.md) |
+| **macOS Native** | Uses native tools and languages to emulate adversary techniques without external dependencies. See [LOOBins](https://www.loobins.io/) for comprehensive macOS binary documentation. |
+| **MITRE ATT&CK Mapped** | All scripts and arguments directly mapped to the MITRE ATT&CK framework. |
+| **Logging** | Built-in syslog logging capability with output formatting in JSON or CSV for analysis. [Log Output](wiki/R&D%20Library/Functions/Shell/Log%20Output.md) |
+| **Encoding and Encryption** | Multiple data encoding options and integrated encryption functions including AES-256-CBC, GPG, and XOR. [Encode Output](wiki/R&D%20Library/Functions/Shell/Encode%20Output.md) • [Encrypt Output](wiki/R&D%20Library/Functions/Shell/Encrypt%20Output.md) |
+| **Exfiltration** | Simulates data exfiltration via HTTP/S or DNS protocols. [Exfiltrate Data](wiki/R&D%20Library/Functions/Shell/Exfiltrate%20Data.md) |
+| **CI/CD Pipeline Ready** | Integrates with existing security tools, automation pipelines, and CI/CD workflows. |
+
+##
+
+
+# Executon Workflow
+
+```mermaid
+flowchart TD
+    A[Step 1: Choose your procedure] --> A1["🐚 Shell Scripts"]
+    A --> A2["🟡 JXA Scripts"]
+    A --> A3["🐍 Python Scripts"]
+    A --> A4["🦉 Swift Scripts"]
+    
+    A1 --> B[Step 2: Choose Execution Type]
+    A2 --> B
+    A3 --> B
+    A4 --> B
+    
+    B --> B1["🏠 Local Execution"]
+    B --> B2["☁️ Remote Execution"]
+    
+    B1 --> C[Step 3: Execute with Built-in Capabilities]
+    B2 --> C
+    
+    C --> C1["🔧 Native macOS Tools"]
+    C --> C2["🔐 Encode & Encrypt"]
+    C --> C3["📡 Exfiltrate Data"]
+    C --> C4["📝 Log Results"]
+    
+    C1 --> D[Step 4: Analyze Results]
+    C2 --> D
+    C3 --> D
+    C4 --> D
+    
+    D --> D1["✅ Test Detection Capabilities<br/>📊 Evaluate Security Controls<br/>🎯 Identify Coverage Gaps"]
+    
+    style A fill:#e84393,stroke:#d63031,stroke-width:2px,color:#fff
+    style B fill:#6c5ce7,stroke:#5f3dc4,stroke-width:2px,color:#fff
+    style B1 fill:#74b9ff,stroke:#0984e3,stroke-width:2px,color:#fff
+    style C fill:#6c5ce7,stroke:#5f3dc4,stroke-width:2px,color:#fff
+    style D fill:#00b894,stroke:#00a085,stroke-width:2px,color:#fff
+    style D1 fill:#74b9ff,stroke:#0984e3,stroke-width:2px,color:#fff
+```
+
+##
+
+
+
+[![MITRE ATT&CK](https://img.shields.io/badge/%20ATT%26CK%20v15-red?style=for-the-badge)](_DOCS/Procedures/Procedure%20Matrix.md)
+# MITRE ATT&CK Coverage Matrix 
+
+
+  </div>
+
 <div align="center">
 
+
+
 </div>
+
 
 <details align="center">
 
@@ -142,56 +253,15 @@
 
 </details>
 
-##
-
-### Overview
-Attack-macOS is a library of scripts security teams can use to evaluate macOS endpoint detection and response capabilities. This project aims to simplify the execution of Living Off The Land (LOTL) techniques via standalone scripts with built-in ooutbound encoding, encryption, formating, logging, and exfiltratin over DNS and HTTP/S.
-
-
-| Problem | Challenge | Solution |
-|---------|-----------|----------|
-| • Limited opensource security tools<br>• Technique procedures primarily focused on </br>**tier I/II** *(advanced)* [Tool Index](_DOCS/Tool%20Index.md)<br>• Most commercial tools primarily focus on hardening and MDM | • Insufficient capabilities to evaluate macOS defenses<br>• The ratio of known to unknown risk<br>• Limited tooling hinders proactive security measures | Build a library of macOS specific attack scripts dedicated to help identify better detection opportunities in macOS specific endpoint security solutions. |
-
-##
-### Key Features
-
-| Feature | Description |
-|:--------|:------------|
-| **Builder Tool** | Includes a YAML template and builder tool for creating new scripts |
-| **Modular Design** | Self-contained scripts that can be used independently or combined, easily integrating with existing frameworks. |
-| **Customizable** | Easily modifiable and extendable, with centralized execution control via global variables and flags. |
-| **macOS Native** | Uses native tools and languages to emulate adversary techniques without external dependencies. |
-| **MITRE ATT&CK Mapped** | All scripts and arguments directly mapped to the MITRE ATT&CK framework. |
-| **Logging** | Consistent built-in logging capability across all scripts for output analysis. |
-| **Encoding and Encryption** | Multiple data encoding options and integrated encryption functions. |
-| **Exfiltration** | Simulates data exfiltration via HTTP/S or DNS protocols. |
-| **Integration** | Seamlessly integrates with existing security tools, automation pipelines, and CI/CD workflows. |
 
 ##
 
-
-
-### Dependencies
-
-All Attack-macOS scripts use native macOS binaries, interpreters, playlists, libraries, tools, and utilities. If third-party tools are installed (```brew```, ```slack```,```jamf```), techniques that leverage third-party apps can be executed.
-
-##
-
-
-
-### Compatibility
-
-![macOS](https://img.shields.io/badge/macOS-Ventura%2013.5-blue)
-
-##
-
-### Quick Start
+# Quick Start
 
 **Download attackmacos.sh:**
 
 ```
 curl -O https://raw.githubusercontent.com/darmado/attack-macOS/main/attackmacos/attackmacos.sh
-chmod +x attackmacos.sh
 ```
 
 **Execute techniques locally:**
@@ -227,12 +297,6 @@ cd attack-macOS/attackmacos
 
 ##
 
-### Documentation
-
-- [Documentation](https://github.com/darmado/attack-macOS/wiki)
-- [Script Blueprint](https://github.com/darmado/attack-macOS/wiki/Script-Blueprint)
-
-##
 
 ### License
 
@@ -242,16 +306,20 @@ This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE
 
 
 ### Credits and References
-In short, every macOS focused opensoruce security project, blog post, CTI, Apple Dev Docs,  especially the archived docs, and MITRE ATT&CK.
- -- **Full list hhere: -->** [Acknoledgements](_DOCS/Acknowledgements.md) 
+In short, every macOS-focused open-source security project, blog post, CTI, Apple Dev Docs, especially the archived docs, and MITRE ATT&CK.
+ 
+[Acknowledgements](wiki/Acknowledgements.md) 
 
-##
+## Documentation
+
+- **[Wiki Home](wiki/)** - Complete documentation hub
+- **[Tool Index](wiki/R&D%20Library/Index/Tool%20Index.md)** - Catalog of macOS security testing tools
+- **[Procedure Index](wiki/R&D%20Library/Index/Procedure%20Index.md)** - All available attack procedures
+- **[Function Index](wiki/R&D%20Library/Index/Function%20Index.md)** - Complete function reference
+- **[Global Variables](wiki/R&D%20Library/Index/Global%20Variables.md)** - Configuration options
+- **[Roadmap](wiki/ROADMAP.md)** - Development roadmap and status
+- **[How To Guides](wiki/How%20To/)** - Step-by-step guides
 
 
-**Quick Start with GitHub Actions:**
-1. Copy `attackmacos/tools/template_example.yaml` to create your technique
-2. Push changes to trigger automatic script generation
-3. Find generated scripts in `attackmacos/ttp/{tactic}/{technique}/`
 
-📖 **Documentation:** [GitHub Actions Guide](docs/quick-start-github-actions.md) | [Full Documentation](docs/github-actions-build.md)
 

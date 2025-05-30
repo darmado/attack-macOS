@@ -409,8 +409,8 @@ list_ttps() {
         elif [ "$list_type" = "remote" ]; then
             ttps=$(get_remote_ttps "$tactic") || {
                 echo "Failed to fetch remote TTPs for $tactic" >&2
-                return 1
-            }
+            return 1
+        }
             echo "Remotely available TTPs for $tactic:"
         fi
         
