@@ -21,10 +21,10 @@
 ![Estimated Known Procedures](https://img.shields.io/badge/Estimated%20Known%20Procedures-6420-grey?style=for-the-badge)
 <br>
 <br>
-  <a href="#MacOS Attack Procedure Matrix">ATT&CK Coverage</a> •
+  <a href="#mitre-attck-coverage-matrix">ATT&CK Matrix</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#quick-start">Quick Start</a> •
-  <a href="#license">License</a>
+  <a href="wiki/R&D%20Library">Research Library</a>
 <br>
 <br>
 
@@ -32,7 +32,6 @@ Attack-macOS is a library of scripts that security teams can use to evaluate mac
 
 
 ##
-
 
 
 
@@ -308,17 +307,18 @@ This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE
 ### Credits and References
 In short, every macOS-focused open-source security project, blog post, CTI, Apple Dev Docs, especially the archived docs, and MITRE ATT&CK.
  
-[Acknowledgements](wiki/Acknowledgements.md) 
+- [References](wiki/References.md)
+- [Acknowledgements](wiki/Acknowledgements.md) 
 
-## Documentation
+## Docs
 
-- **[Wiki Home](wiki/)** - Complete documentation hub
-- **[Tool Index](wiki/R&D%20Library/Index/Tool%20Index.md)** - Catalog of macOS security testing tools
-- **[Procedure Index](wiki/R&D%20Library/Index/Procedure%20Index.md)** - All available attack procedures
-- **[Function Index](wiki/R&D%20Library/Index/Function%20Index.md)** - Complete function reference
-- **[Global Variables](wiki/R&D%20Library/Index/Global%20Variables.md)** - Configuration options
-- **[Roadmap](wiki/ROADMAP.md)** - Development roadmap and status
-- **[How To Guides](wiki/How%20To/)** - Step-by-step guides
+- [Wiki Home](wiki/) 
+- [Tool Index](wiki/R&D%20Library/Index/Tool%20Index.md) 
+- [Procedure Index](wiki/R&D%20Library/Index/Procedure%20Index.md)
+- [Function Index](wiki/R&D%20Library/Index/Function%20Index.md) 
+- [Global Variables](wiki/R&D%20Library/Index/Global%20Variables.md) 
+- [Roadmap](wiki/ROADMAP.md) 
+- [How To Guides](wiki/How%20To/) 
 
 
 
