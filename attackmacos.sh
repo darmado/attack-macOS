@@ -1,0 +1,11 @@
+            --list-local)
+                list_mode=true
+                list_type="local"
+                shift
+                ;;
+            --list-remote)
+                list_mode=true
+                list_type="remote"
+                shift
+                ;;
+            -h|--help) 

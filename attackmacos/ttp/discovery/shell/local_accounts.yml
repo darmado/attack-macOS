@@ -1,0 +1,359 @@
+---
+procedure_name: local_accounts
+ttp_id: T1087
+tactic: Discovery
+guid: 12345678-1234-5678-9abc-123456789012
+intent: Identifies valid local accounts and groups on macOS systems using various native commands
+author: "@darmado | https://x.com/darmad0"
+version: "1.5.0"
+created: "2023-10-06"
+updated: "2025-05-28"
+
+procedure:
+  arguments:
+    - option: "-a|--all"
+      description: "Run all account discovery techniques"
+      execute_function:
+        - list_user_dirs
+        - list_dscl_users
+        - extract_passwd_users
+        - show_id_info
+        - list_logged_users
+        - read_loginwindow_plist
+        - list_groups_dscacheutil
+        - list_groups_dscl
+        - list_groups_etc
+        - list_groups_id
+        - list_groups_cmd
+        - list_dscacheutil_users
+
+    - option: "-d|--user-dirs"
+      description: "List user directories using 'ls -la /Users'"
+      execute_function:
+        - list_user_dirs
+
+    - option: "-l|--dscl-users"
+      description: "List users using 'dscl . -list /Users'"
+      execute_function:
+        - list_dscl_users
+
+    - option: "-p|--passwd"
+      description: "Display content of '/etc/passwd'"
+      execute_function:
+        - extract_passwd_users
+
+    - option: "-i|--id"
+      description: "Show current user info using 'id' command"
+      execute_function:
+        - show_id_info
+
+    - option: "-w|--who"
+      description: "List logged-in users with 'who' command"
+      execute_function:
+        - list_logged_users
+
+    - option: "-s|--plist"
+      description: "Read user list from loginwindow plist"
+      execute_function:
+        - read_loginwindow_plist
+
+    - option: "-m|--dscacheutil"
+      description: "List local users using 'dscacheutil -q user'"
+      execute_function:
+        - list_dscacheutil_users
+
+    - option: "-g|--all-groups"
+      description: "Run all group discovery techniques"
+      execute_function:
+        - list_groups_dscacheutil
+        - list_groups_dscl
+        - list_groups_etc
+        - list_groups_id
+        - list_groups_cmd
+
+    - option: "-gc|--cache-groups"
+      description: "List groups using 'dscacheutil -q group'"
+      execute_function:
+        - list_groups_dscacheutil
+
+    - option: "-gd|--dscl-groups"
+      description: "List groups using 'dscl . -list /Groups'"
+      execute_function:
+        - list_groups_dscl
+
+    - option: "-ge|--etc-groups"
+      description: "List groups using 'grep /etc/group'"
+      execute_function:
+        - list_groups_etc
+
+    - option: "-gi|--id-groups"
+      description: "List groups using 'id -G'"
+      execute_function:
+        - list_groups_id
+
+    - option: "-gg|--groups-cmd"
+      description: "List groups using 'groups' command"
+      execute_function:
+        - list_groups_cmd
+
+  global_variable:
+    - name: NAME
+      type: string
+      default_value: "accounts"
+
+    - name: TACTIC
+      type: string
+      default_value: "discovery"
+
+    - name: TTP_ID
+      type: string
+      default_value: "T1087"
+
+    - name: LOG_FILE
+      type: string
+      default_value: "${TTP_ID}_${NAME}.log"
+
+    - name: CMD_LIST_USER_DIRS
+      type: string
+      default_value: "ls -la /Users"
+
+    - name: CMD_LIST_DSCL_USERS
+      type: string
+      default_value: "dscl . -list /Users"
+
+    - name: CMD_EXTRACT_PASSWD_USERS
+      type: string
+      default_value: "cat /etc/passwd"
+
+    - name: CMD_SHOW_ID_INFO
+      type: string
+      default_value: "id"
+
+    - name: CMD_LIST_LOGGED_USERS
+      type: string
+      default_value: "who"
+
+    - name: CMD_READ_LOGINWINDOW_PLIST
+      type: string
+      default_value: "defaults read /Library/Preferences/com.apple.loginwindow.plist"
+
+    - name: CMD_LIST_GROUPS_DSCACHEUTIL
+      type: string
+      default_value: "dscacheutil -q group"
+
+    - name: CMD_LIST_GROUPS_DSCL
+      type: string
+      default_value: "dscl . -list /Groups"
+
+    - name: CMD_LIST_GROUPS_ETC
+      type: string
+      default_value: "grep -v '^#' /etc/group"
+
+    - name: CMD_LIST_GROUPS_ID
+      type: string
+      default_value: "id -G"
+
+    - name: CMD_LIST_GROUPS_CMD
+      type: string
+      default_value: "groups"
+
+    - name: CMD_LIST_DSCACHEUTIL_USERS
+      type: string
+      default_value: "dscacheutil -q user"
+
+  functions:
+    - name: get_user
+      type: helper
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        get_user() {
+            USER=$(whoami)
+        }
+
+    - name: get_timestamp
+      type: helper
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        get_timestamp() {
+            date +"%Y-%m-%d %H:%M:%S"
+        }
+
+    - name: list_user_dirs
+      type: main
+      opsec:
+        check_fda:
+          enabled: false
+        check_permission:
+          type: directory
+          path: /Users
+          read: true
+          exit_on_failure: true
+      code: |
+        list_user_dirs() {
+            get_user
+            printf "[$(get_timestamp)]: user: $USER; msg: Discovered user directories; command: \"$CMD_LIST_USER_DIRS\"\n"
+            $CMD_LIST_USER_DIRS
+            return 0
+        }
+
+    - name: list_dscl_users
+      type: main
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        list_dscl_users() {
+            get_user
+            printf "[$(get_timestamp)]: user: $USER; msg: Listed users; command: \"$CMD_LIST_DSCL_USERS\"\n"
+            $CMD_LIST_DSCL_USERS
+            return 0
+        }
+
+    - name: extract_passwd_users
+      type: main
+      opsec:
+        check_fda:
+          enabled: false
+        check_permission:
+          type: file
+          path: /etc/passwd
+          read: true
+          exit_on_failure: true
+      code: |
+        extract_passwd_users() {
+            get_user
+            printf "[$(get_timestamp)]: user: $USER; msg: Retrieved content of /etc/passwd file; command: \"$CMD_EXTRACT_PASSWD_USERS\"\n"
+            $CMD_EXTRACT_PASSWD_USERS
+            return 0
+        }
+
+    - name: show_id_info
+      type: main
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        show_id_info() {
+            get_user
+            printf "[$(get_timestamp)]: user: $USER; msg: Obtained current user info; command: \"$CMD_SHOW_ID_INFO\"\n"
+            $CMD_SHOW_ID_INFO
+            return 0
+        }
+
+    - name: list_logged_users
+      type: main
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        list_logged_users() {
+            get_user
+            printf "[timestamp=$(get_timestamp)] user: $USER; msg: Listed logged in users; command: \"$CMD_LIST_LOGGED_USERS\"\n"
+            $CMD_LIST_LOGGED_USERS
+            return 0
+        }
+
+    - name: read_loginwindow_plist
+      type: main
+      opsec:
+        check_fda:
+          enabled: true
+        check_permission:
+          type: file
+          path: /Library/Preferences/com.apple.loginwindow.plist
+          read: true
+          exit_on_failure: true
+      code: |
+        read_loginwindow_plist() {
+            get_user
+            printf "[$(get_timestamp)]: user: $USER; msg: Read content of loginwindow plist; command: \"$CMD_READ_LOGINWINDOW_PLIST\"\n"
+            $CMD_READ_LOGINWINDOW_PLIST
+            return 0
+        }
+
+    - name: list_groups_dscacheutil
+      type: main
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        list_groups_dscacheutil() {
+            get_user
+            printf "[$(get_timestamp)]: user: $USER; msg: Listed groups; command: \"$CMD_LIST_GROUPS_DSCACHEUTIL\"\n"
+            $CMD_LIST_GROUPS_DSCACHEUTIL
+            return 0
+        }
+
+    - name: list_groups_dscl
+      type: main
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        list_groups_dscl() {
+            get_user
+            printf "[$(get_timestamp)]: user: $USER; msg: Listed groups; command: \"$CMD_LIST_GROUPS_DSCL\"\n"
+            $CMD_LIST_GROUPS_DSCL
+            return 0
+        }
+
+    - name: list_groups_etc
+      type: main
+      opsec:
+        check_fda:
+          enabled: false
+        check_permission:
+          type: file
+          path: /etc/group
+          read: true
+          exit_on_failure: true
+      code: |
+        list_groups_etc() {
+            get_user
+            printf "[$(get_timestamp)]: user: $USER; msg: Listed groups from /etc/group; command: \"$CMD_LIST_GROUPS_ETC\"\n"
+            $CMD_LIST_GROUPS_ETC
+            return 0
+        }
+
+    - name: list_groups_id
+      type: main
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        list_groups_id() {
+            get_user
+            printf "[$(get_timestamp)]: user: $USER; msg: Listed groups for the current user; command: \"$CMD_LIST_GROUPS_ID\"\n"
+            $CMD_LIST_GROUPS_ID
+            return 0
+        }
+
+    - name: list_groups_cmd
+      type: main
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        list_groups_cmd() {
+            get_user
+            printf "[$(get_timestamp)]: user: $USER; msg: Listed groups for the current user; command: \"$CMD_LIST_GROUPS_CMD\"\n"
+            $CMD_LIST_GROUPS_CMD
+            return 0
+        }
+
+    - name: list_dscacheutil_users
+      type: main
+      opsec:
+        check_fda:
+          enabled: false
+      code: |
+        list_dscacheutil_users() {
+            get_user
+            printf "[$(get_timestamp)]: user: $USER; msg: Listed local users; command: \"$CMD_LIST_DSCACHEUTIL_USERS\"\n"
+            $CMD_LIST_DSCACHEUTIL_USERS
+            return 0
+        } 

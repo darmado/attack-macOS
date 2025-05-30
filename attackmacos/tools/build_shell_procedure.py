@@ -406,7 +406,7 @@ def main():
         show_usage()
     else:
         yaml_file = sys.argv[1]
-        build_script(yaml_file)
+        build_script(yaml_file) 
 
 
 def validate_shell_syntax(script_path):

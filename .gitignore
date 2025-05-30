@@ -1,4 +1,5 @@
-
+# Misc Tols
+misc_tools
 
 # Logs
 logs
@@ -9,7 +10,8 @@ logs
 #yaml/
 
 # Docs
-docs
+_TODO
+STIX
 
 # DEV files
 *.dev.*

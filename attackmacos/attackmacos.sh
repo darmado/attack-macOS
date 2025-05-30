@@ -99,12 +99,14 @@ Optional:
   --method <method>     Specify the method (default: curl)
   --args <arguments>    Specify arguments for the TTP script
   --banner             Display the ASCII art banner
-  --list               List available TTPs for a tactic (use with --tactic)
+  --list-local         List locally available TTPs for a tactic (use with --tactic)
+  --list-remote        List remotely available TTPs for a tactic (use with --tactic)
   -h, --help           Display this help message
 
 Examples:
   $(basename "$0") --method local --tactic discovery --ttp browser_history --args='-s'
-  $(basename "$0") --list --tactic discovery
+  $(basename "$0") --list-local --tactic discovery
+  $(basename "$0") --list-remote --tactic discovery
 EOF
 }
 
@@ -230,23 +232,34 @@ validate_ttp() {
     return "$E_INVALID_TTP"
 }
 
-# Get available TTPs for a tactic
-get_ttps() {
+# Get available TTPs for a tactic (local files only)
+get_local_ttps() {
     tactic="$1"
     base_dir="$SCRIPT_DIR/ttp/$tactic"
-    ttps=""
     
     [ ! -d "$base_dir" ] && return 1
 
-    for dir in "$base_dir"/*; do
-        [ "$dir" = "$base_dir/*" ] && continue
-        [ -d "$dir" ] && [ -n "$(find "$dir" -maxdepth 1 -name "*.sh" 2>/dev/null)" ] && {
-            ttps="$ttps$(basename "$dir")\n"
-        }
-    done
+    # Find all .sh files in the tactic directory
+    find "$base_dir" -name "*.sh" -type f 2>/dev/null | while read -r script_path; do
+        # Extract the script name without extension
+        script_name=$(basename "$script_path" .sh)
+        echo "$script_name"
+    done | sort -u
+}
 
-    [ -z "$ttps" ] && return 1
-    printf "%b" "$ttps" | sort -u
+# Get available TTPs from remote repository
+get_remote_ttps() {
+    tactic="$1"
+    # Fetch GitHub page and extract TTP names from JSON data
+    curl -sSL -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)" \
+        "https://github.com/darmado/attack-macOS/tree/main/attackmacos/ttp/$tactic" 2>/dev/null | \
+    grep -o '{"name":"[^"]*","path":"attackmacos/ttp/'$tactic'/[^"]*","contentType":"directory"}' | \
+    grep -o '"name":"[^"]*"' | \
+    sed 's/"name":"//;s/"//' | \
+    sort -u || {
+        echo "Failed to fetch remote TTPs for $tactic" >&2
+        return 1
+    }
 }
 
 #------------------------------------------------------------------------------
@@ -377,26 +390,39 @@ execute_ttp() {
 # List available TTPs
 list_ttps() {
     local tactic="$1"
+    local list_type="$2"
     local ttps=""
     
     if [ -n "$tactic" ]; then
         validate_tactic "$tactic" || {
             echo "Invalid tactic: $tactic" >&2
-            echo "Available tactics: ${TACTICS[*]}" >&2
+            echo "Available tactics: $TACTICS" >&2
             return 1
         }
         
-        ttps=$(get_ttps "$tactic") || {
-            echo "No TTPs found for $tactic" >&2
-            return 1
-        }
+        if [ "$list_type" = "local" ]; then
+            ttps=$(get_local_ttps "$tactic") || {
+                echo "No local TTPs found for $tactic" >&2
+                return 1
+            }
+            echo "Locally available TTPs for $tactic:"
+        elif [ "$list_type" = "remote" ]; then
+            ttps=$(get_remote_ttps "$tactic") || {
+                echo "Failed to fetch remote TTPs for $tactic" >&2
+                return 1
+            }
+            echo "Remotely available TTPs for $tactic:"
+        fi
         
-        echo "Available TTPs for $tactic:"
         printf "%s\n" "$ttps" | sed 's/^/- /'
     else
-        echo "Available TTPs by tactic:"
-        for t in "${TACTICS[@]}"; do
-            ttps=$(get_ttps "$t") || continue
+        echo "Available TTPs by tactic ($list_type):"
+        for t in $TACTICS; do
+            if [ "$list_type" = "local" ]; then
+                ttps=$(get_local_ttps "$t") || continue
+            elif [ "$list_type" = "remote" ]; then
+                ttps=$(get_remote_ttps "$t") || continue
+            fi
             echo
             echo "$t:"
             printf "%s\n" "$ttps" | sed 's/^/  /'
@@ -415,6 +441,7 @@ main() {
     local args=""
     local show_banner=false
     local list_mode=false
+    local list_type=""
 
     # Parse arguments
     while [ $# -gt 0 ]; do
@@ -471,8 +498,14 @@ main() {
                 show_banner=true
                 shift
                 ;;
-            --list)
+            --list-local)
                 list_mode=true
+                list_type="local"
+                shift
+                ;;
+            --list-remote)
+                list_mode=true
+                list_type="remote"
                 shift
                 ;;
             -h|--help)
@@ -502,7 +535,7 @@ main() {
     [ "$show_banner" = true ] && display_banner
 
     # Handle list mode
-    [ "$list_mode" = true ] && { list_ttps "$tactic"; return $?; }
+    [ "$list_mode" = true ] && { list_ttps "$tactic" "$list_type"; return $?; }
 
     # Validate required arguments
     [ -z "$tactic" ] || [ -z "$ttp" ] && {

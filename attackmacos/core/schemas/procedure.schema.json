@@ -18,9 +18,8 @@
   "properties": {
     "procedure_name": {
       "type": "string",
-      "pattern": "^[0-9]{4}_[a-zA-Z0-9_]+$",
-      "description": "Unique procedure name following MITRE ATT&CK format (e.g., 1217_browser_history)",
-      "examples": ["1217_browser_history", "1082_system_info"]
+      "description": "Unique procedure name for the generated script (e.g., security_software_comprehensive)",
+      "examples": ["security_software_comprehensive", "browser_history", "system_info"]
     },
     "ttp_id": {
       "type": "string", 

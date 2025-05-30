@@ -1,0 +1,73 @@
+---
+procedure_name: "search_db"
+ttp_id: "T1087.003"
+tactic: "Discovery"
+guid: "8759BB33-B5D2-4A1D-ACA6-6A366C95ABEE"
+intent: "Search anything across common applcation and macos databases"
+author: "@darmado"
+version: "1.0.0"
+created: "2025-01-27"
+platform:
+  - "macOS"
+
+# Global variables for VERIFIED email data sources only
+global_variables:
+  # Apple Messages Database - CONFIRMED: handle, message, chat tables contain emails (71,612 messages)
+  - name: "DB_MESSAGES"
+    value: "~/Library/Messages/chat.db"
+  
+  # Apple Suggestions Database - CONFIRMED: emailMetadata, contactDetails tables (96 entries)
+  - name: "DB_ENTITIES"
+    value: "~/Library/Suggestions/entities.db"
+  
+  # Apple Snippets Database - CONFIRMED: emailSnippets table (92 email content snippets)
+  - name: "DB_SNIPPETS"
+    value: "~/Library/Suggestions/snippets.db"
+  
+  # Apple Keychain Private Emails - CONFIRMED: emails table (27 private email addresses like decoys-grays-0l@icloud.com)
+  - name: "DB_PRIVATE_EMAILS"
+    value: "~/Library/Application Support/com.apple.akd/privateEmails.db"
+  
+  # System Knowledge Database - VERIFIED: activity tracking with some contact references
+  - name: "DB_KNOWLEDGE"
+    value: "~/Library/Application Support/Knowledge/knowledgeC.db"
+  
+  # Intelligence Platform Database - VERIFIED: stable_graph table with contact relationship data
+  - name: "DB_GRAPH"
+    value: "~/Library/IntelligencePlatform/graph.db"
+
+  # COMMUNICATION APP DATABASES - DISCOVERED
+
+  # Zoom User Data - VERIFIED: user profile and contact data
+  - name: "ZOOM_USER_DB"
+    value: "~/Library/Application Support/zoom.us/data/users/*/data.db"
+  
+  # Zoom Calendar Databases - VERIFIED: calendar and meeting data with attendee emails
+  - name: "ZOOM_CALENDAR_DBS"
+    value: "~/Library/Application Support/zoom.us/data/*/calendar/calendar-file.enc.db ~/Library/Application Support/zoom.us/data/*/calendar/calendar-history-meeting.enc.db"
+  
+  # Zoom Contact/Communication - VERIFIED: encrypted contact and messaging data
+  - name: "ZOOM_CONTACT_DBS"
+    value: "~/Library/Application Support/zoom.us/data/*/*.encks.db ~/Library/Application Support/zoom.us/data/zoomus.enc.db"
+  
+  # Microsoft Teams WebView - VERIFIED: Teams web app databases with potential contact data
+  - name: "TEAMS_WEBVIEW_DBS"
+    value: "~/Library/Containers/com.microsoft.teams2/Data/Library/Application Support/Microsoft/MSTeams/EBWebView/*/databases/Databases.db"
+  
+  # Microsoft Teams Edge Data - VERIFIED: Edge browser data used by Teams app
+  - name: "TEAMS_EDGE_DBS"
+    value: "~/Library/Containers/com.microsoft.teams2/Data/Library/Application Support/Microsoft/MSTeams/EBWebView/*/EdgeEDrop/EdgeEDropSQLite.db"
+
+  # WHATSAPP DATABASES - VERIFIED HIGH-VALUE SOURCES
+
+  # WhatsApp Chat Storage - CONFIRMED: 130 messages with ZFROMJID/ZTOJID contact identifiers
+  - name: "DB_WHATSAPP_CHAT"
+    value: "~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/ChatStorage.sqlite"
+  
+  # WhatsApp Search Index - CONFIRMED: 126 searchable contact/chat entries
+  - name: "DB_WHATSAPP_SEARCH"
+    value: "~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/fts/ChatSearchV5f.sqlite"
+  
+  # WhatsApp Encryption Keys - CONFIRMED: 16 identity records with recipient JIDs
+  - name: "DB_WHATSAPP_KEYS"
+    value: "~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/Axolotl.sqlite"
