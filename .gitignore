@@ -13,9 +13,10 @@ logs
 _TODO
 STIX
 
-# DEV files
+# DEV scripts
 *.dev.*
 *.DEV.*
+*.dev
 
 # Test Tools
 .tools/

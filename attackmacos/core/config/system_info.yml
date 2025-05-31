@@ -1,0 +1,306 @@
+procedure_name: system_info
+ttp_id: T1082
+tactic: Discovery
+guid: 03c1592c-5eef-42df-aee8-68cb47a0418d
+intent: Discovers detailed system information on macOS systems using native commands
+  for enumeration.
+author: '@darmado'
+version: 1.0.0
+created: '2025-01-27'
+updated: '2025-05-30'
+platform:
+- macOS
+detection:
+- ioc: sw_vers command execution
+  analysis: System version discovery using sw_vers command
+  rule_sigma: ''
+  rule_elastic: ''
+  rule_splunk: ''
+  rule_block: ''
+- ioc: system_profiler command execution
+  analysis: Hardware profiling using system_profiler command
+  rule_sigma: ''
+  rule_elastic: ''
+  rule_splunk: ''
+  rule_block: ''
+resources:
+- link: https://attack.mitre.org/techniques/T1082/
+  description: MITRE ATT&CK - System Information Discovery
+- link: https://developer.apple.com/documentation/systemconfiguration
+  description: Apple System Configuration Framework Documentation
+procedure:
+  arguments:
+  - option: --help
+    description: Display help message with detailed command information
+    type: string
+    option_required: false
+    input_required: false
+    input_values: []
+    argument_required: false
+    execute_function: []
+  - option: --verbose
+    description: Enable verbose output with timestamps and user context
+    option_required: false
+    input_required: false
+    input_values: []
+    argument_required: false
+    execute_function: []
+  - option: --all
+    description: Run all system discovery checks (combines all options below)
+    option_required: false
+    input_required: false
+    input_values: []
+    argument_required: false
+    execute_function:
+    - check_basic_system_info
+    - check_hardware_info
+    - check_environment_info
+    - check_network_config
+    - check_boot_security
+    - check_power_info
+  - option: --system
+    description: Basic system information using sw_vers, uname, and hostname commands
+    option_required: false
+    input_required: false
+    input_values: []
+    argument_required: false
+    execute_function:
+    - check_basic_system_info
+  - option: --hardware
+    description: Hardware details using sysctl and system_profiler commands (CPU,
+      memory, serial numbers)
+    option_required: false
+    input_required: false
+    input_values: []
+    argument_required: false
+    execute_function:
+    - check_hardware_info
+  - option: --env
+    description: Environment variables and locale settings using env and locale commands
+    option_required: false
+    input_required: false
+    input_values: []
+    argument_required: false
+    execute_function:
+    - check_environment_info
+  - option: --network
+    description: Network configuration using ifconfig and scutil commands (interfaces,
+      DNS)
+    option_required: false
+    input_required: false
+    input_values: []
+    argument_required: false
+    execute_function:
+    - check_network_config
+  - option: --boot
+    description: Boot and security settings using csrutil and spctl commands (SIP,
+      Gatekeeper)
+    option_required: false
+    input_required: false
+    input_values: []
+    argument_required: false
+    execute_function:
+    - check_boot_security
+  - option: --power
+    description: Power and battery information using system_profiler and ioreg commands
+    option_required: false
+    input_required: false
+    input_values: []
+    argument_required: false
+    execute_function:
+    - check_power_info
+  global_variable:
+  - name: VERBOSE
+    type: boolean
+    default_value: false
+    array_elements: []
+  - name: ALL
+    type: boolean
+    default_value: false
+    array_elements: []
+  - name: SYSTEM
+    type: boolean
+    default_value: false
+    array_elements: []
+  - name: HARDWARE
+    type: boolean
+    default_value: false
+    array_elements: []
+  - name: ENV
+    type: boolean
+    default_value: false
+    array_elements: []
+  - name: NETWORK
+    type: boolean
+    default_value: false
+    array_elements: []
+  - name: BOOT
+    type: boolean
+    default_value: false
+    array_elements: []
+  - name: POWER
+    type: boolean
+    default_value: false
+    array_elements: []
+  functions:
+  - name: check_basic_system_info
+    type: main
+    execute_condition:
+      global_variable: SYSTEM
+      exists: true
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+      check_db_lock:
+        enabled: false
+        database_path: ''
+        exit_on_failure: true
+        error_message: ''
+    code: 'printf "[$(core_get_timestamp)]: user: $USER; msg: Basic System Information\n"
+
+      printf "OS Version:\n$(sw_vers 2>/dev/null)\n"
+
+      printf "Kernel Information:\n$(uname -a 2>/dev/null)\n"
+
+      printf "Host Information:\n$(hostname -f 2>/dev/null)\n"
+
+      '
+  - name: check_hardware_info
+    type: main
+    execute_condition:
+      global_variable: HARDWARE
+      exists: true
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+      check_db_lock:
+        enabled: false
+        database_path: ''
+        exit_on_failure: true
+        error_message: ''
+    code: 'printf "[$(core_get_timestamp)]: user: $USER; msg: Hardware Information\n"
+
+      printf "CPU Information:\n"
+
+      printf "$(sysctl -n machdep.cpu.brand_string 2>/dev/null)\n"
+
+      printf "$(sysctl -n hw.ncpu 2>/dev/null) processors\n"
+
+      printf "Memory Information:\n"
+
+      printf "$(sysctl -n hw.memsize 2>/dev/null) bytes total\n"
+
+      printf "Hardware Model:\n"
+
+      printf "$(system_profiler SPHardwareDataType 2>/dev/null | grep ''Model Name\|Model
+      Identifier\|Serial Number'' 2>/dev/null)\n"
+
+      '
+  - name: check_environment_info
+    type: main
+    execute_condition:
+      global_variable: ENV
+      exists: true
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+      check_db_lock:
+        enabled: false
+        database_path: ''
+        exit_on_failure: true
+        error_message: ''
+    code: 'printf "[$(core_get_timestamp)]: user: $USER; msg: Environment Information\n"
+
+      printf "Environment Variables:\n"
+
+      printf "$(env 2>/dev/null | grep -v ''PASSWORD\|KEY\|SECRET\|TOKEN'' 2>/dev/null)\n"
+
+      printf "Locale Settings:\n"
+
+      printf "$(locale 2>/dev/null)\n"
+
+      '
+  - name: check_network_config
+    type: main
+    execute_condition:
+      global_variable: NETWORK
+      exists: true
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+      check_db_lock:
+        enabled: false
+        database_path: ''
+        exit_on_failure: true
+        error_message: ''
+    code: 'printf "[$(core_get_timestamp)]: user: $USER; msg: Network Configuration\n"
+
+      printf "Network Interfaces:\n"
+
+      printf "$(ifconfig 2>/dev/null)\n"
+
+      printf "DNS Configuration:\n"
+
+      printf "$(scutil --dns 2>/dev/null)\n"
+
+      '
+  - name: check_boot_security
+    type: main
+    execute_condition:
+      global_variable: BOOT
+      exists: true
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+      check_db_lock:
+        enabled: false
+        database_path: ''
+        exit_on_failure: true
+        error_message: ''
+    code: 'printf "[$(core_get_timestamp)]: user: $USER; msg: Boot and Security Settings\n"
+
+      printf "System Integrity Protection Status:\n"
+
+      printf "$(csrutil status 2>/dev/null)\n"
+
+      printf "Gatekeeper Status:\n"
+
+      printf "$(spctl --status 2>/dev/null)\n"
+
+      '
+  - name: check_power_info
+    type: main
+    execute_condition:
+      global_variable: POWER
+      exists: true
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+      check_db_lock:
+        enabled: false
+        database_path: ''
+        exit_on_failure: true
+        error_message: ''
+    code: "printf \"[$(core_get_timestamp)]: user: $USER; msg: Power Information\\\
+      n\"\nprintf \"Power Status:\\n\"\nprintf \"$(system_profiler SPPowerDataType\
+      \ 2>/dev/null)\\n\"\nprintf \"Battery Information:\\n\"\nprintf \"$(ioreg -rn\
+      \ AppleSmartBattery 2>/dev/null)\\n\" \nprintf \"$(ioreg -rn AppleSmartBattery\
+      \ 2>/dev/null)\\n\" "

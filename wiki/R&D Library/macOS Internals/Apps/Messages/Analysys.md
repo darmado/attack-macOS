@@ -333,9 +333,9 @@ This data structure enables:
 
 7. Thread Analysis:
    ```sql
-   thread_originator_guid: null
-   reply_to_guid: null
-   associated_message_guid: null
+   thread_originator_guid: $GUID
+   reply_to_guid: $GUID
+   associated_message_guid: $GUID
    ```
    Intelligence Value: Initial contact, no previous conversation
 

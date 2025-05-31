@@ -302,7 +302,7 @@ def parse_json_data(json_str: str) -> Tuple[str, Dict[str, Any]]:
             'timestamp': data.get('timestamp'),
             'command': data.get('command'),
             'jobId': data.get('jobId'),
-            'dataSource': data.get('dataSource'),
+            'procedure': data.get('procedure'),
             'encoding': data.get('encoding', {}),
             'encryption': data.get('encryption', {}),
             'steganography': data.get('steganography', {})

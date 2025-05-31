@@ -147,7 +147,7 @@ This job can bring a good income to the family, with a minimum monthly income of
             message_source: parseInt(fields[7]) || 0                  // 7
         },
     message: {
-        guid: fields[8],                                              // 8
+        guid: $GUID
         type: {
             is_auto_reply: fields[9] === '1',                         // 9
             is_system_message: fields[10] === '1',                     // 10
@@ -161,7 +161,7 @@ This job can bring a good income to the family, with a minimum monthly income of
         communication: {
             sender: {
                 account: fields[17],                                    // 17
-                account_guid: fields[18],                               // 18
+                account_guid: $GUID
                 phone_number: fields[19],                               // 19
                 country: fields[20],                                    // 20
                 uncanonicalized_id: null,                              
@@ -171,7 +171,7 @@ This job can bring a good income to the family, with a minimum monthly income of
             receiver: {
                 handle_id: parseInt(fields[22]) || null,                // 22
                 account: fields[23],                                    // 23
-                account_guid: fields[24],                               // 24
+                account_guid: $GUID
                 phone_number: fields[25],                               // 25
                 country: fields[26],                                    // 26
                 uncanonicalized_id: null,                              
@@ -215,11 +215,11 @@ This job can bring a good income to the family, with a minimum monthly income of
             }
         },
         threading: {
-            reply_to_guid: fields[51],                                 // 51
-            thread_originator_guid: fields[52],                        // 52
+            reply_to_guid: $GUID
+            thread_originator_guid: $GUID
             thread_originator_part: fields[53],                        // 53
             associated_message: {
-                guid: fields[54],                                      // 54
+                guid: $GUID
                 type: parseInt(fields[55]) || 0,                       // 55
                 range_location: parseInt(fields[56]) || 0,             // 56
                 range_length: parseInt(fields[57]) || 0                // 57

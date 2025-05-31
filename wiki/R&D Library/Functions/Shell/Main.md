@@ -111,7 +111,7 @@ core_main() {
     fi
     
     # Process the output (format, encode, encrypt)
-    processed_output=$(core_process_output "$raw_output" "$data_source")
+    processed_output=$(core_process_output "$raw_output" "$procedure")
     
     # Handle the final output (log, exfil, or display)
     core_transform_output "$processed_output"

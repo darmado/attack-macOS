@@ -152,7 +152,7 @@ Create a function that implements your feature's logic. Name it with the `core_`
 # Purpose: Implement your feature's logic
 # Inputs: $1 - Data to process
 # Outputs: Processed data
-# Side Effects: [Document any side effects]
+# - [Document any side effects]
 core_your_feature() {
     local input_data="$1"
     
@@ -169,7 +169,7 @@ Example (Steganography):
 # Purpose: Apply steganography to data in the processing pipeline
 # Inputs: $1 - Data to hide in steganography
 # Outputs: Status message (actual data is written to file)
-# Side Effects: Creates output image file
+# - Creates output image file
 core_apply_steganography() {
     local data_to_hide="$1"
     local carrier_image=""
@@ -370,7 +370,7 @@ Example (Steganography):
 
 5. **Comprehensive Documentation**: Update the help text with all new options.
 
-6. **Avoid Side Effects**: Document any side effects your feature introduces.
+6. **Avoid Logic**: Document any side effects your feature introduces.
 
 7. **Use POSIX Compatibility**: Ensure your code works with POSIX-compliant shells.
 

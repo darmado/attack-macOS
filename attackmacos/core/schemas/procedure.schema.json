@@ -264,7 +264,7 @@
           "description": "Shell functions that implement the technique",
           "items": {
             "type": "object",
-            "required": ["name", "type", "code"],
+            "required": ["name", "type", "language", "code"],
             "properties": {
               "name": {
                 "type": "string",
@@ -276,6 +276,15 @@
                 "enum": ["main", "helper"],
                 "default": "main",
                 "description": "Function type: 'main' functions execute from arguments, 'helper' functions are called by other functions"
+              },
+              "language": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["shell", "bash", "zsh", "python", "javascript", "jxa", "applescript", "swift", "powershell", "go"]
+                },
+                "minItems": 1,
+                "description": "Programming/scripting languages used by this function for logging and detection purposes"
               },
               "execute_condition": {
                 "type": "object",

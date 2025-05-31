@@ -40,7 +40,7 @@ These fields identify your technique and provide basic information.
 ---
 procedure_name: 1518_edr_discovery
 tactic: Discovery
-guid: 456e7890-e12b-34c5-d678-901234567890
+guid: $GUID
 intent: Discover EDR software installed on macOS systems
 author: "@darmado | https://x.com/darmad0"
 version: "1.0.0"
@@ -169,6 +169,7 @@ The `functions` section contains the script functions that implement your techni
 | Field | Type | Required | Function Names | Description | Example |
 |-------|------|----------|----------------|-------------|---------|
 | **name** | string | ✅ | Use MITRE ATT&CK tactic prefixes (see naming table below) | Function name using adversary language | `discover_edr_processes` |
+| **language** | array | ✅ | Must specify at least one language | Programming/scripting languages used in function | `["shell"]`, `["shell", "python"]` |
 | **opsec** | object | ✅ | N/A | OPSEC requirements | See OPSEC table below |
 | **code** | string | ✅ | N/A | Shell function implementation | See code requirements below |
 
@@ -395,6 +396,33 @@ functions:
 ```
 </details>
 
+### Language Requirements
+
+The `language` field specifies which programming/scripting languages are used in your function. This information is captured in logs to help detection engineers understand the execution profile.
+
+| Supported Languages | Description | Use Case |
+|-------------------|-------------|----------|
+| **shell** | Pure shell/bash commands | Most common - native macOS commands |
+| **python** | Python scripts or one-liners | Complex data processing, JSON handling |
+| **javascript** | JavaScript via JXA or node | macOS automation, application control |
+| **jxa** | JavaScript for Automation | macOS-specific application scripting |
+| **powershell** | PowerShell (via pwsh) | Cross-platform PowerShell commands |
+| **go** | Go binaries or scripts | High-performance utilities |
+
+**Language Field Examples:**
+```yaml
+# Single language (most common)
+language: ["shell"]
+
+# Multiple languages in one function
+language: ["shell", "python"]
+
+# JXA for macOS automation
+language: ["jxa"]
+```
+
+**Important**: Detection engineers use this field to understand what languages/interpreters were executed, making it easier to create accurate detection rules and understand attack patterns.
+
 ---
 
 ## Complete Example
@@ -407,7 +435,7 @@ functions:
 procedure_name: 1518_edr_discovery
 ttp_id: T1518
 tactic: Discovery
-guid: 456e7890-e12b-34c5-d678-901234567890
+guid: $GUID
 intent: Discover EDR software installed on macOS systems
 author: "@darmado | https://x.com/darmad0"
 version: "1.0.0"
@@ -436,6 +464,7 @@ procedure:
 
   functions:
     - name: discover_edr_processes
+      language: ["shell"]
       opsec:
         check_fda:
           enabled: false
@@ -457,6 +486,7 @@ procedure:
         }
 
     - name: discover_edr_files
+      language: ["shell"]
       opsec:
         check_fda:
           enabled: false

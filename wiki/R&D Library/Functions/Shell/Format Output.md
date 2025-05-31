@@ -29,7 +29,7 @@ core_format_output() {
     
     case "$format" in
         json|json-lines)
-            formatted=$(core_format_as_json "$output" "$data_source" "$is_encoded" "$encoding" "$is_encrypted" "$encryption" "$is_steganography")
+            formatted=$(core_format_as_json "$output" "$procedure" "$is_encoded" "$encoding" "$is_encrypted" "$encryption" "$is_steganography")
             ;;
         csv)
             formatted=$(core_format_as_csv "$output")

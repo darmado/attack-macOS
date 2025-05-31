@@ -28,7 +28,7 @@ Always refer to the actual script implementations for the most up-to-date and co
 
 ## Utility Functions
 
-| Function Name | Description | Parameters | Returns | Side Effects |
+| Function Name | Description | Parameters | Returns | Logic |
 |---------------|-------------|------------|---------|--------------|
 | `check_perms` | Check file permissions | `file`: str, `permission`: str | bool | Logs permission status |
 | `check_perms_tcc` | Check if the app has Full Disk Access | None | bool | Logs FDA status |

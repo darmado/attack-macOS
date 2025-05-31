@@ -1,0 +1,375 @@
+procedure_name: local_accounts
+ttp_id: T1087.001
+tactic: Discovery
+guid: 858d5344-87cc-4ce8-9662-242cc19d6f1b
+intent: Identifies valid local accounts and groups on macOS systems using various
+  native commands
+author: '@darmado | https://x.com/darmad0'
+created: '2023-10-06'
+updated: '2025-05-30'
+version: 1.5.0
+procedure:
+  arguments:
+  - option: -a|--all
+    description: Run all account discovery techniques
+    execute_function:
+    - list_user_dirs
+    - list_dscl_users
+    - extract_passwd_users
+    - show_id_info
+    - list_logged_users
+    - read_loginwindow_plist
+    - list_groups_dscacheutil
+    - list_groups_dscl
+    - list_groups_etc
+    - list_groups_id
+    - list_groups_cmd
+    - list_dscacheutil_users
+    - find_user_defaults
+    - show_last_logins
+    - list_user_profiles
+    - show_user_profile_details
+  - option: -d|--user-dirs
+    description: List user directories using 'ls -la /Users'
+    execute_function:
+    - list_user_dirs
+  - option: -l|--dscl-users
+    description: List users using 'dscl . -list /Users'
+    execute_function:
+    - list_dscl_users
+  - option: -p|--passwd
+    description: Display content of '/etc/passwd'
+    execute_function:
+    - extract_passwd_users
+  - option: -i|--id
+    description: Show current user info using 'id' command
+    execute_function:
+    - show_id_info
+  - option: -w|--who
+    description: List logged-in users with 'who' command
+    execute_function:
+    - list_logged_users
+  - option: -s|--plist
+    description: Read user list from loginwindow plist
+    execute_function:
+    - read_loginwindow_plist
+  - option: -m|--dscacheutil
+    description: List local users using 'dscacheutil -q user'
+    execute_function:
+    - list_dscacheutil_users
+  - option: -g|--all-groups
+    description: Run all group discovery techniques
+    execute_function:
+    - list_groups_dscacheutil
+    - list_groups_dscl
+    - list_groups_etc
+    - list_groups_id
+    - list_groups_cmd
+  - option: -gc|--cache-groups
+    description: List groups using 'dscacheutil -q group'
+    execute_function:
+    - list_groups_dscacheutil
+  - option: -gd|--dscl-groups
+    description: List groups using 'dscl . -list /Groups'
+    execute_function:
+    - list_groups_dscl
+  - option: -ge|--etc-groups
+    description: List groups using 'grep /etc/group'
+    execute_function:
+    - list_groups_etc
+  - option: -gi|--id-groups
+    description: List groups using 'id -G'
+    execute_function:
+    - list_groups_id
+  - option: -gg|--groups-cmd
+    description: List groups using 'groups' command
+    execute_function:
+    - list_groups_cmd
+  - option: -df|--defaults-find
+    description: Find user account info using 'defaults find'
+    execute_function:
+    - find_user_defaults
+  - option: -lt|--last-logins
+    description: Show last user logins using 'last' command
+    execute_function:
+    - show_last_logins
+  - option: -pf|--profiles
+    description: List and show user configuration profiles
+    execute_function:
+    - list_user_profiles
+    - show_user_profile_details
+  - option: -pa|--profiles-all
+    description: Show all configuration profiles (requires sudo)
+    execute_function:
+    - show_all_profiles
+  global_variable:
+  - name: LOG_FILE
+    type: string
+    default_value: ${TTP_ID}_${NAME}.log
+  - name: CMD_LIST_USER_DIRS
+    type: string
+    default_value: ls -la /Users
+  - name: CMD_LIST_DSCL_USERS
+    type: string
+    default_value: dscl . -list /Users
+  - name: CMD_EXTRACT_PASSWD_USERS
+    type: string
+    default_value: cat /etc/passwd
+  - name: CMD_SHOW_ID_INFO
+    type: string
+    default_value: id
+  - name: CMD_LIST_LOGGED_USERS
+    type: string
+    default_value: who
+  - name: CMD_READ_LOGINWINDOW_PLIST
+    type: string
+    default_value: defaults read /Library/Preferences/com.apple.loginwindow.plist
+  - name: CMD_LIST_GROUPS_DSCACHEUTIL
+    type: string
+    default_value: dscacheutil -q group
+  - name: CMD_LIST_GROUPS_DSCL
+    type: string
+    default_value: dscl . -list /Groups
+  - name: CMD_LIST_GROUPS_ETC
+    type: string
+    default_value: grep -v '^#' /etc/group
+  - name: CMD_LIST_GROUPS_ID
+    type: string
+    default_value: id -G
+  - name: CMD_LIST_GROUPS_CMD
+    type: string
+    default_value: groups
+  - name: CMD_LIST_DSCACHEUTIL_USERS
+    type: string
+    default_value: dscacheutil -q user
+  - name: CMD_FIND_USER_DEFAULTS
+    type: string
+    default_value: defaults find NSGlobalDomain
+  - name: CMD_SHOW_LAST_LOGINS
+    type: string
+    default_value: last -n 20
+  - name: CMD_LIST_USER_PROFILES
+    type: string
+    default_value: profiles list
+  - name: CMD_SHOW_USER_PROFILE
+    type: string
+    default_value: profiles show -user
+  - name: CMD_SHOW_ALL_PROFILES
+    type: string
+    default_value: profiles show -all
+  functions:
+  - name: get_user
+    type: helper
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "get_user() {\n    USER=$(whoami)\n}\n"
+  - name: get_timestamp
+    type: helper
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "get_timestamp() {\n    date +\"%Y-%m-%d %H:%M:%S\"\n}\n"
+  - name: list_user_dirs
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+      check_permission:
+        type: directory
+        path: /Users
+        read: true
+        exit_on_failure: true
+    code: "list_user_dirs() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
+      \ $USER; msg: Discovered user directories; command: \\\"$CMD_LIST_USER_DIRS\\\
+      \"\\n\"\n    $CMD_LIST_USER_DIRS\n    return 0\n}\n"
+  - name: list_dscl_users
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "list_dscl_users() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
+      \ $USER; msg: Listed users; command: \\\"$CMD_LIST_DSCL_USERS\\\"\\n\"\n   \
+      \ $CMD_LIST_DSCL_USERS\n    return 0\n}\n"
+  - name: extract_passwd_users
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+      check_permission:
+        type: file
+        path: /etc/passwd
+        read: true
+        exit_on_failure: true
+    code: "extract_passwd_users() {\n    get_user\n    printf \"[$(get_timestamp)]:\
+      \ user: $USER; msg: Retrieved content of /etc/passwd file; command: \\\"$CMD_EXTRACT_PASSWD_USERS\\\
+      \"\\n\"\n    $CMD_EXTRACT_PASSWD_USERS\n    return 0\n}\n"
+  - name: show_id_info
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "show_id_info() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
+      \ $USER; msg: Obtained current user info; command: \\\"$CMD_SHOW_ID_INFO\\\"\
+      \\n\"\n    $CMD_SHOW_ID_INFO\n    return 0\n}\n"
+  - name: list_logged_users
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "list_logged_users() {\n    get_user\n    printf \"[timestamp=$(get_timestamp)]\
+      \ user: $USER; msg: Listed logged in users; command: \\\"$CMD_LIST_LOGGED_USERS\\\
+      \"\\n\"\n    $CMD_LIST_LOGGED_USERS\n    return 0\n}\n"
+  - name: read_loginwindow_plist
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: true
+      check_permission:
+        type: file
+        path: /Library/Preferences/com.apple.loginwindow.plist
+        read: true
+        exit_on_failure: true
+    code: "read_loginwindow_plist() {\n    get_user\n    printf \"[$(get_timestamp)]:\
+      \ user: $USER; msg: Read content of loginwindow plist; command: \\\"$CMD_READ_LOGINWINDOW_PLIST\\\
+      \"\\n\"\n    $CMD_READ_LOGINWINDOW_PLIST\n    return 0\n}\n"
+  - name: list_groups_dscacheutil
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "list_groups_dscacheutil() {\n    get_user\n    printf \"[$(get_timestamp)]:\
+      \ user: $USER; msg: Listed groups; command: \\\"$CMD_LIST_GROUPS_DSCACHEUTIL\\\
+      \"\\n\"\n    $CMD_LIST_GROUPS_DSCACHEUTIL\n    return 0\n}\n"
+  - name: list_groups_dscl
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "list_groups_dscl() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
+      \ $USER; msg: Listed groups; command: \\\"$CMD_LIST_GROUPS_DSCL\\\"\\n\"\n \
+      \   $CMD_LIST_GROUPS_DSCL\n    return 0\n}\n"
+  - name: list_groups_etc
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+      check_permission:
+        type: file
+        path: /etc/group
+        read: true
+        exit_on_failure: true
+    code: "list_groups_etc() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
+      \ $USER; msg: Listed groups from /etc/group; command: \\\"$CMD_LIST_GROUPS_ETC\\\
+      \"\\n\"\n    $CMD_LIST_GROUPS_ETC\n    return 0\n}\n"
+  - name: list_groups_id
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "list_groups_id() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
+      \ $USER; msg: Listed groups for the current user; command: \\\"$CMD_LIST_GROUPS_ID\\\
+      \"\\n\"\n    $CMD_LIST_GROUPS_ID\n    return 0\n}\n"
+  - name: list_groups_cmd
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "list_groups_cmd() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
+      \ $USER; msg: Listed groups for the current user; command: \\\"$CMD_LIST_GROUPS_CMD\\\
+      \"\\n\"\n    $CMD_LIST_GROUPS_CMD\n    return 0\n}\n"
+  - name: list_dscacheutil_users
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "list_dscacheutil_users() {\n    get_user\n    printf \"[$(get_timestamp)]:\
+      \ user: $USER; msg: Listed local users; command: \\\"$CMD_LIST_DSCACHEUTIL_USERS\\\
+      \"\\n\"\n    $CMD_LIST_DSCACHEUTIL_USERS\n    return 0\n} "
+  - name: find_user_defaults
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "find_user_defaults() {\n    get_user\n    printf \"[$(get_timestamp)]:\
+      \ user: $USER; msg: Found user account defaults; command: \\\"$CMD_FIND_USER_DEFAULTS\\\
+      \"\\n\"\n    $CMD_FIND_USER_DEFAULTS\n    return 0\n}"
+  - name: show_last_logins
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "show_last_logins() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
+      \ $USER; msg: Retrieved last login records; command: \\\"$CMD_SHOW_LAST_LOGINS\\\
+      \"\\n\"\n    $CMD_SHOW_LAST_LOGINS\n    return 0\n}"
+  - name: list_user_profiles
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "list_user_profiles() {\n    get_user\n    printf \"[$(get_timestamp)]:\
+      \ user: $USER; msg: Listed user configuration profiles; command: \\\"$CMD_LIST_USER_PROFILES\\\
+      \"\\n\"\n    $CMD_LIST_USER_PROFILES\n    return 0\n}"
+  - name: show_user_profile_details
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "show_user_profile_details() {\n    get_user\n    # Check if profiles exist\
+      \ for user first\n    local profile_check\n    profile_check=$($CMD_LIST_USER_PROFILES\
+      \ 2>/dev/null)\n    if [ -n \"$profile_check\" ] && ! echo \"$profile_check\"\
+      \ | grep -q \"no configuration profiles\"; then\n        printf \"[$(get_timestamp)]:\
+      \ user: $USER; msg: Retrieved user profile details; command: \\\"$CMD_SHOW_USER_PROFILE\
+      \ $USER\\\"\\n\"\n        $CMD_SHOW_USER_PROFILE \"$USER\"\n    else\n     \
+      \   printf \"[$(get_timestamp)]: user: $USER; msg: No configuration profiles\
+      \ found for user\\n\"\n    fi\n    return 0\n}"
+  - name: show_all_profiles
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+      check_sudo:
+        enabled: true
+        exit_on_failure: true
+    code: "show_all_profiles() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
+      \ $USER; msg: Retrieved all configuration profiles (requires sudo); command:\
+      \ \\\"$CMD_SHOW_ALL_PROFILES\\\"\\n\"\n    $CMD_SHOW_ALL_PROFILES\n    return\
+      \ 0\n}"

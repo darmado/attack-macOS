@@ -553,7 +553,7 @@ class MsgIntel {
                 }
             },
             message: {
-                guid: msg.guid,
+                guid: $GUID
                 type: {
                     is_empty: Boolean(msg.is_empty),
                     is_archive: Boolean(msg.is_archive),
@@ -566,7 +566,7 @@ class MsgIntel {
                 communication: {
                     sender: {
                         account: msg.account,
-                        account_guid: msg.account_guid,
+                        account_guid: $GUID
                         service: msg.service
                     }
                 },

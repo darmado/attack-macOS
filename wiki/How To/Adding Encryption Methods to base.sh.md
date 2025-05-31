@@ -30,7 +30,7 @@ Implement your encryption function after the existing encryption functions:
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: Encrypted data in appropriate format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to your method
 encrypt_with_yourmethod() {
     local data="$1"

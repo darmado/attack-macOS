@@ -1,0 +1,111 @@
+procedure_name: emails
+ttp_id: T1087.003
+tactic: Discovery
+guid: 72dbdc57-deeb-4947-9618-49ed4897edc9
+intent: Discover email addresses from verified macOS databases containing confirmed
+  email data
+author: '@darmado'
+version: 1.0.0
+created: '2025-01-27'
+updated: '2025-05-30'
+platform:
+- macOS
+procedure:
+  arguments:
+  - option: --messages
+    description: Extract emails from Apple Messages database
+    execute_function:
+    - discover_messages_emails
+  - option: --entities
+    description: Extract emails from Apple Suggestions database
+    execute_function:
+    - discover_entities_emails
+  - option: --whatsapp
+    description: Extract emails from WhatsApp message content
+    execute_function:
+    - discover_whatsapp_emails
+  - option: --all
+    description: Extract emails from all verified sources
+    execute_function:
+    - discover_messages_emails
+    - discover_entities_emails
+    - discover_whatsapp_emails
+  global_variable:
+  - name: INPUT_DOMAIN
+    type: string
+    default_value: ''
+  - name: DB_MESSAGES
+    type: string
+    default_value: $HOME/Library/Messages/chat.db
+  - name: DB_ENTITIES
+    type: string
+    default_value: $HOME/Library/Suggestions/entities.db
+  - name: DB_WHATSAPP_CHAT
+    type: string
+    default_value: $HOME/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/ChatStorage.sqlite
+  functions:
+  - name: discover_messages_emails
+    type: main
+    language:
+    - shell
+    code: "discover_messages_emails() {\n    local db_path=\"${DB_MESSAGES}\"\n  \
+      \  if [ ! -f \"${db_path}\" ]; then\n      printf \"[-] Messages database not\
+      \ found: %s\\n\" \"${db_path}\"\n      return 1\n    fi\n    \n    printf \"\
+      [+] Extracting emails from Messages database...\\n\"\n    \n    # Extract from\
+      \ handle.id (primary source - 34 emails)\n    printf \"=== HANDLE.ID EMAILS\
+      \ ===\\n\"\n    sqlite3 \"${db_path}\" \"\n    SELECT DISTINCT id as email_address\n\
+      \    FROM handle \n    WHERE id LIKE '%@%' \n    ORDER BY id;\" 2>/dev/null\n\
+      \    \n    # Extract from message.account (sender accounts - 2 emails with high\
+      \ message counts)\n    printf \"\\n=== MESSAGE.ACCOUNT EMAILS ===\\n\"\n   \
+      \ sqlite3 \"${db_path}\" \"\n    SELECT DISTINCT account as email_address\n\
+      \    FROM message \n    WHERE account LIKE '%@%' \n    ORDER BY account;\" 2>/dev/null\n\
+      \    \n    # Extract from message.destination_caller_id (recipients - 7 emails)\n\
+      \    printf \"\\n=== DESTINATION_CALLER_ID EMAILS ===\\n\"\n    sqlite3 \"${db_path}\"\
+      \ \"\n    SELECT DISTINCT destination_caller_id as email_address\n    FROM message\
+      \ \n    WHERE destination_caller_id LIKE '%@%' \n    ORDER BY destination_caller_id;\"\
+      \ 2>/dev/null\n    \n    # Extract from chat.account_login (user credentials\
+      \ - 2 emails)\n    printf \"\\n=== CHAT.ACCOUNT_LOGIN EMAILS ===\\n\"\n    sqlite3\
+      \ \"${db_path}\" \"\n    SELECT DISTINCT account_login as email_address\n  \
+      \  FROM chat \n    WHERE account_login LIKE '%@%' \n    ORDER BY account_login;\"\
+      \ 2>/dev/null\n    \n    return 0\n}\n"
+  - name: discover_entities_emails
+    type: main
+    language:
+    - shell
+    code: "discover_entities_emails() {\n    local db_path=\"${DB_ENTITIES}\"\n  \
+      \  if [ ! -f \"${db_path}\" ]; then\n      printf \"[-] Entities database not\
+      \ found: %s\\n\" \"${db_path}\"\n      return 1\n    fi\n    \n    printf \"\
+      [+] Extracting emails from Apple Suggestions entities.db...\\n\"\n    \n   \
+      \ # Extract from contactDetails where type=2 (email addresses - 28 emails)\n\
+      \    printf \"=== CONTACTDETAILS EMAIL ADDRESSES (type=2) ===\\n\"\n    sqlite3\
+      \ \"${db_path}\" \"\n    SELECT DISTINCT value as email_address\n    FROM contactDetails\
+      \ \n    WHERE type = 2 AND value LIKE '%@%'\n    ORDER BY value;\" 2>/dev/null\n\
+      \    \n    # Extract from emailMetadata.author (sender emails with metadata\
+      \ - 28 emails)\n    printf \"\\n=== EMAILMETADATA SENDER EMAILS ===\\n\"\n \
+      \   sqlite3 \"${db_path}\" \"\n    SELECT DISTINCT author as email_address\n\
+      \    FROM emailMetadata \n    WHERE author LIKE '%@%'\n    ORDER BY author;\"\
+      \ 2>/dev/null\n    \n    # Extract from emailMetadata.key (message identifiers\
+      \ - 69 emails)\n    printf \"\\n=== EMAILMETADATA KEY FIELD EMAILS ===\\n\"\n\
+      \    sqlite3 \"${db_path}\" \"\n    SELECT DISTINCT \n        CASE \n      \
+      \      WHEN key LIKE '%iMessage;-;%@%' THEN \n                SUBSTR(key, INSTR(key,\
+      \ 'iMessage;-;') + 10)\n            ELSE key\n        END as email_address\n\
+      \    FROM emailMetadata \n    WHERE key LIKE '%@%'\n    ORDER BY email_address;\"\
+      \ 2>/dev/null\n    \n    return 0\n}\n"
+  - name: discover_whatsapp_emails
+    type: main
+    language:
+    - shell
+    code: "discover_whatsapp_emails() {\n    local db_path=\"${DB_WHATSAPP_CHAT}\"\
+      \n    if [ ! -f \"${db_path}\" ]; then\n      printf \"[-] WhatsApp chat database\
+      \ not found: %s\\n\" \"${db_path}\"\n      return 1\n    fi\n    \n    printf\
+      \ \"[+] Extracting emails from WhatsApp message content...\\n\"\n    \n    #\
+      \ Extract email addresses from message text content (ZTEXT field)\n    printf\
+      \ \"=== WHATSAPP MESSAGE CONTENT EMAILS ===\\n\"\n    sqlite3 \"${db_path}\"\
+      \ \"\n    SELECT DISTINCT ZTEXT as message_content\n    FROM ZWAMESSAGE \n \
+      \   WHERE ZTEXT LIKE '%@gmail.%' \n       OR ZTEXT LIKE '%@yahoo.%' \n     \
+      \  OR ZTEXT LIKE '%@hotmail.%' \n       OR ZTEXT LIKE '%@outlook.%' \n     \
+      \  OR ZTEXT LIKE '%@icloud.%'\n       OR ZTEXT LIKE '%@apple.%'\n       OR (ZTEXT\
+      \ LIKE '%@%.%' \n           AND ZTEXT NOT LIKE '%@s.whatsapp.net%' \n      \
+      \     AND ZTEXT NOT LIKE '%@g.us%'\n           AND ZTEXT NOT LIKE '%@media.whatsapp.com%'\n\
+      \           AND LENGTH(ZTEXT) < 200)\n    ORDER BY message_content;\" 2>/dev/null\n\
+      \    \n    return 0\n}\n"

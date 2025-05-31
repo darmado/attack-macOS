@@ -1,0 +1,315 @@
+procedure_name: security_software
+ttp_id: T1518
+tactic: Discovery
+guid: 63e8a56a-c538-489d-a467-74087fc7dde6
+intent: Comprehensive security software discovery for macOS systems including EDR,
+  AV, firewalls, and built-in protections
+author: '@darmado | https://x.com/darmad0'
+version: 2.0.0
+created: '2025-01-27'
+updated: '2025-05-30'
+procedure:
+  arguments:
+  - option: --edr
+    description: Discover all EDR solutions using ps, system_profiler, and find commands
+    execute_function:
+    - discover_edr_all
+  - option: --edr-ps
+    description: Check for EDR processes using ps aux with perl pattern matching
+    execute_function:
+    - discover_edr_processes
+  - option: --edr-info
+    description: Get detailed EDR information using system_profiler and find commands
+    execute_function:
+    - discover_edr_info
+  - option: --av
+    description: Discover antivirus products using system_profiler and find commands
+    execute_function:
+    - discover_av_all
+  - option: --ost
+    description: Discover Objective-See security tools using system_profiler and find
+      commands
+    execute_function:
+    - discover_ost_apps
+  - option: --mrt-apps
+    description: Discover malware removal tools using system_profiler and find commands
+    execute_function:
+    - discover_mrt_apps
+  - option: --log-forwarder
+    description: Discover log forwarding applications using system_profiler and find
+      commands
+    execute_function:
+    - discover_logforward_apps
+  - option: --vpn
+    description: Discover VPN applications using system_profiler and find commands
+    execute_function:
+    - discover_vpn_apps
+  - option: --hids
+    description: Discover Host-based Intrusion Detection Systems using system_profiler
+      and find commands
+    execute_function:
+    - discover_hids_apps
+  - option: --tcc
+    description: Check TCC database and permissions using sqlite3 and pgrep commands
+    execute_function:
+    - discover_tcc_info
+  - option: --gatekeeper
+    description: Check Gatekeeper status using spctl command
+    execute_function:
+    - discover_gatekeeper_info
+  - option: --xprotect
+    description: Check XProtect malware detection service using pgrep and defaults
+      commands
+    execute_function:
+    - discover_xprotect_info
+  - option: --mrt
+    description: Check Malware Removal Tool service using pgrep and defaults commands
+    execute_function:
+    - discover_mrt_info
+  - option: --firewall
+    description: Check macOS Application Firewall configuration using defaults command
+    execute_function:
+    - discover_firewall_info
+  - option: --quarantine
+    description: Check File Quarantine system status using find and xattr commands
+    execute_function:
+    - discover_quarantine_info
+  global_variable:
+  - name: EDR_PATTERN
+    type: string
+    default_value: (sentinel|crowdstrike|carbonblack|cylance|endgame|cortex|defender|bitdefender|sophos|kaspersky|trend|symantec|mcafee|norton|avast|avg|malwarebytes|eset|f-secure|panda|webroot|avira|gdata|emsisoft)
+  - name: AV_PATTERN
+    type: string
+    default_value: (antivirus|anti-virus|defender|bitdefender|sophos|kaspersky|trend|symantec|mcafee|norton|avast|avg|malwarebytes|eset|f-secure|panda|webroot|avira|gdata|emsisoft)
+  - name: OST_PATTERN
+    type: string
+    default_value: (lulu|blockblock|knockknock|reikey|whatsyoursign|processmonitor|filesetup|netiquette|oversight|dnsmonitor|taskexplorer)
+  - name: MRT_PATTERN
+    type: string
+    default_value: (mrt|malware.removal|xprotect|yara|clamav|maldet)
+  - name: LOGFORWARD_PATTERN
+    type: string
+    default_value: (splunk|elastic|logstash|fluentd|rsyslog|syslog|graylog|sumo|datadog|newrelic)
+  - name: VPN_PATTERN
+    type: string
+    default_value: (vpn|openvpn|wireguard|tunnelblick|viscosity|nordvpn|expressvpn|surfshark|cyberghost|purevpn)
+  - name: HIDS_PATTERN
+    type: string
+    default_value: (hids|ossec|samhain|aide|tripwire|rkhunter|chkrootkit|tiger|lynis)
+  - name: TCC_SYSTEM_DB
+    type: string
+    default_value: /Library/Application Support/com.apple.TCC/TCC.db
+  - name: TCC_USER_DB
+    type: string
+    default_value: $HOME/Library/Application Support/com.apple.TCC/TCC.db
+  functions:
+  - name: discover_edr_all
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "discover_edr_all() {\n    discover_edr_processes\n    raw_output=\"$raw_output\"\
+      $'\\n'\n    discover_edr_info\n}\n"
+  - name: discover_edr_processes
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "discover_edr_processes() {\n    local edr_result=$(ps aux | perl -ne \"\
+      print if /$EDR_PATTERN/i\" | head -20)\n    if [ -n \"$edr_result\" ]; then\n\
+      \        $CMD_PRINTF \"EDR_PROCESS|active|%s\\n\" \"$edr_result\"\n    else\n\
+      \        $CMD_PRINTF \"EDR_PROCESS|inactive|\\n\"\n    fi\n}\n"
+  - name: discover_edr_info
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+      check_permission:
+        type: directory
+        path: /Library/LaunchDaemons
+        read: true
+        write: false
+        execute: false
+        exit_on_failure: false
+    code: "discover_edr_info() {\n    local edr_apps=$(system_profiler SPApplicationsDataType\
+      \ | perl -00 -ne \"print if /$EDR_PATTERN/i\")\n    if [ -n \"$edr_apps\" ];\
+      \ then\n        $CMD_PRINTF \"EDR_APPS|installed|%s\\n\" \"$edr_apps\"\n   \
+      \ else\n        $CMD_PRINTF \"EDR_APPS|none|\\n\"\n    fi\n    \n    # Check\
+      \ launch daemons\n    local daemon_result=$(find /Library/LaunchDaemons -name\
+      \ \"*.plist\" -exec grep -l -i -E \"$EDR_PATTERN\" {} \\; 2>/dev/null)\n   \
+      \ if [ -n \"$daemon_result\" ]; then\n        $CMD_PRINTF \"EDR_DAEMONS|system|%s\\\
+      n\" \"$daemon_result\"\n    else\n        $CMD_PRINTF \"EDR_DAEMONS|none|\\\
+      n\"\n    fi\n    \n    # Check launch agents\n    local agent_result=$(find\
+      \ /Library/LaunchAgents ~/Library/LaunchAgents -name \"*.plist\" -exec grep\
+      \ -l -i -E \"$EDR_PATTERN\" {} \\; 2>/dev/null)\n    if [ -n \"$agent_result\"\
+      \ ]; then\n        $CMD_PRINTF \"EDR_AGENTS|user|%s\\n\" \"$agent_result\"\n\
+      \    else\n        $CMD_PRINTF \"EDR_AGENTS|none|\\n\"\n    fi\n}\n"
+  - name: discover_security_apps
+    type: helper
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+      check_permission:
+        type: directory
+        path: /Library/LaunchDaemons
+        read: true
+        write: false
+        execute: false
+        exit_on_failure: false
+    code: "discover_security_apps() {\n    local category=\"$1\"\n    local pattern=\"\
+      $2\"\n    local output=\"\"\n    \n    # Get applications from system profiler\n\
+      \    local apps_result=$(system_profiler SPApplicationsDataType | perl -00 -ne\
+      \ \"print if /$pattern/i\")\n    if [ -n \"$apps_result\" ]; then\n        output=\"\
+      ${category^^}_APPS|installed|$apps_result\"\n    else\n        output=\"${category^^}_APPS|none|\"\
+      \n    fi\n    \n    # Check launch daemons\n    local daemon_result=$(find /Library/LaunchDaemons\
+      \ -name \"*.plist\" -exec grep -l -i -E \"$pattern\" {} \\; 2>/dev/null)\n \
+      \   if [ -n \"$daemon_result\" ]; then\n        output=\"$output\"$'\\n'\"${category^^}_DAEMONS|system|$daemon_result\"\
+      \n    else\n        output=\"$output\"$'\\n'\"${category^^}_DAEMONS|none|\"\n\
+      \    fi\n    \n    # Check launch agents\n    local agent_result=$(find /Library/LaunchAgents\
+      \ ~/Library/LaunchAgents -name \"*.plist\" -exec grep -l -i -E \"$pattern\"\
+      \ {} \\; 2>/dev/null)\n    if [ -n \"$agent_result\" ]; then\n        output=\"\
+      $output\"$'\\n'\"${category^^}_AGENTS|user|$agent_result\"\n    else\n     \
+      \   output=\"$output\"$'\\n'\"${category^^}_AGENTS|none|\"\n    fi\n    \n \
+      \   $CMD_PRINTF \"%s\\n\" \"$output\"\n}\n"
+  - name: discover_av_all
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "discover_av_all() {\n    discover_security_apps \"antivirus\" \"$AV_PATTERN\"\
+      \n}\n"
+  - name: discover_ost_apps
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "discover_ost_apps() {\n    discover_security_apps \"objective-see\" \"\
+      $OST_PATTERN\"\n}\n"
+  - name: discover_mrt_apps
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "discover_mrt_apps() {\n    discover_security_apps \"malware-removal\" \"\
+      $MRT_PATTERN\"\n}\n"
+  - name: discover_logforward_apps
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "discover_logforward_apps() {\n    discover_security_apps \"log-forwarding\"\
+      \ \"$LOGFORWARD_PATTERN\"\n}\n"
+  - name: discover_vpn_apps
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "discover_vpn_apps() {\n    discover_security_apps \"vpn\" \"$VPN_PATTERN\"\
+      \n}\n"
+  - name: discover_hids_apps
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "discover_hids_apps() {\n    discover_security_apps \"hids\" \"$HIDS_PATTERN\"\
+      \n}\n"
+  - name: discover_tcc_info
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: true
+    code: "discover_tcc_info() {\n    if pgrep syspolicyd > /dev/null; then\n    \
+      \    local tcc_status=\"TCC_SERVICE|syspolicyd|active\"\n        if [ -f \"\
+      $TCC_SYSTEM_DB\" ] && [ -r \"$TCC_SYSTEM_DB\" ]; then\n            local permissions=$($CMD_SQLITE3\
+      \ \"$TCC_SYSTEM_DB\" \"SELECT client, service, allowed FROM access LIMIT 5\"\
+      \ 2>/dev/null)\n            if [ -n \"$permissions\" ]; then\n             \
+      \   tcc_status=\"$tcc_status\"$'\\n'\"TCC_PERMISSIONS|system|$permissions\"\n\
+      \            fi\n        fi\n        $CMD_PRINTF \"%s\\n\" \"$tcc_status\"\n\
+      \    else\n        $CMD_PRINTF \"TCC_SERVICE|syspolicyd|inactive\\n\"\n    fi\n\
+      }\n"
+  - name: discover_gatekeeper_info
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "discover_gatekeeper_info() {\n    local gatekeeper_status=$(spctl --status\
+      \ 2>/dev/null)\n    if echo \"$gatekeeper_status\" | $CMD_GREP -q \"enabled\"\
+      ; then\n        local assessment=$(spctl --assess --verbose /Applications/Safari.app\
+      \ 2>/dev/null | $CMD_HEAD -3)\n        $CMD_PRINTF \"GATEKEEPER|enabled|%s\\\
+      n\" \"$assessment\"\n    else\n        $CMD_PRINTF \"GATEKEEPER|disabled|\\\
+      n\"\n    fi\n}\n"
+  - name: discover_xprotect_info
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "discover_xprotect_info() {\n    local xprotect_file=\"/System/Library/CoreServices/XProtect.bundle/Contents/Resources/XProtect.meta.plist\"\
+      \n    if pgrep XProtectService > /dev/null; then\n        local version=$(defaults\
+      \ read \"$xprotect_file\" Version 2>/dev/null || echo \"Unknown\")\n       \
+      \ $CMD_PRINTF \"XPROTECT|active|version:%s\\n\" \"$version\"\n    else\n   \
+      \     $CMD_PRINTF \"XPROTECT|inactive|\\n\"\n    fi\n}\n"
+  - name: discover_mrt_info
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "discover_mrt_info() {\n    local mrt_file=\"/System/Library/CoreServices/MRT.app/Contents/Info.plist\"\
+      \n    if pgrep MRT > /dev/null; then\n        local version=$(defaults read\
+      \ \"$mrt_file\" CFBundleVersion 2>/dev/null || echo \"Unknown\")\n        $CMD_PRINTF\
+      \ \"MRT|active|version:%s\\n\" \"$version\"\n    else\n        $CMD_PRINTF \"\
+      MRT|inactive|\\n\"\n    fi\n}\n"
+  - name: discover_firewall_info
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "discover_firewall_info() {\n    local global_state=$(defaults read /Library/Preferences/com.apple.alf\
+      \ globalstate 2>/dev/null || echo \"0\")\n    if [ \"$global_state\" = \"1\"\
+      \ ]; then\n        local stealth_mode=$(defaults read /Library/Preferences/com.apple.alf\
+      \ stealthenabled 2>/dev/null || echo \"0\")\n        $CMD_PRINTF \"FIREWALL|enabled|stealth:%s\\\
+      n\" \"$stealth_mode\"\n    else\n        $CMD_PRINTF \"FIREWALL|disabled|\\\
+      n\"\n    fi\n}\n"
+  - name: discover_quarantine_info
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "discover_quarantine_info() {\n    local downloads_dir=\"$HOME/Downloads\"\
+      \n    local quarantined_files=0\n    \n    if [ -d \"$downloads_dir\" ]; then\n\
+      \        quarantined_files=$(find \"$downloads_dir\" -type f -exec xattr -l\
+      \ {} \\; 2>/dev/null | $CMD_GREP -c \"com.apple.quarantine\" || echo \"0\")\n\
+      \        $CMD_PRINTF \"QUARANTINE|active|files:%s\\n\" \"$quarantined_files\"\
+      \n    else\n        $CMD_PRINTF \"QUARANTINE|unknown|files:0\\n\"\n    fi\n\
+      }   "

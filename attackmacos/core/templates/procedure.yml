@@ -1,78 +1,86 @@
 ---
+# Template Version: 1.0.0
+# Last Modified: 2025-03-19
+# Author: @darmado | https://x.com/darmad0
+# License: Apache 2.0
+# Repository: https://github.com/darmado/attack-macOS
+# Description: Template for defining MITRE ATT&CK procedures for macOS
+# Dependencies: None
+
 # Required fields
-procedure_name: ""
-ttp_id: ""
-tactic: ""
-guid: ""
-intent: ""
-author: ""
-version: ""
-created: ""
+procedure_name: ""  # Name of the procedure
+tactic: ""         # MITRE ATT&CK Tactic
+ttp_id: ""         # MITRE ATT&CK TTP ID (e.g., T1087)
+guid: $GUID
+intent: ""         # Purpose and goal of the procedure
+author: ""         # Author name and contact
+created: ""        # Creation date (YYYY-MM-DD)
+updated: $UPDATED
+version: ""        # Semantic versioning (e.g., 1.0.0)
+
 
 # Optional fields
-updated: ""
-platform: []
+
+platform: []       # Supported platforms (e.g., ["macOS", "iOS"])
 
 # Optional detection section
-detection:
-  - ioc: ""
-    analysis: ""
-    rule_sigma: ""
-    rule_elastic: ""
-    rule_splunk: ""
-    rule_block: ""
+detection:         # Detection and monitoring capabilities
+  - ioc: ""        # Indicator of Compromise
+    analysis: ""   # Analysis methodology
+    rule_sigma: "" # Sigma rule for detection
+    rule_elastic: "" # Elastic detection rule
+    rule_splunk: ""  # Splunk detection rule
+    rule_block: ""   # Blocking rule
 
 # Optional resources section  
-resources:
-  - link: ""
-    description: ""
+resources:         # Reference materials and documentation
+  - link: ""       # URL to resource
+    description: "" # Resource description
 
 # Optional acknowledgement section
-acknowledgement:
-  - person: ""
-    handle: ""
+acknowledgement:   # Credits and acknowledgements
+  - person: ""     # Person name
+    handle: ""     # Social media handle
 
 # Required procedure section
-procedure:
-  # Required arguments array
-  arguments:
-    - option: ""
-      description: ""
-      type: ""
-      option_required: false
-      input_required: false
-      input_values: []
-      argument_required: false
-      execute_function: []
+procedure:         # Core procedure definition
+  arguments:       # Command-line arguments
+    - option: ""   # Argument name
+      description: "" # Argument description
+      type: ""     # Argument type
+      option_required: false # Whether option is required
+      input_required: false  # Whether input is required
+      input_values: []      # Valid input values
+      argument_required: false # Whether argument is required
+      execute_function: []  # Functions to execute
 
-  # Required global_variable array
-  global_variable:
-    - name: ""
-      type: ""
-      default_value: ""
-      array_elements: []
+  global_variable: # Global variables
+    - name: ""     # Variable name
+      type: ""     # Variable type
+      default_value: "" # Default value
+      array_elements: [] # Array elements if applicable
 
-  # Required functions array
-  functions:
-    - name: ""
-      type: ""
-      execute_condition:
-        global_variable: ""
-        exists: false
-      opsec:
-        check_fda:
-          enabled: false
-          exit_on_failure: true
-        check_permission:
-          type: ""
-          path: ""
-          read: false
-          write: false
-          execute: false
-          exit_on_failure: true
-        check_db_lock:
-          enabled: false
-          database_path: ""
-          exit_on_failure: true
-          error_message: ""
-      code: |
+  functions:       # Procedure functions
+    - name: ""     # Function name
+      type: ""     # Function type
+      language: [] # Supported languages (cmd, sh, bash, zsh, python, powershell, javascript, JXA, go)
+      execute_condition: # Execution conditions
+        global_variable: "" # Required global variable
+        exists: false      # Whether variable must exist
+      opsec:       # Operational security checks
+        check_fda: # File system access checks
+          enabled: false   # Enable FDA checks
+          exit_on_failure: true # Exit on failure
+        check_permission: # Permission checks
+          type: ""        # Permission type
+          path: ""        # Path to check
+          read: false     # Read permission required
+          write: false    # Write permission required
+          execute: false  # Execute permission required
+          exit_on_failure: true # Exit on failure
+        check_db_lock:    # Database lock checks
+          enabled: false  # Enable DB lock checks
+          database_path: "" # Database path
+          exit_on_failure: true # Exit on failure
+          error_message: "" # Error message
+      code: |      # Function code

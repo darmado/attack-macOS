@@ -1,0 +1,90 @@
+procedure_name: search_urls
+tactic: Discovery
+ttp_id: T1082
+guid: 365f3cef-c675-4d55-ac3c-9b0e7d1be31e
+intent: Discover URLs and web-related configuration data using macOS defaults command
+  to enumerate browsing history, bookmarks, and web service endpoints.
+author: '@darmado | https://x.com/darmad0'
+version: 1.0.0
+created: '2025-01-27'
+detection:
+- ioc: defaults command execution
+- ioc: Browser preference domain queries
+- ioc: URL enumeration from application preferences
+- analysis: https://objective-see.org/blog/blog_0x25.html
+- rule_sigma: https://github.com/SigmaHQ/sigma/tree/master/rules/macos
+resources:
+- link: https://www.loobins.io/binaries/defaults/
+  description: LOOBins defaults binary reference
+- link: https://macos-defaults.com/
+  description: Comprehensive list of macOS defaults commands
+- link: https://ss64.com/osx/defaults.html
+  description: defaults command documentation
+acknowledgement:
+- person: LOOBins Project
+  handle: '@loobins'
+platform:
+- macOS
+procedure:
+  arguments:
+  - option: --urls
+    description: Discover URLs from all preference domains
+    execute_function:
+    - discover_urls
+  global_variable:
+  - name: CMD_DEFAULTS
+    type: string
+    default_value: defaults
+  - name: URL_DOMAINS
+    type: string
+    default_value: NSGlobalDomain com.apple.Safari com.google.Chrome org.mozilla.firefox
+      com.microsoft.EdgeMAC com.brave.Browser com.vivaldi.Vivaldi org.chromium.Chromium
+      com.duckduckgo.macos.browser org.torproject.torbrowser com.apple.mail com.microsoft.teams2
+      com.okta.mobile com.cloudflare.1dot1dot1dot1.macos com.tinyspeck.slackmacgap
+      com.hnc.Discord net.whatsapp.WhatsApp org.whispersystems.signal-desktop com.microsoft.VSCode
+      com.figma.Desktop com.postmanlabs.mac com.github.Electron com.electron.dockerdesktop
+      com.spotify.client com.grammarly.ProjectLlama com.grammarly.safari.extension
+      com.linear md.obsidian dev.warp.Warp-Stable com.googlecode.iterm2 com.apple.Messages
+      com.apple.FaceTime com.apple.Notes com.apple.News com.apple.newscore com.apple.Music
+      com.apple.TV com.apple.AppStore com.apple.appstored com.apple.Maps com.apple.Photos
+      com.apple.Wallet com.google.drivefs com.microsoft.autoupdate2 com.microsoft.to-do-mac
+      org.openvpn.client.app ch.protonvpn.mac com.apple.weather.sensitive com.apple.weatherd
+      com.apple.stocks com.apple.reminders com.apple.iCal com.apple.iChat com.apple.iTunes
+      com.apple.itunescloud com.apple.itunesstored com.apple.Terminal com.apple.TextEdit
+      com.apple.Preview com.apple.QuickTimePlayerX com.apple.ScreenSharing com.apple.Console
+      com.apple.ActivityMonitor com.apple.systempreferences burp.extensions._auth
+      burp.extensions._bcheck burp.extensions._burp burp.extensions._change burp.extensions._csrf
+      burp.extensions._customizer burp.extensions._error burp.extensions._freddy burp.extensions._http
+      burp.extensions._jwt burp.extensions._replicator burp.extensions._reshaper burp.extensions._sensitive
+      burp.extensions._software burp.pro.detached-frames com.objective-see.KnockKnock
+      com.objective-see.Netiquette com.objective-see.oversight com.objectiveSee.BlockBlock
+      com.malwarebytes.mbam.frontend.application com.redcanary.agent com.canva.canvaeditor
+      com.apple.cloudd com.apple.cloudpaird com.apple.icloud.fmfd com.firebase.FIRInstallations
+      com.google.Keystone.Agent us.zoom.xos us.zoom.ZoomClips com.obsproject.obs-studio.helper.renderer
+      org.sparkle-project.Sparkle.Autoupdate com.segment.storage.1f1G4Yg6Ca2De9zafBSlsDQ1fH8PSwej
+      com.google.gmp.measurement com.lemon.lvoverseas com.bytedance.CapCut com.capcut.CapCut
+      com.streamlabs.slobs com.sophos.ipm
+  - name: URL_PROTOCOLS
+    type: string
+    default_value: https http ftp ldap ldaps ssh sftp smb nfs file
+  functions:
+  - name: discover_urls
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: false
+    code: "discover_urls() {\n    core_debug_print \"Discovering URLs from common\
+      \ preference domains\"\n    \n    for domain in $URL_DOMAINS; do\n        local\
+      \ domain_output\n        domain_output=$($CMD_DEFAULTS read \"$domain\" 2>/dev/null)\n\
+      \        \n        if [ $? -eq 0 ] && [ -n \"$domain_output\" ]; then\n    \
+      \        # Check each protocol and output URLs immediately\n            for\
+      \ protocol in $URL_PROTOCOLS; do\n                local urls\n             \
+      \   urls=$(echo \"$domain_output\" | grep -o \"${protocol}://[^[:space:]]*\"\
+      )\n                if [ -n \"$urls\" ]; then\n                    echo \"===\
+      \ $protocol URLs from $domain ===\"\n                    echo \"$urls\"\n  \
+      \                  echo \"\"\n                fi\n            done\n       \
+      \ fi\n    done\n    \n    return 0\n} "
+updated: '2025-05-30'

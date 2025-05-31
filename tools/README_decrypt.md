@@ -1,7 +1,6 @@
 # Attack-macOS Decryption Tool
 
-A clean, modular Python decryption tool for data encrypted by attack-macOS scripts. Supports multiple encryption methods with no third-party dependencies.
-
+A tool used to decrypt your output data.
 ## Features
 
 - **AES-256-CBC decryption** (via OpenSSL subprocess)
@@ -22,10 +21,6 @@ A clean, modular Python decryption tool for data encrypted by attack-macOS scrip
 ## Installation
 
 The tool is ready to use - just make it executable:
-
-```bash
-chmod +x attackmacos/tools/decrypt.py
-```
 
 ## Usage
 
@@ -120,7 +115,7 @@ The tool can parse JSON output from attack-macOS scripts with this structure:
   "timestamp": "2024-08-21T23:06:41Z",
   "command": "1217_browser_history.sh",
   "jobId": "abc12345",
-  "dataSource": "1217_browser_history",
+  "procedure": "1217_browser_history",
   "data": ["encrypted_line_1", "encrypted_line_2"],
   "encryption": {
     "method": "aes",

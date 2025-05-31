@@ -1,0 +1,102 @@
+procedure_name: hide_artifacts
+ttp_id: T1564
+tactic: Defense Evasion
+guid: b32b1714-06f6-4acf-8175-60b14d6bf5b9
+intent: Hide artifacts and evidence from user view by concealing mounted drives, removable
+  media, and desktop icons using Finder defaults
+author: '@darmado | https://x.com/darmad0'
+version: 1.0.0
+created: '2025-01-27'
+updated: '2025-05-30'
+procedure:
+  arguments:
+  - option: --hide-servers
+    description: Hide mounted servers from desktop
+    execute_function:
+    - hide_mounted_servers
+  - option: --hide-removable
+    description: Hide removable media from desktop
+    execute_function:
+    - hide_removable_media
+  - option: --hide-external
+    description: Hide external hard drives from desktop
+    execute_function:
+    - hide_external_drives
+  - option: --hide-desktop
+    description: Hide all desktop icons
+    execute_function:
+    - hide_desktop_icons
+  - option: --all
+    description: Hide all artifacts and evidence
+    execute_function:
+    - hide_mounted_servers
+    - hide_removable_media
+    - hide_external_drives
+    - hide_desktop_icons
+  global_variable:
+  - name: CMD_DEFAULTS
+    type: string
+    default_value: defaults
+  - name: CMD_KILLALL
+    type: string
+    default_value: killall
+  functions:
+  - name: hide_mounted_servers
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "hide_mounted_servers() {\n    $CMD_PRINTF \"HIDE_TYPE|COMMAND|RESULT\\\
+      n\"\n    \n    # Hide mounted servers from desktop\n    local result\n    result=$($CMD_DEFAULTS\
+      \ write com.apple.finder ShowMountedServersOnDesktop -bool false 2>&1)\n   \
+      \ $CMD_PRINTF \"MOUNTED_SERVERS|defaults write com.apple.finder ShowMountedServersOnDesktop\
+      \ -bool false|%s\\n\" \"$result\"\n    \n    # Restart Finder to apply changes\n\
+      \    local killall_result\n    killall_result=$($CMD_KILLALL Finder 2>&1)\n\
+      \    $CMD_PRINTF \"FINDER_RESTART|killall Finder|%s\\n\" \"$killall_result\"\
+      \n    \n    return 0\n}\n"
+  - name: hide_removable_media
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "hide_removable_media() {\n    $CMD_PRINTF \"HIDE_TYPE|COMMAND|RESULT\\\
+      n\"\n    \n    # Hide removable media from desktop\n    local result\n    result=$($CMD_DEFAULTS\
+      \ write com.apple.finder ShowRemovableMediaOnDesktop -bool false 2>&1)\n   \
+      \ $CMD_PRINTF \"REMOVABLE_MEDIA|defaults write com.apple.finder ShowRemovableMediaOnDesktop\
+      \ -bool false|%s\\n\" \"$result\"\n    \n    # Restart Finder to apply changes\n\
+      \    local killall_result\n    killall_result=$($CMD_KILLALL Finder 2>&1)\n\
+      \    $CMD_PRINTF \"FINDER_RESTART|killall Finder|%s\\n\" \"$killall_result\"\
+      \n    \n    return 0\n}\n"
+  - name: hide_external_drives
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "hide_external_drives() {\n    $CMD_PRINTF \"HIDE_TYPE|COMMAND|RESULT\\\
+      n\"\n    \n    # Hide external hard drives from desktop\n    local result\n\
+      \    result=$($CMD_DEFAULTS write com.apple.finder ShowExternalHardDrivesOnDesktop\
+      \ -bool false 2>&1)\n    $CMD_PRINTF \"EXTERNAL_DRIVES|defaults write com.apple.finder\
+      \ ShowExternalHardDrivesOnDesktop -bool false|%s\\n\" \"$result\"\n    \n  \
+      \  # Restart Finder to apply changes\n    local killall_result\n    killall_result=$($CMD_KILLALL\
+      \ Finder 2>&1)\n    $CMD_PRINTF \"FINDER_RESTART|killall Finder|%s\\n\" \"$killall_result\"\
+      \n    \n    return 0\n}\n"
+  - name: hide_desktop_icons
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: "hide_desktop_icons() {\n    $CMD_PRINTF \"HIDE_TYPE|COMMAND|RESULT\\n\"\
+      \n    \n    # Hide all desktop icons\n    local result\n    result=$($CMD_DEFAULTS\
+      \ write com.apple.finder CreateDesktop -bool false 2>&1)\n    $CMD_PRINTF \"\
+      DESKTOP_ICONS|defaults write com.apple.finder CreateDesktop -bool false|%s\\\
+      n\" \"$result\"\n    \n    # Restart Finder to apply changes\n    local killall_result\n\
+      \    killall_result=$($CMD_KILLALL Finder 2>&1)\n    $CMD_PRINTF \"FINDER_RESTART|killall\
+      \ Finder|%s\\n\" \"$killall_result\"\n    \n    return 0\n} "

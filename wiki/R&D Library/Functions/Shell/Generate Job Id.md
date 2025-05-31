@@ -11,14 +11,14 @@ core_generate_job_id()
 ## Parameters
 - **Inputs**: None
 - **Outputs**: 8-character hexadecimal job ID (e.g., "a1b2c3d4")
-- **Side Effects**: None
+- **Logic**: None
 
 ## Implementation
 ```bash
 # Purpose: Generate a unique job ID for tracking script execution
 # Inputs: None
 # Outputs: 8-character hexadecimal job ID
-# Side Effects: None
+# - None
 core_generate_job_id() {
     # Use openssl to generate random hex string for job tracking
     # Fallback to date-based ID if openssl not available

@@ -1,11 +1,11 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: system_info
+# Procedure Name: search_urls
 # Tactic: Discovery
 # Technique: T1082
-# GUID: 0c0f2db0-16fe-49cc-9d0f-2ec457872374
-# Intent: Discovers detailed system information on macOS systems using native commands for enumeration.
-# Author: @darmado
+# GUID: 7b75cf3c-ed89-4b79-9ab9-e47c2210836b
+# Intent: Discover URLs and web-related configuration data using macOS defaults command to enumerate browsing history, bookmarks, and web service endpoints.
+# Author: @darmado | https://x.com/darmad0
 # created: 2025-01-27
 # Updated: 2025-05-30
 # Version: 1.0.0
@@ -92,27 +92,14 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-INPUT_HELP=""
-VERBOSE=false
-ALL=false
-SYSTEM=false
-HARDWARE=false
-ENV=false
-NETWORK=false
-BOOT=false
-POWER=false
+URLS=false
 
-VERBOSE=False
-ALL=False
-SYSTEM=False
-HARDWARE=False
-ENV=False
-NETWORK=False
-BOOT=False
-POWER=False
+CMD_DEFAULTS="defaults"
+URL_DOMAINS="NSGlobalDomain com.apple.Safari com.google.Chrome org.mozilla.firefox com.microsoft.EdgeMAC com.brave.Browser com.vivaldi.Vivaldi org.chromium.Chromium com.duckduckgo.macos.browser org.torproject.torbrowser com.apple.mail com.microsoft.teams2 com.okta.mobile com.cloudflare.1dot1dot1dot1.macos com.tinyspeck.slackmacgap com.hnc.Discord net.whatsapp.WhatsApp org.whispersystems.signal-desktop com.microsoft.VSCode com.figma.Desktop com.postmanlabs.mac com.github.Electron com.electron.dockerdesktop com.spotify.client com.grammarly.ProjectLlama com.grammarly.safari.extension com.linear md.obsidian dev.warp.Warp-Stable com.googlecode.iterm2 com.apple.Messages com.apple.FaceTime com.apple.Notes com.apple.News com.apple.newscore com.apple.Music com.apple.TV com.apple.AppStore com.apple.appstored com.apple.Maps com.apple.Photos com.apple.Wallet com.google.drivefs com.microsoft.autoupdate2 com.microsoft.to-do-mac org.openvpn.client.app ch.protonvpn.mac com.apple.weather.sensitive com.apple.weatherd com.apple.stocks com.apple.reminders com.apple.iCal com.apple.iChat com.apple.iTunes com.apple.itunescloud com.apple.itunesstored com.apple.Terminal com.apple.TextEdit com.apple.Preview com.apple.QuickTimePlayerX com.apple.ScreenSharing com.apple.Console com.apple.ActivityMonitor com.apple.systempreferences burp.extensions._auth burp.extensions._bcheck burp.extensions._burp burp.extensions._change burp.extensions._csrf burp.extensions._customizer burp.extensions._error burp.extensions._freddy burp.extensions._http burp.extensions._jwt burp.extensions._replicator burp.extensions._reshaper burp.extensions._sensitive burp.extensions._software burp.pro.detached-frames com.objective-see.KnockKnock com.objective-see.Netiquette com.objective-see.oversight com.objectiveSee.BlockBlock com.malwarebytes.mbam.frontend.application com.redcanary.agent com.canva.canvaeditor com.apple.cloudd com.apple.cloudpaird com.apple.icloud.fmfd com.firebase.FIRInstallations com.google.Keystone.Agent us.zoom.xos us.zoom.ZoomClips com.obsproject.obs-studio.helper.renderer org.sparkle-project.Sparkle.Autoupdate com.segment.storage.1f1G4Yg6Ca2De9zafBSlsDQ1fH8PSwej com.google.gmp.measurement com.lemon.lvoverseas com.bytedance.CapCut com.capcut.CapCut com.streamlabs.slobs com.sophos.ipm"
+URL_PROTOCOLS="https http ftp ldap ldaps ssh sftp smb nfs file"
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="system_info"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="search_urls"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -579,39 +566,8 @@ core_parse_args() {
                 fi
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --help)
-            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
-                MISSING_VALUES="$MISSING_VALUES $1"
-            elif [ -n "$2" ]; then
-                INPUT_HELP="$2"
-                    shift
-            else
-                MISSING_VALUES="$MISSING_VALUES $1"
-                fi
-                ;;
-        --verbose)
-            VERBOSE=true
-            ;;
-        --all)
-            ALL=true
-            ;;
-        --system)
-            SYSTEM=true
-            ;;
-        --hardware)
-            HARDWARE=true
-            ;;
-        --env)
-            ENV=true
-            ;;
-        --network)
-            NETWORK=true
-            ;;
-        --boot)
-            BOOT=true
-            ;;
-        --power)
-            POWER=true
+        --urls)
+            URLS=true
             ;;
             *)
                 # Collect unknown arguments for error reporting
@@ -650,15 +606,7 @@ Basic Options:
   -h, --help           Display this help message
   -d, --debug          Enable debug output (includes verbose output)
   -a, --all            Process all available data (technique-specific)
-  --help VALUE              Display help message with detailed command information
-  --verbose                 Enable verbose output with timestamps and user context
-  --all                     Run all system discovery checks (combines all options below)
-  --system                  Basic system information using sw_vers, uname, and hostname commands
-  --hardware                Hardware details using sysctl and system_profiler commands (CPU, memory, serial numbers)
-  --env                     Environment variables and locale settings using env and locale commands
-  --network                 Network configuration using ifconfig and scutil commands (interfaces, DNS)
-  --boot                    Boot and security settings using csrutil and spctl commands (SIP, Gatekeeper)
-  --power                   Power and battery information using system_profiler and ioreg commands
+  --urls                    Discover URLs from all preference domains
 
 Output Options:
   --format TYPE        Output format: 
@@ -1886,77 +1834,15 @@ raw_output=""
 # Set global function language for this procedure
 FUNCTION_LANG="shell"
 
-# Execute functions for --help
-if [ "$HELP" = true ]; then
-    core_debug_print "Executing functions for --help"
-fi
-
-# Execute functions for --verbose
-if [ "$VERBOSE" = true ]; then
-    core_debug_print "Executing functions for --verbose"
-fi
-
-# Execute functions for --all
-if [ "$ALL" = true ]; then
-    core_debug_print "Executing functions for --all"
-    result=$(check_basic_system_info)
-    raw_output="${raw_output}${result}\n"
-    result=$(check_hardware_info)
-    raw_output="${raw_output}${result}\n"
-    result=$(check_environment_info)
-    raw_output="${raw_output}${result}\n"
-    result=$(check_network_config)
-    raw_output="${raw_output}${result}\n"
-    result=$(check_boot_security)
-    raw_output="${raw_output}${result}\n"
-    result=$(check_power_info)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --system
-if [ "$SYSTEM" = true ]; then
-    core_debug_print "Executing functions for --system"
-    result=$(check_basic_system_info)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --hardware
-if [ "$HARDWARE" = true ]; then
-    core_debug_print "Executing functions for --hardware"
-    result=$(check_hardware_info)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --env
-if [ "$ENV" = true ]; then
-    core_debug_print "Executing functions for --env"
-    result=$(check_environment_info)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --network
-if [ "$NETWORK" = true ]; then
-    core_debug_print "Executing functions for --network"
-    result=$(check_network_config)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --boot
-if [ "$BOOT" = true ]; then
-    core_debug_print "Executing functions for --boot"
-    result=$(check_boot_security)
-    raw_output="${raw_output}${result}\n"
-fi
-
-# Execute functions for --power
-if [ "$POWER" = true ]; then
-    core_debug_print "Executing functions for --power"
-    result=$(check_power_info)
+# Execute functions for --urls
+if [ "$URLS" = true ]; then
+    core_debug_print "Executing functions for --urls"
+    result=$(discover_urls)
     raw_output="${raw_output}${result}\n"
 fi
 
 # Set procedure name for processing
-procedure="system_info"
+procedure="search_urls"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2122,79 +2008,31 @@ core_generate_encryption_key() {
 
 # Functions from YAML procedure
 
-# Function: check_basic_system_info
-# Description: check_basic_system_info - Generated from YAML
-check_basic_system_info() {
-
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Basic System Information\n"
-    printf "OS Version:\n$(sw_vers 2>/dev/null)\n"
-    printf "Kernel Information:\n$(uname -a 2>/dev/null)\n"
-    printf "Host Information:\n$(hostname -f 2>/dev/null)\n"
-
-}
-
-# Function: check_hardware_info
-# Description: check_hardware_info - Generated from YAML
-check_hardware_info() {
-
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Hardware Information\n"
-    printf "CPU Information:\n"
-    printf "$(sysctl -n machdep.cpu.brand_string 2>/dev/null)\n"
-    printf "$(sysctl -n hw.ncpu 2>/dev/null) processors\n"
-    printf "Memory Information:\n"
-    printf "$(sysctl -n hw.memsize 2>/dev/null) bytes total\n"
-    printf "Hardware Model:\n"
-    printf "$(system_profiler SPHardwareDataType 2>/dev/null | grep 'Model Name\|Model Identifier\|Serial Number' 2>/dev/null)\n"
-
-}
-
-# Function: check_environment_info
-# Description: check_environment_info - Generated from YAML
-check_environment_info() {
-
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Environment Information\n"
-    printf "Environment Variables:\n"
-    printf "$(env 2>/dev/null | grep -v 'PASSWORD\|KEY\|SECRET\|TOKEN' 2>/dev/null)\n"
-    printf "Locale Settings:\n"
-    printf "$(locale 2>/dev/null)\n"
-
-}
-
-# Function: check_network_config
-# Description: check_network_config - Generated from YAML
-check_network_config() {
-
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Network Configuration\n"
-    printf "Network Interfaces:\n"
-    printf "$(ifconfig 2>/dev/null)\n"
-    printf "DNS Configuration:\n"
-    printf "$(scutil --dns 2>/dev/null)\n"
-
-}
-
-# Function: check_boot_security
-# Description: check_boot_security - Generated from YAML
-check_boot_security() {
-
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Boot and Security Settings\n"
-    printf "System Integrity Protection Status:\n"
-    printf "$(csrutil status 2>/dev/null)\n"
-    printf "Gatekeeper Status:\n"
-    printf "$(spctl --status 2>/dev/null)\n"
-
-}
-
-# Function: check_power_info
-# Description: check_power_info - Generated from YAML
-check_power_info() {
-
-    printf "[$(core_get_timestamp)]: user: $USER; msg: Power Information\n"
-    printf "Power Status:\n"
-    printf "$(system_profiler SPPowerDataType 2>/dev/null)\n"
-    printf "Battery Information:\n"
-    printf "$(ioreg -rn AppleSmartBattery 2>/dev/null)\n" 
-    printf "$(ioreg -rn AppleSmartBattery 2>/dev/null)\n" 
-}
+# Function: discover_urls
+# Description: discover_urls - Generated from YAML
+discover_urls() {
+    core_debug_print "Discovering URLs from common preference domains"
+    
+    for domain in $URL_DOMAINS; do
+        local domain_output
+        domain_output=$($CMD_DEFAULTS read "$domain" 2>/dev/null)
+        
+        if [ $? -eq 0 ] && [ -n "$domain_output" ]; then
+            # Check each protocol and output URLs immediately
+            for protocol in $URL_PROTOCOLS; do
+                local urls
+                urls=$(echo "$domain_output" | grep -o "${protocol}://[^[:space:]]*")
+                if [ -n "$urls" ]; then
+                    echo "=== $protocol URLs from $domain ==="
+                    echo "$urls"
+                    echo ""
+                fi
+            done
+        fi
+    done
+    
+    return 0
+} 
 
 
 JOB_ID=$(core_generate_job_id)

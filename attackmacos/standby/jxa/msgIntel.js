@@ -194,9 +194,9 @@
                                 is_from_me: 1,
                                 chat_identifier: recipientId || 'Pending',
                                 thread: {
-                                    reply_to_guid: null,
-                                    originator_guid: null,
-                                    associated_guid: null
+                                    reply_to_guid: $GUID
+                                    originator_guid: $GUID
+                                    associated_guid: $GUID
                                 }
                             },
                             sender: {
@@ -280,7 +280,7 @@
                 data: {
                     messages: results.map(msg => ({
                         message: {
-                            guid: msg.guid,
+                            guid: $GUID
                             timestamps: {
                                 date: this.convertAppleDate(msg.date),
                                 date_read: this.convertAppleDate(msg.date_read),
@@ -320,9 +320,9 @@
                                     is_from_me: msg.is_from_me,
                                     chat_identifier: msg.chat_identifier,
                                     thread: {
-                                        reply_to_guid: msg.reply_to_guid,
-                                        originator_guid: msg.thread_originator_guid,
-                                        associated_guid: msg.associated_message_guid
+                                        reply_to_guid: $GUID
+                                        originator_guid: $GUID
+                                        associated_guid: $GUID
                                     }
                                 },
                                 sender: msg.is_from_me === 0 ? {
@@ -551,7 +551,7 @@
                 data: {
                     attachments: attachments.map(att => ({
                         attachment: {
-                            guid: att.guid,
+                            guid: $GUID
                             created_date: MsgIntelUtils.convertAppleDate(att.created_date),
                             file_metadata: {
                                 filename: att.filename,
@@ -568,7 +568,7 @@
                                 is_commsafety_sensitive: att.is_commsafety_sensitive
                             },
                             message: {
-                                guid: att.guid.substring(att.guid.indexOf('_', att.guid.indexOf('_') + 1) + 1),
+                                guid: $GUID
                                 communication: {
                                     channel: {
                                         service: att.service,
@@ -658,7 +658,7 @@
                 data: {
                     messages: messages.map(msg => ({
                         message: {
-                            guid: msg.guid,
+                            guid: $GUID
                             timestamps: {
                                 date: MsgIntelUtils.convertAppleDate(msg.date),
                                 date_read: MsgIntelUtils.convertAppleDate(msg.date_read),
@@ -698,9 +698,9 @@
                                     is_from_me: msg.is_from_me,
                                     chat_identifier: msg.chat_identifier,
                                     thread: {
-                                        reply_to_guid: msg.reply_to_guid,
-                                        originator_guid: msg.thread_originator_guid,
-                                        associated_guid: msg.associated_message_guid
+                                        reply_to_guid: $GUID
+                                        originator_guid: $GUID
+                                        associated_guid: $GUID
                                     }
                                 },
                                 sender: msg.is_from_me === 0 ? {
@@ -793,7 +793,7 @@
                         const base64Data = dataMatch ? dataMatch[1].replace(/\s+/g, '') : '';
 
                         drafts.push({
-                            guid: `DRAFT-${$.NSUUID.UUID.UUIDString.js}`,
+                            guid: $GUID
                             created_date: creationDate,
                             modified_date: modDate,
                             text: base64Data,
@@ -900,7 +900,7 @@
                 data: {
                     hidden_messages: messages.map(msg => ({
                         message: {
-                            guid: msg.guid,
+                            guid: $GUID
                             timeline: {
                                 delete_date: MsgIntelUtils.convertAppleDate(msg.delete_date),
                                 date: MsgIntelUtils.convertAppleDate(msg.message_date),
@@ -923,8 +923,8 @@
                                 group_title: msg.group_title
                             },
                             thread: {
-                                associated_guid: msg.associated_message_guid,
-                                reply_to_guid: msg.reply_to_guid
+                                associated_guid: $GUID
+                                reply_to_guid: $GUID
                             }
                         }
                     }))
@@ -1351,7 +1351,7 @@
                 if (messages && messages.length > 0) {
                     results.data.deleted.messages = messages.map(m => ({
                         rowid: m.ROWID,
-                        guid: m.guid,
+                        guid: $GUID
                         record_id: m.recordID,
                         handle: m.handle_id ? {
                             id: m.handle_id,
@@ -1366,7 +1366,7 @@
                 if (chats && chats.length > 0) {
                     results.data.deleted.chats = chats.map(c => ({
                         rowid: c.ROWID,
-                        guid: c.guid,
+                        guid: $GUID
                         record_id: c.recordID
                     }));
                 }
@@ -1376,7 +1376,7 @@
                 if (attachments && attachments.length > 0) {
                     results.data.deleted.attachments = attachments.map(a => ({
                         rowid: a.ROWID,
-                        guid: a.guid,
+                        guid: $GUID
                         record_id: a.recordID
                     }));
                 }
@@ -1450,7 +1450,7 @@
                 data: {
                     messages: messages.map(msg => ({
                         message: {
-                            guid: msg.guid,
+                            guid: $GUID
                             timestamps: {
                                 date: MsgIntelUtils.convertAppleDate(msg.date),
                                 date_read: MsgIntelUtils.convertAppleDate(msg.date_read),
@@ -1490,9 +1490,9 @@
                                     is_from_me: msg.is_from_me,
                                     chat_identifier: msg.chat_identifier,
                                     thread: {
-                                        reply_to_guid: msg.reply_to_guid,
-                                        originator_guid: msg.thread_originator_guid,
-                                        associated_guid: msg.associated_message_guid
+                                        reply_to_guid: $GUID
+                                        originator_guid: $GUID
+                                        associated_guid: $GUID
                                     }
                                 },
                                 sender: msg.is_from_me === 0 ? {
