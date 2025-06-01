@@ -1,0 +1,180 @@
+procedure_name: modify_firewall_settings
+ttp_id: T1562.001
+tactic: Defense Evasion
+guid: 562bfb9d-a679-4384-b5ca-61151e284a55
+intent: Modify macOS security settings using native system commands
+author: '@darmado | https://x.com/darmad0'
+version: 1.0.0
+created: '2025-01-02'
+updated: '2025-06-01'
+resources:
+- link: https://www.loobins.io/binaries/defaults/
+  description: LOOBins defaults commands for Gatekeeper and firewall modification
+acknowledgement:
+- person: Brendan Chamberlain
+  handle: '@infosecB'
+procedure:
+  arguments:
+  - option: --disable-gatekeeper
+    description: Write GKAutoRearm -bool NO to /Library/Preferences/com.apple.security using defaults
+    execute_function:
+    - disable_gatekeeper_defaults
+  - option: --enable-gatekeeper
+    description: Write GKAutoRearm -bool YES to /Library/Preferences/com.apple.security using defaults
+    execute_function:
+    - enable_gatekeeper_defaults
+  - option: --disable-appfirewall
+    description: Execute socketfilterfw --setglobalstate off
+    execute_function:
+    - disable_appfirewall_socketfilter
+  - option: --enable-appfirewall
+    description: Execute socketfilterfw --setglobalstate on
+    execute_function:
+    - enable_appfirewall_socketfilter
+  - option: --disable-alf
+    description: Write globalstate -int 0 to /Library/Preferences/com.apple.alf using defaults
+    execute_function:
+    - disable_appfirewall_defaults
+  - option: --enable-alf
+    description: Write globalstate -int 1 to /Library/Preferences/com.apple.alf using defaults
+    execute_function:
+    - enable_appfirewall_defaults
+  - option: --disable-spctl
+    description: Execute spctl --master-disable
+    execute_function:
+    - disable_gatekeeper_spctl
+  - option: --enable-spctl
+    description: Execute spctl --master-enable
+    execute_function:
+    - enable_gatekeeper_spctl
+  - option: --check-status
+    description: Read current values from all security preference files and spctl status
+    execute_function:
+    - check_status
+  - option: --restore-defaults
+    description: Write all security settings back to enabled state
+    execute_function:
+    - restore_security_defaults
+  global_variable:
+  - name: FILE_GATEKEEPER_PREF
+    type: string
+    default_value: /Library/Preferences/com.apple.security
+  - name: KEY_GATEKEEPER
+    type: string
+    default_value: GKAutoRearm
+  - name: FILE_ALF_PREF
+    type: string
+    default_value: /Library/Preferences/com.apple.alf
+  - name: KEY_ALF_GLOBALSTATE
+    type: string
+    default_value: globalstate
+  - name: CMD_SOCKETFILTERFW
+    type: string
+    default_value: /usr/libexec/ApplicationFirewall/socketfilterfw
+  - name: CMD_DEFAULTS
+    type: string
+    default_value: defaults
+  - name: CMD_SPCTL
+    type: string
+    default_value: spctl
+  functions:
+  - name: disable_gatekeeper_defaults
+    type: main
+    language:
+    - shell
+    code: |
+      disable_gatekeeper_defaults() {
+          local output=$("$CMD_DEFAULTS" write "$FILE_GATEKEEPER_PREF" "$KEY_GATEKEEPER" -bool NO 2>&1)
+          $CMD_PRINTF "GATEKEEPER|%s\n" "$output"
+      }
+  - name: enable_gatekeeper_defaults
+    type: main
+    language:
+    - shell
+    code: |
+      enable_gatekeeper_defaults() {
+          local output=$("$CMD_DEFAULTS" write "$FILE_GATEKEEPER_PREF" "$KEY_GATEKEEPER" -bool YES 2>&1)
+          $CMD_PRINTF "GATEKEEPER|%s\n" "$output"
+      }
+  - name: disable_appfirewall_socketfilter
+    type: main
+    language:
+    - shell
+    code: |
+      disable_appfirewall_socketfilter() {
+          local output=$("$CMD_SOCKETFILTERFW" --setglobalstate off 2>&1)
+          $CMD_PRINTF "APPFIREWALL|%s\n" "$output"
+      }
+  - name: enable_appfirewall_socketfilter
+    type: main
+    language:
+    - shell
+    code: |
+      enable_appfirewall_socketfilter() {
+          local output=$("$CMD_SOCKETFILTERFW" --setglobalstate on 2>&1)
+          $CMD_PRINTF "APPFIREWALL|%s\n" "$output"
+      }
+  - name: disable_appfirewall_defaults
+    type: main
+    language:
+    - shell
+    code: |
+      disable_appfirewall_defaults() {
+          local output=$("$CMD_DEFAULTS" write "$FILE_ALF_PREF" "$KEY_ALF_GLOBALSTATE" -int 0 2>&1)
+          $CMD_PRINTF "ALF|%s\n" "$output"
+      }
+  - name: enable_appfirewall_defaults
+    type: main
+    language:
+    - shell
+    code: |
+      enable_appfirewall_defaults() {
+          local output=$("$CMD_DEFAULTS" write "$FILE_ALF_PREF" "$KEY_ALF_GLOBALSTATE" -int 1 2>&1)
+          $CMD_PRINTF "ALF|%s\n" "$output"
+      }
+  - name: disable_gatekeeper_spctl
+    type: main
+    language:
+    - shell
+    code: |
+      disable_gatekeeper_spctl() {
+          local output=$("$CMD_SPCTL" --master-disable 2>&1)
+          $CMD_PRINTF "SPCTL|%s\n" "$output"
+      }
+  - name: enable_gatekeeper_spctl
+    type: main
+    language:
+    - shell
+    code: |
+      enable_gatekeeper_spctl() {
+          local output=$("$CMD_SPCTL" --master-enable 2>&1)
+          $CMD_PRINTF "SPCTL|%s\n" "$output"
+      }
+  - name: check_status
+    type: main
+    language:
+    - shell
+    code: |
+      check_status() {
+          local output=$("$CMD_DEFAULTS" read "$FILE_GATEKEEPER_PREF" "$KEY_GATEKEEPER" 2>&1)
+          $CMD_PRINTF "GATEKEEPER|%s\n" "$output"
+          local output=$("$CMD_SOCKETFILTERFW" --getglobalstate 2>&1)
+          $CMD_PRINTF "APPFIREWALL|%s\n" "$output"
+          local output=$("$CMD_DEFAULTS" read "$FILE_ALF_PREF" "$KEY_ALF_GLOBALSTATE" 2>&1)
+          $CMD_PRINTF "ALF|%s\n" "$output"
+          local output=$("$CMD_SPCTL" --status 2>&1)
+          $CMD_PRINTF "SPCTL|%s\n" "$output"
+      }
+  - name: restore_security_defaults
+    type: main
+    language:
+    - shell
+    code: |
+      restore_security_defaults() {
+          local output=$("$CMD_DEFAULTS" write "$FILE_GATEKEEPER_PREF" "$KEY_GATEKEEPER" -bool YES 2>&1)
+          $CMD_PRINTF "GATEKEEPER|%s\n" "$output"
+          local output=$("$CMD_SOCKETFILTERFW" --setglobalstate on 2>&1)
+          $CMD_PRINTF "APPFIREWALL|%s\n" "$output"
+          local output=$("$CMD_DEFAULTS" write "$FILE_ALF_PREF" "$KEY_ALF_GLOBALSTATE" -int 1 2>&1)
+          $CMD_PRINTF "ALF|%s\n" "$output"
+      }
