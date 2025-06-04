@@ -1,13 +1,13 @@
 procedure_name: system_info
 ttp_id: T1082
 tactic: Discovery
-guid: 03c1592c-5eef-42df-aee8-68cb47a0418d
+guid: 2db012d4-935e-4a20-be3f-2321e1516378
 intent: Discovers detailed system information on macOS systems using native commands
   for enumeration.
 author: '@darmado'
-version: 1.0.0
+version: 1.0.3
 created: '2025-01-27'
-updated: '2025-05-30'
+updated: '2025-06-03'
 platform:
 - macOS
 detection:
@@ -159,15 +159,11 @@ procedure:
         database_path: ''
         exit_on_failure: true
         error_message: ''
-    code: 'printf "[$(core_get_timestamp)]: user: $USER; msg: Basic System Information\n"
-
+    code: |
+      printf "[$(core_get_timestamp)]: user: $USER; msg: Basic System Information\n"
       printf "OS Version:\n$(sw_vers 2>/dev/null)\n"
-
       printf "Kernel Information:\n$(uname -a 2>/dev/null)\n"
-
       printf "Host Information:\n$(hostname -f 2>/dev/null)\n"
-
-      '
   - name: check_hardware_info
     type: main
     execute_condition:
@@ -184,24 +180,15 @@ procedure:
         database_path: ''
         exit_on_failure: true
         error_message: ''
-    code: 'printf "[$(core_get_timestamp)]: user: $USER; msg: Hardware Information\n"
-
+    code: |
+      printf "[$(core_get_timestamp)]: user: $USER; msg: Hardware Information\n"
       printf "CPU Information:\n"
-
       printf "$(sysctl -n machdep.cpu.brand_string 2>/dev/null)\n"
-
       printf "$(sysctl -n hw.ncpu 2>/dev/null) processors\n"
-
       printf "Memory Information:\n"
-
       printf "$(sysctl -n hw.memsize 2>/dev/null) bytes total\n"
-
       printf "Hardware Model:\n"
-
-      printf "$(system_profiler SPHardwareDataType 2>/dev/null | grep ''Model Name\|Model
-      Identifier\|Serial Number'' 2>/dev/null)\n"
-
-      '
+      printf "$(system_profiler SPHardwareDataType 2>/dev/null | grep 'Model Name\|Model Identifier\|Serial Number' 2>/dev/null)\n"
   - name: check_environment_info
     type: main
     execute_condition:
@@ -218,17 +205,12 @@ procedure:
         database_path: ''
         exit_on_failure: true
         error_message: ''
-    code: 'printf "[$(core_get_timestamp)]: user: $USER; msg: Environment Information\n"
-
+    code: |
+      printf "[$(core_get_timestamp)]: user: $USER; msg: Environment Information\n"
       printf "Environment Variables:\n"
-
-      printf "$(env 2>/dev/null | grep -v ''PASSWORD\|KEY\|SECRET\|TOKEN'' 2>/dev/null)\n"
-
+      printf "$(env 2>/dev/null | grep -v 'PASSWORD\|KEY\|SECRET\|TOKEN' 2>/dev/null)\n"
       printf "Locale Settings:\n"
-
       printf "$(locale 2>/dev/null)\n"
-
-      '
   - name: check_network_config
     type: main
     execute_condition:
@@ -245,17 +227,12 @@ procedure:
         database_path: ''
         exit_on_failure: true
         error_message: ''
-    code: 'printf "[$(core_get_timestamp)]: user: $USER; msg: Network Configuration\n"
-
+    code: |
+      printf "[$(core_get_timestamp)]: user: $USER; msg: Network Configuration\n"
       printf "Network Interfaces:\n"
-
       printf "$(ifconfig 2>/dev/null)\n"
-
       printf "DNS Configuration:\n"
-
       printf "$(scutil --dns 2>/dev/null)\n"
-
-      '
   - name: check_boot_security
     type: main
     execute_condition:
@@ -272,17 +249,12 @@ procedure:
         database_path: ''
         exit_on_failure: true
         error_message: ''
-    code: 'printf "[$(core_get_timestamp)]: user: $USER; msg: Boot and Security Settings\n"
-
+    code: |
+      printf "[$(core_get_timestamp)]: user: $USER; msg: Boot and Security Settings\n"
       printf "System Integrity Protection Status:\n"
-
       printf "$(csrutil status 2>/dev/null)\n"
-
       printf "Gatekeeper Status:\n"
-
       printf "$(spctl --status 2>/dev/null)\n"
-
-      '
   - name: check_power_info
     type: main
     execute_condition:
@@ -299,8 +271,9 @@ procedure:
         database_path: ''
         exit_on_failure: true
         error_message: ''
-    code: "printf \"[$(core_get_timestamp)]: user: $USER; msg: Power Information\\\
-      n\"\nprintf \"Power Status:\\n\"\nprintf \"$(system_profiler SPPowerDataType\
-      \ 2>/dev/null)\\n\"\nprintf \"Battery Information:\\n\"\nprintf \"$(ioreg -rn\
-      \ AppleSmartBattery 2>/dev/null)\\n\" \nprintf \"$(ioreg -rn AppleSmartBattery\
-      \ 2>/dev/null)\\n\" "
+    code: |
+      printf "[$(core_get_timestamp)]: user: $USER; msg: Power Information\n"
+      printf "Power Status:\n"
+      printf "$(system_profiler SPPowerDataType 2>/dev/null)\n"
+      printf "Battery Information:\n"
+      printf "$(ioreg -rn AppleSmartBattery 2>/dev/null)\n"
