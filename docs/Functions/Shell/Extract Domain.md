@@ -1,27 +1,23 @@
 # Extract Domain
 
-## Purpose
-
+### Purpose
 core_extract_domain function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `CMD_PRINTF` | "printf" |
+| Function | `core_extract_domain()` | For extract domain |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_extract_domain() {
 local uri="$1"
-    "$CMD_PRINTF" '%s' "$uri" | sed -E 's~^https?://([^/:]+).*~\1~'
+    "$CMD_PRINTF" '%s' "$uri" | sed -E 's~^https?://([^/:]+).*~<details>
+
+~'
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
