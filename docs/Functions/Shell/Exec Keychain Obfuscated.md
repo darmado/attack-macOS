@@ -1,15 +1,17 @@
 # Exec Keychain Obfuscated
 
-## Purpose
-
+### Purpose
 core_exec_keychain_obfuscated function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Function | `core_debug_print()` | For debug print |
+| Function | `core_exec_keychain_obfuscated()` | For exec keychain obfuscated |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_exec_keychain_obfuscated() {
 local operation="$1"
     local cmd=""
@@ -50,12 +52,4 @@ local operation="$1"
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
