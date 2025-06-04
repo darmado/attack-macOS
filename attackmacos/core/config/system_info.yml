@@ -5,7 +5,7 @@ guid: 2db012d4-935e-4a20-be3f-2321e1516378
 intent: Discovers detailed system information on macOS systems using native commands
   for enumeration.
 author: '@darmado'
-version: 1.0.3
+version: 1.0.4
 created: '2025-01-27'
 updated: '2025-06-03'
 platform:
