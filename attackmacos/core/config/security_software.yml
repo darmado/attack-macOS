@@ -5,7 +5,7 @@ guid: 3349e821-b561-4407-a4f7-45ff1fb2900b
 intent: Comprehensive security software discovery for macOS systems including EDR,
   AV, firewalls, and built-in protections
 author: '@darmado | https://x.com/darmad0'
-version: 2.0.3
+version: 2.0.4
 created: '2025-01-27'
 updated: '2025-06-03'
 procedure:
