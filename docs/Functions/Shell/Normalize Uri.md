@@ -1,15 +1,18 @@
 # Normalize Uri
 
-## Purpose
-
+### Purpose
 core_normalize_uri function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `CMD_GREP` | "grep" |
+| Global Variable | `CMD_PRINTF` | "printf" |
+| Function | `core_normalize_uri()` | For normalize uri |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_normalize_uri() {
 local uri="$1"
     
@@ -20,12 +23,4 @@ local uri="$1"
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
