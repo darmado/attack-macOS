@@ -119,7 +119,7 @@ flowchart TD
     
     D --> D1("🎯 Identify Endpoint</br>Detection Gaps")
     
-    style A1 fill:transprent,stroke:#6140E0,stroke-width:2px
+    style A1 fill:transparent,stroke:#6140E0,stroke-width:2px
     style A2 fill:transparent,stroke:#C7B300,stroke-width:2px
     style A3 fill:transparent,stroke:#3BC05A, stroke-width:2px
     style A4 fill:transparent,stroke:#47B7F8, stroke-width:2px

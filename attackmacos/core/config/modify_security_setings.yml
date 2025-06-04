@@ -4,7 +4,7 @@ tactic: Defense Evasion
 guid: 562bfb9d-a679-4384-b5ca-61151e284a55
 intent: Modify macOS security settings including Gatekeeper, firewall, SIP, login items, and system logs
 author: '@darmado | https://x.com/darmad0'
-version: 1.0.2
+version: 1.0.6
 created: '2025-01-02'
 updated: '2025-06-03'
 resources:
@@ -48,10 +48,10 @@ procedure:
     description: Restore all security settings to their default enabled state
     execute_function:
     - restore_security_defaults
-  - option: --show-fw-settings
+  - option: --show-security-settings
     description: Display firewall settings and configuration
     execute_function:
-    - show_fw_settings
+    - show_security_settings
   - option: --set-blockall
     description: Block all incoming connections through the firewall
     input_required: true
@@ -104,10 +104,6 @@ procedure:
     description: Remove all log messages from the system
     execute_function:
     - erase_all_logs
-  - option: --show-sip-status
-    description: Display current System Integrity Protection status
-    execute_function:
-    - show_sip_status
   - option: --disable-quarantine
     description: Disable LSQuarantine warnings for downloaded files
     execute_function:
@@ -224,16 +220,45 @@ procedure:
           local output3=$("$CMD_SUDO" "$CMD_SPCTL" --master-enable 2>&1)
           $CMD_PRINTF "RESTORE_DEFAULTS|%s|%s|%s\n" "$output1" "$output2" "$output3"
       }
-  - name: show_fw_settings
+  - name: show_security_settings
     type: main
     language:
     - shell
     code: |
-      show_fw_settings() {
-          local output1=$("$CMD_DEFAULTS" read "$FILE_GATEKEEPER_PREF" "$KEY_GATEKEEPER" 2>&1)
-          local output2=$("$CMD_SOCKETFILTERFW" --getglobalstate 2>&1)
-          local output3=$("$CMD_SPCTL" --status 2>&1)
-          $CMD_PRINTF "FW_SETTINGS|%s|%s|%s\n" "$output1" "$output2" "$output3"
+      show_security_settings() {
+          # Firewall settings
+          $CMD_PRINTF "FIREWALL_GLOBAL|"
+          $CMD_SOCKETFILTERFW --getglobalstate 2>&1
+          $CMD_PRINTF "FIREWALL_BLOCKALL|"
+          $CMD_SOCKETFILTERFW --getblockall 2>&1
+          $CMD_PRINTF "FIREWALL_APPS|"
+          $CMD_SOCKETFILTERFW --listapps 2>&1
+          $CMD_PRINTF "FIREWALL_ALLOWSIGNED|"
+          $CMD_SOCKETFILTERFW --getallowsigned 2>&1
+          $CMD_PRINTF "FIREWALL_STEALTH|"
+          $CMD_SOCKETFILTERFW --getstealthmode 2>&1
+          $CMD_PRINTF "FIREWALL_LOGGING|"
+          $CMD_SOCKETFILTERFW --getloggingmode 2>&1
+          $CMD_PRINTF "FIREWALL_LOGOPT|"
+          $CMD_SOCKETFILTERFW --getloggingopt 2>&1
+          
+          # Gatekeeper settings
+          $CMD_PRINTF "GATEKEEPER_STATUS|"
+          $CMD_DEFAULTS read "$FILE_GATEKEEPER_PREF" "$KEY_GATEKEEPER" 2>&1
+          $CMD_PRINTF "SPCTL_STATUS|"
+          $CMD_SPCTL --status 2>&1
+          
+          # SIP status
+          $CMD_PRINTF "SIP_STATUS|"
+          $CMD_CSRUTIL status 2>&1
+          
+          # Quarantine status
+          $CMD_PRINTF "QUARANTINE_STATUS|"
+          $CMD_DEFAULTS read com.apple.LaunchServices LSQuarantine 2>&1
+          
+          # ALF (Application Layer Firewall) status
+          $CMD_PRINTF "ALF_STATUS|"
+          $CMD_DEFAULTS read "$FILE_ALF_PREF" "$KEY_ALF_GLOBALSTATE" 2>&1
       }
   - name: setblockall_fw
     type: main
@@ -342,15 +367,6 @@ procedure:
       erase_all_logs() {
           local output=$("$CMD_SUDO" "$CMD_LOG" erase --all 2>&1)
           $CMD_PRINTF "LOGS_ERASED|%s\n" "$output"
-      }
-  - name: show_sip_status
-    type: main
-    language:
-    - shell
-    code: |
-      show_sip_status() {
-          local output=$("$CMD_CSRUTIL" status 2>&1)
-          $CMD_PRINTF "SIP_STATUS|%s\n" "$output"
       }
   - name: disable_quarantine
     type: main
