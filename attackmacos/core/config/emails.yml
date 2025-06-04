@@ -5,7 +5,7 @@ guid: 04a65e77-5f4a-4a0d-90d0-bf45e96aa070
 intent: Discover email addresses from verified macOS databases containing confirmed
   email data
 author: '@darmado'
-version: 1.0.3
+version: 1.0.4
 created: '2025-01-27'
 updated: '2025-06-03'
 platform:
