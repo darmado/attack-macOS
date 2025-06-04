@@ -5,7 +5,7 @@ guid: 2488a056-5b6d-4a3a-b9d2-782019190eb8
 intent: Find account information and user data using defaults read commands to search
   application preferences and system settings
 author: '@darmado | https://x.com/darmad0'
-version: 1.0.3
+version: 1.0.4
 created: '2025-01-27'
 updated: '2025-06-03'
 procedure:
