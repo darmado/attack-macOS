@@ -1,15 +1,17 @@
 # Exec Cmd Construct
 
-## Purpose
-
+### Purpose
 core_exec_cmd_construct function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Function | `core_debug_print()` | For debug print |
+| Function | `core_exec_cmd_construct()` | For exec cmd construct |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_exec_cmd_construct() {
 local fragments="$*"
     local constructed_cmd=""
@@ -33,12 +35,4 @@ local fragments="$*"
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
