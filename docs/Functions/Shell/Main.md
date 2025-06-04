@@ -35,10 +35,7 @@ Orchestrates complete script execution flow: 1) Parse arguments, 2) Display help
 
 ```shell
 core_main() {
-local raw_output=""
-    local processed_output=""
-    
-    # Step 1: Parse command line arguments (no validation)
+# Step 1: Parse command line arguments (no validation)
     core_parse_args "$@"
     
     # Step 2: Display help if requested (early exit)
@@ -56,51 +53,39 @@ local raw_output=""
     # Step 5: Validate required commands
     core_validate_command || exit 1
     
-    # Process OPSEC checks from YAML configuration
-    if [ "$CHECK_FDA" = "true" ]; then
-        core_debug_print "Performing Full Disk Access check"
-        if ! core_check_fda; then
-            core_handle_error "Full Disk Access not granted - script cannot access required databases"
-            exit 1
-        fi
-        core_debug_print "Full Disk Access check passed"
-    fi
-    
-    if [ "$CHECK_PERMS" = "true" ]; then
-        core_debug_print "Permission checks enabled - will be validated per function"
-    fi
-    
-    if [ "$CHECK_DB_LOCK" = "true" ]; then
-        core_debug_print "Database lock checks enabled - will be validated per function"
-    fi
-    
-    # Initialize the log file if logging is enabled
-    if [ "$LOG_ENABLED" = true ]; then
-        # Initialize logging at start
-        core_log_output "Starting ${NAME}" "started" true
-    fi
-    
-    # Default data source identifier
-    local data_source="generic"
-    
-    # Check if we should extract steganography data
-    if [ "$STEG_EXTRACT" = true ]; then
-        data_source="steg_extracted"
-    else
-        # Execute script-specific logic here
-# PLACEHOLDER_MAIN_EXECUTION
-        # This section is intentionally left empty as it will be filled by
-        # technique-specific implementations when sourcing this base script
-        # If no raw_output is set by the script, exit gracefully
-        if [ -z "$raw_output" ]; then
+    # Step 6: Check if isolated execution is requested
+    if [ "$ISOLATED" = "true" ]; then
+        core_debug_print "Executing script in memory isolated mode"
+        
+        # Create isolated execution environment
+        local buffer_name="main_$(date +%s)"
+        if memory_create_buffer "$buffer_name"; then
+            # Execute main logic in isolated process
+            memory_spawn_isolated "$buffer_name" "$(declare -f core_execute_main_logic); core_execute_main_logic"
+            sleep 1  # Allow execution time
+            
+            # Read results from isolated process
+            local isolated_result=$(memory_read_buffer "${buffer_name}_proc")
+            
+            # Cleanup isolation
+            memory_cleanup_buffer "$buffer_name"
+            
+            # Output results
+            if [ -n "$isolated_result" ]; then
+                printf "%s
+" "$isolated_result"
+            fi
+            
+            core_debug_print "Isolated execution completed"
             return 0
-        fi  
+        else
+            core_handle_error "Failed to create isolated execution environment, falling back to normal execution"
+            # Fall through to normal execution
+        fi
     fi
-    # Process the output (format, encode, encrypt)
-    processed_output=$(core_process_output "$raw_output" "$PROCEDURE_NAME")
     
-    # Handle the final output (log, exfil, or display)
-    core_transform_output "$processed_output"
+    # Step 7: Normal execution (or fallback from failed isolation)
+    core_execute_main_logic
 }
 ```
 
