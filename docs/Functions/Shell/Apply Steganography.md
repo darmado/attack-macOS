@@ -1,15 +1,24 @@
 # Apply Steganography
 
-## Purpose
-
+### Purpose
 core_apply_steganography function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `CMD_CP` | "cp" |
+| Global Variable | `CMD_PRINTF` | "printf" |
+| Global Variable | `CMD_SED` | "sed" |
+| Global Variable | `CMD_WC` | "wc" |
+| Global Variable | `STEG_CARRIER_IMAGE` | "" |
+| Global Variable | `STEG_OUTPUT_IMAGE` | "" |
+| Function | `core_apply_steganography()` | For apply steganography |
+| Function | `core_handle_error()` | For handle error |
+| Command | `date` | For date operations |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_apply_steganography() {
 local data_to_hide="$1"
     local carrier_image=""
@@ -29,13 +38,19 @@ local data_to_hide="$1"
     # The approach is to append the data to the end of the image file
     # This works because image viewers stop rendering at the image end marker
     if $CMD_CP "$carrier_image" "$output_image" 2>/dev/null; then
-        "$CMD_PRINTF" '\n\n[STEG_DATA_START]\n%s\n[STEG_DATA_END]\n' "$data_to_hide" >> "$output_image"
+        "$CMD_PRINTF" '
+
+[STEG_DATA_START]
+%s
+[STEG_DATA_END]
+' "$data_to_hide" >> "$output_image"
         
         # Success message
         local data_size=$("$CMD_PRINTF"  -n "$data_to_hide" | $CMD_WC -c | $CMD_SED 's/^ *//')
-        result="Steganography applied\\nCarrier: $carrier_image\\nOutput: $output_image\\nHidden data size: $data_size bytes"
+        result="Steganography applied\nCarrier: $carrier_image\nOutput: $output_image\nHidden data size: $data_size bytes"
         
-        "$CMD_PRINTF"  "[INFO] [%s] Data hidden successfully in %s\n" "$(core_get_timestamp)" "$output_image"
+        "$CMD_PRINTF"  "[INFO] [%s] Data hidden successfully in %s
+" "$(core_get_timestamp)" "$output_image"
         return 0
     else
         core_handle_error "Failed to create steganography image: $output_image"
@@ -46,12 +61,4 @@ local data_to_hide="$1"
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
