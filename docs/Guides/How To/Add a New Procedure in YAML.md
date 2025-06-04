@@ -160,10 +160,10 @@ procedure:
 procedure:
   arguments:
     # Boolean flag arguments (no input required)
-    - option: "--show-fw-settings"
+    - option: "--show-security-settings"
       description: "Display firewall settings and configuration"
       execute_function:
-        - show_fw_settings
+        - show_security_settings
 
     # Input required arguments (user provides values)
     - option: "--gatekeeper"
