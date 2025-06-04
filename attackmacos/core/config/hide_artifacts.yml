@@ -1,13 +1,13 @@
 procedure_name: hide_artifacts
 ttp_id: T1564
 tactic: Defense Evasion
-guid: b32b1714-06f6-4acf-8175-60b14d6bf5b9
+guid: 784d94ea-0329-4e1a-aecd-c0a9e43b60d5
 intent: Hide artifacts and evidence from user view by concealing mounted drives, removable
   media, and desktop icons using Finder defaults
 author: '@darmado | https://x.com/darmad0'
-version: 1.0.0
+version: 1.0.3
 created: '2025-01-27'
-updated: '2025-05-30'
+updated: '2025-06-03'
 procedure:
   arguments:
   - option: --hide-servers
@@ -48,14 +48,22 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "hide_mounted_servers() {\n    $CMD_PRINTF \"HIDE_TYPE|COMMAND|RESULT\\\
-      n\"\n    \n    # Hide mounted servers from desktop\n    local result\n    result=$($CMD_DEFAULTS\
-      \ write com.apple.finder ShowMountedServersOnDesktop -bool false 2>&1)\n   \
-      \ $CMD_PRINTF \"MOUNTED_SERVERS|defaults write com.apple.finder ShowMountedServersOnDesktop\
-      \ -bool false|%s\\n\" \"$result\"\n    \n    # Restart Finder to apply changes\n\
-      \    local killall_result\n    killall_result=$($CMD_KILLALL Finder 2>&1)\n\
-      \    $CMD_PRINTF \"FINDER_RESTART|killall Finder|%s\\n\" \"$killall_result\"\
-      \n    \n    return 0\n}\n"
+    code: |
+      hide_mounted_servers() {
+          $CMD_PRINTF "HIDE_TYPE|COMMAND|RESULT\n"
+          
+          # Hide mounted servers from desktop
+          local result
+          result=$($CMD_DEFAULTS write com.apple.finder ShowMountedServersOnDesktop -bool false 2>&1)
+          $CMD_PRINTF "MOUNTED_SERVERS|defaults write com.apple.finder ShowMountedServersOnDesktop -bool false|%s\n" "$result"
+          
+          # Restart Finder to apply changes
+          local killall_result
+          killall_result=$($CMD_KILLALL Finder 2>&1)
+          $CMD_PRINTF "FINDER_RESTART|killall Finder|%s\n" "$killall_result"
+          
+          return 0
+      }
   - name: hide_removable_media
     type: main
     language:
@@ -63,14 +71,22 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "hide_removable_media() {\n    $CMD_PRINTF \"HIDE_TYPE|COMMAND|RESULT\\\
-      n\"\n    \n    # Hide removable media from desktop\n    local result\n    result=$($CMD_DEFAULTS\
-      \ write com.apple.finder ShowRemovableMediaOnDesktop -bool false 2>&1)\n   \
-      \ $CMD_PRINTF \"REMOVABLE_MEDIA|defaults write com.apple.finder ShowRemovableMediaOnDesktop\
-      \ -bool false|%s\\n\" \"$result\"\n    \n    # Restart Finder to apply changes\n\
-      \    local killall_result\n    killall_result=$($CMD_KILLALL Finder 2>&1)\n\
-      \    $CMD_PRINTF \"FINDER_RESTART|killall Finder|%s\\n\" \"$killall_result\"\
-      \n    \n    return 0\n}\n"
+    code: |
+      hide_removable_media() {
+          $CMD_PRINTF "HIDE_TYPE|COMMAND|RESULT\n"
+          
+          # Hide removable media from desktop
+          local result
+          result=$($CMD_DEFAULTS write com.apple.finder ShowRemovableMediaOnDesktop -bool false 2>&1)
+          $CMD_PRINTF "REMOVABLE_MEDIA|defaults write com.apple.finder ShowRemovableMediaOnDesktop -bool false|%s\n" "$result"
+          
+          # Restart Finder to apply changes
+          local killall_result
+          killall_result=$($CMD_KILLALL Finder 2>&1)
+          $CMD_PRINTF "FINDER_RESTART|killall Finder|%s\n" "$killall_result"
+          
+          return 0
+      }
   - name: hide_external_drives
     type: main
     language:
@@ -78,14 +94,22 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "hide_external_drives() {\n    $CMD_PRINTF \"HIDE_TYPE|COMMAND|RESULT\\\
-      n\"\n    \n    # Hide external hard drives from desktop\n    local result\n\
-      \    result=$($CMD_DEFAULTS write com.apple.finder ShowExternalHardDrivesOnDesktop\
-      \ -bool false 2>&1)\n    $CMD_PRINTF \"EXTERNAL_DRIVES|defaults write com.apple.finder\
-      \ ShowExternalHardDrivesOnDesktop -bool false|%s\\n\" \"$result\"\n    \n  \
-      \  # Restart Finder to apply changes\n    local killall_result\n    killall_result=$($CMD_KILLALL\
-      \ Finder 2>&1)\n    $CMD_PRINTF \"FINDER_RESTART|killall Finder|%s\\n\" \"$killall_result\"\
-      \n    \n    return 0\n}\n"
+    code: |
+      hide_external_drives() {
+          $CMD_PRINTF "HIDE_TYPE|COMMAND|RESULT\n"
+          
+          # Hide external hard drives from desktop
+          local result
+          result=$($CMD_DEFAULTS write com.apple.finder ShowExternalHardDrivesOnDesktop -bool false 2>&1)
+          $CMD_PRINTF "EXTERNAL_DRIVES|defaults write com.apple.finder ShowExternalHardDrivesOnDesktop -bool false|%s\n" "$result"
+          
+          # Restart Finder to apply changes
+          local killall_result
+          killall_result=$($CMD_KILLALL Finder 2>&1)
+          $CMD_PRINTF "FINDER_RESTART|killall Finder|%s\n" "$killall_result"
+          
+          return 0
+      }
   - name: hide_desktop_icons
     type: main
     language:
@@ -93,10 +117,19 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "hide_desktop_icons() {\n    $CMD_PRINTF \"HIDE_TYPE|COMMAND|RESULT\\n\"\
-      \n    \n    # Hide all desktop icons\n    local result\n    result=$($CMD_DEFAULTS\
-      \ write com.apple.finder CreateDesktop -bool false 2>&1)\n    $CMD_PRINTF \"\
-      DESKTOP_ICONS|defaults write com.apple.finder CreateDesktop -bool false|%s\\\
-      n\" \"$result\"\n    \n    # Restart Finder to apply changes\n    local killall_result\n\
-      \    killall_result=$($CMD_KILLALL Finder 2>&1)\n    $CMD_PRINTF \"FINDER_RESTART|killall\
-      \ Finder|%s\\n\" \"$killall_result\"\n    \n    return 0\n} "
+    code: |
+      hide_desktop_icons() {
+          $CMD_PRINTF "HIDE_TYPE|COMMAND|RESULT\n"
+          
+          # Hide all desktop icons
+          local result
+          result=$($CMD_DEFAULTS write com.apple.finder CreateDesktop -bool false 2>&1)
+          $CMD_PRINTF "DESKTOP_ICONS|defaults write com.apple.finder CreateDesktop -bool false|%s\n" "$result"
+          
+          # Restart Finder to apply changes
+          local killall_result
+          killall_result=$($CMD_KILLALL Finder 2>&1)
+          $CMD_PRINTF "FINDER_RESTART|killall Finder|%s\n" "$killall_result"
+          
+          return 0
+      }
