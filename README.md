@@ -28,7 +28,7 @@
 <br>
 <br>
 
-Attack-macOS is a library of scripts that security teams can use to evaluate macOS endpoint detection and response capabilities. This project aims to simplify the execution of Living Off The Orchard (LOOT) techniques via standalone scripts with built-in encoding, encryption, formatting, logging, and exfiltration over DNS and HTTPS/S.
+Attack-macOS is a library of scripts that security teams can use to evaluate macOS endpoint detection and response capabilities. This project aims to simplify the execution of [Living Off The Orchard (LOObins)](https://www.loobins.io/) techniques via standalone scripts with built-in encoding, encryption, formatting, logging, and exfiltration over DNS and HTTPS/S.
 
 ##
 
@@ -299,8 +299,8 @@ This project is licensed under the Apache License 2.0.  [LICENSE](LICENSE)
 
 ## Acknowledgements
 
-For contributor acknowledgements and project credits, see [Acknowledgements.md](wiki/Acknowledgements.md).
+For contributor acknowledgements and project credits, see [Acknowledgements.md](docs/Acknowledgements.md).
 
 ## References
 
-For research references and technical documentation, see [References.md](wiki/References.md).
+For research references and technical documentation, see [References.md](docs/References.md).
