@@ -1,15 +1,37 @@
 # Validate Parsed Args
 
-## Purpose
-
+### Purpose
 core_validate_parsed_args function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `CHUNK_SIZE` | 50 |
+| Global Variable | `CMD_PRINTF` | "printf" |
+| Global Variable | `ENCODE` | "none" |
+| Global Variable | `ENCRYPT` | "none" |
+| Global Variable | `EXFIL_METHOD` | "none" |
+| Global Variable | `EXFIL_URI` | "" |
+| Global Variable | `FORMAT` | "raw" |
+| Global Variable | `LIST_FILES` | false |
+| Global Variable | `PROXY_URL` | "" |
+| Global Variable | `SHOW_HELP` | false |
+| Global Variable | `STEG_CARRIER_IMAGE` | "" |
+| Global Variable | `STEG_EXTRACT` | false |
+| Global Variable | `STEG_EXTRACT_FILE` | "" |
+| Global Variable | `STEG_OUTPUT_IMAGE` | "" |
+| Function | `core_debug_print()` | For debug print |
+| Function | `core_extract_domain_from_url()` | For extract domain from url |
+| Function | `core_handle_error()` | For handle error |
+| Function | `core_validate_domain()` | For validate domain |
+| Function | `core_validate_input()` | For validate input |
+| Function | `core_validate_parsed_args()` | For validate parsed args |
+| Command | `date` | For date operations |
+| Command | `tr` | For tr operations |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_validate_parsed_args() {
 local validation_errors=""
     local has_valid_actions=false
@@ -22,7 +44,8 @@ local validation_errors=""
     # Validate chunk size if provided
     if [ -n "$CHUNK_SIZE" ]; then
         if ! core_validate_input "$CHUNK_SIZE" "integer"; then
-            validation_errors="${validation_errors}Invalid chunk size: $CHUNK_SIZE (must be positive integer)\n"
+            validation_errors="${validation_errors}Invalid chunk size: $CHUNK_SIZE (must be positive integer)
+"
         fi
     fi
     
@@ -31,7 +54,8 @@ local validation_errors=""
         case "$FORMAT" in
             json|csv|raw) ;;
             *) 
-                validation_errors="${validation_errors}Invalid format: $FORMAT (must be json, csv, or raw)\n"
+                validation_errors="${validation_errors}Invalid format: $FORMAT (must be json, csv, or raw)
+"
                 ;;
         esac
     fi
@@ -41,7 +65,8 @@ local validation_errors=""
         case "$ENCODE" in
             base64|b64|hex|perl_b64|perl_utf8) ;;
             *)
-                validation_errors="${validation_errors}Invalid encoding: $ENCODE (must be base64, hex, perl_b64, or perl_utf8)\n"
+                validation_errors="${validation_errors}Invalid encoding: $ENCODE (must be base64, hex, perl_b64, or perl_utf8)
+"
                 ;;
         esac
     fi
@@ -51,7 +76,8 @@ local validation_errors=""
         case "$ENCRYPT" in
             aes|gpg|xor) ;;
             *)
-                validation_errors="${validation_errors}Invalid encryption: $ENCRYPT (must be aes, gpg, or xor)\n"
+                validation_errors="${validation_errors}Invalid encryption: $ENCRYPT (must be aes, gpg, or xor)
+"
                 ;;
         esac
     fi
@@ -59,34 +85,41 @@ local validation_errors=""
     # Validate exfiltration settings
     if [ "$EXFIL" = true ]; then
         if [ -z "$EXFIL_METHOD" ]; then
-            validation_errors="${validation_errors}Exfiltration enabled but no method specified\n"
+            validation_errors="${validation_errors}Exfiltration enabled but no method specified
+"
         fi
         
         if [ -z "$EXFIL_URI" ]; then
-            validation_errors="${validation_errors}Exfiltration enabled but no URI specified\n"
+            validation_errors="${validation_errors}Exfiltration enabled but no URI specified
+"
         else
             # Validate the URI based on method
             case "$EXFIL_METHOD" in
                 dns)
                     if ! core_validate_input "$EXFIL_URI" "domain"; then
-                        validation_errors="${validation_errors}Invalid domain format: $EXFIL_URI\n"
+                        validation_errors="${validation_errors}Invalid domain format: $EXFIL_URI
+"
                     elif ! core_validate_domain "$EXFIL_URI"; then
-                        validation_errors="${validation_errors}Domain does not resolve: $EXFIL_URI\n"
+                        validation_errors="${validation_errors}Domain does not resolve: $EXFIL_URI
+"
                     fi
                     ;;
                 http|https)
                     if ! core_validate_input "$EXFIL_URI" "url"; then
-                        validation_errors="${validation_errors}Invalid URL format: $EXFIL_URI\n"
+                        validation_errors="${validation_errors}Invalid URL format: $EXFIL_URI
+"
                     else
                         # Extract and validate domain
                         local domain=$(core_extract_domain_from_url "$EXFIL_URI")
                         if ! core_validate_domain "$domain"; then
-                            validation_errors="${validation_errors}Domain does not resolve: $domain (from URL: $EXFIL_URI)\n"
+                            validation_errors="${validation_errors}Domain does not resolve: $domain (from URL: $EXFIL_URI)
+"
                         fi
                     fi
                     ;;
                 *)
-                    validation_errors="${validation_errors}Invalid exfiltration method: $EXFIL_METHOD\n"
+                    validation_errors="${validation_errors}Invalid exfiltration method: $EXFIL_METHOD
+"
                     ;;
             esac
         fi
@@ -95,26 +128,30 @@ local validation_errors=""
     # Validate file paths if provided
     if [ -n "$STEG_EXTRACT_FILE" ]; then
         if ! core_validate_input "$STEG_EXTRACT_FILE" "file_path"; then
-            validation_errors="${validation_errors}Invalid file path: $STEG_EXTRACT_FILE\n"
+            validation_errors="${validation_errors}Invalid file path: $STEG_EXTRACT_FILE
+"
         fi
     fi
     
     if [ -n "$STEG_CARRIER_IMAGE" ]; then
         if ! core_validate_input "$STEG_CARRIER_IMAGE" "file_path"; then
-            validation_errors="${validation_errors}Invalid carrier image path: $STEG_CARRIER_IMAGE\n"
+            validation_errors="${validation_errors}Invalid carrier image path: $STEG_CARRIER_IMAGE
+"
         fi
     fi
     
     if [ -n "$STEG_OUTPUT_IMAGE" ]; then
         if ! core_validate_input "$STEG_OUTPUT_IMAGE" "file_path"; then
-            validation_errors="${validation_errors}Invalid output image path: $STEG_OUTPUT_IMAGE\n"
+            validation_errors="${validation_errors}Invalid output image path: $STEG_OUTPUT_IMAGE
+"
         fi
     fi
     
     # Validate proxy URL if provided
     if [ -n "$PROXY_URL" ]; then
         if ! core_validate_input "$PROXY_URL" "url"; then
-            validation_errors="${validation_errors}Invalid proxy URL: $PROXY_URL\n"
+            validation_errors="${validation_errors}Invalid proxy URL: $PROXY_URL
+"
         fi
     fi
     
@@ -123,8 +160,10 @@ local validation_errors=""
         # If we have valid actions, continue; otherwise exit
         if [ "$has_valid_actions" = true ]; then
             # Format as single line warning since script continues
-            local formatted_errors=$("$CMD_PRINTF"  "%b" "$validation_errors" | tr '\n' '; ' | sed 's/; $//')
-            "$CMD_PRINTF"  "[WARNING] [%s] Argument validation issues found: %s\n" "$(core_get_timestamp)" "$formatted_errors" >&2
+            local formatted_errors=$("$CMD_PRINTF"  "%b" "$validation_errors" | tr '
+' '; ' | sed 's/; $//')
+            "$CMD_PRINTF"  "[WARNING] [%s] Argument validation issues found: %s
+" "$(core_get_timestamp)" "$formatted_errors" >&2
             return 0
         else
             core_handle_error "Argument validation errors found:"
@@ -139,12 +178,4 @@ local validation_errors=""
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
