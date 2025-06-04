@@ -1,13 +1,13 @@
 procedure_name: security_software
 ttp_id: T1518
 tactic: Discovery
-guid: 63e8a56a-c538-489d-a467-74087fc7dde6
+guid: 3349e821-b561-4407-a4f7-45ff1fb2900b
 intent: Comprehensive security software discovery for macOS systems including EDR,
   AV, firewalls, and built-in protections
 author: '@darmado | https://x.com/darmad0'
-version: 2.0.0
+version: 2.0.3
 created: '2025-01-27'
-updated: '2025-05-30'
+updated: '2025-06-03'
 procedure:
   arguments:
   - option: --edr
@@ -298,7 +298,13 @@ procedure:
       \ ]; then\n        local stealth_mode=$(defaults read /Library/Preferences/com.apple.alf\
       \ stealthenabled 2>/dev/null || echo \"0\")\n        $CMD_PRINTF \"FIREWALL|enabled|stealth:%s\\\
       n\" \"$stealth_mode\"\n    else\n        $CMD_PRINTF \"FIREWALL|disabled|\\\
-      n\"\n    fi\n}\n"
+      n\"\n    fi\n    local alf_agent=\"/System/Library/LaunchAgents/com.apple.alf.useragent.plist\"\
+      \n    local alf_daemon=\"/System/Library/LaunchDaemons/com.apple.alf.agent.plist\"\
+      \n    if [ -f \"$alf_agent\" ]; then\n        $CMD_PRINTF \"FIREWALL_AGENT|present|%s\\\
+      n\" \"$alf_agent\"\n    else\n        $CMD_PRINTF \"FIREWALL_AGENT|missing|%s\\\
+      n\" \"$alf_agent\"\n    fi\n    if [ -f \"$alf_daemon\" ]; then\n        $CMD_PRINTF\
+      \ \"FIREWALL_DAEMON|present|%s\\n\" \"$alf_daemon\"\n    else\n        $CMD_PRINTF\
+      \ \"FIREWALL_DAEMON|missing|%s\\n\" \"$alf_daemon\"\n    fi\n}\n"
   - name: discover_quarantine_info
     type: main
     language:
@@ -306,10 +312,8 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "discover_quarantine_info() {\n    local downloads_dir=\"$HOME/Downloads\"\
-      \n    local quarantined_files=0\n    \n    if [ -d \"$downloads_dir\" ]; then\n\
-      \        quarantined_files=$(find \"$downloads_dir\" -type f -exec xattr -l\
-      \ {} \\; 2>/dev/null | $CMD_GREP -c \"com.apple.quarantine\" || echo \"0\")\n\
-      \        $CMD_PRINTF \"QUARANTINE|active|files:%s\\n\" \"$quarantined_files\"\
-      \n    else\n        $CMD_PRINTF \"QUARANTINE|unknown|files:0\\n\"\n    fi\n\
-      }   "
+    code: |
+      discover_quarantine_info() {
+          local quarantined=$(find ~/Downloads -name '*.dmg' -o -name '*.zip' -o -name '*.pkg' 2>/dev/null | head -1 | xargs xattr -l 2>/dev/null | grep -c 'com.apple.quarantine' || echo '0')
+          $CMD_PRINTF "QUARANTINE|active|files:%s\n" "$quarantined"
+      }
