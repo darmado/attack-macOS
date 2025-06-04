@@ -1,11 +1,11 @@
 procedure_name: search_urls
 tactic: Discovery
 ttp_id: T1082
-guid: 365f3cef-c675-4d55-ac3c-9b0e7d1be31e
+guid: 427311de-a065-4b2c-b190-5feb4bfdff75
 intent: Discover URLs and web-related configuration data using macOS defaults command
   to enumerate browsing history, bookmarks, and web service endpoints.
 author: '@darmado | https://x.com/darmad0'
-version: 1.0.0
+version: 1.0.3
 created: '2025-01-27'
 detection:
 - ioc: defaults command execution
@@ -76,15 +76,28 @@ procedure:
       check_fda:
         enabled: false
         exit_on_failure: false
-    code: "discover_urls() {\n    core_debug_print \"Discovering URLs from common\
-      \ preference domains\"\n    \n    for domain in $URL_DOMAINS; do\n        local\
-      \ domain_output\n        domain_output=$($CMD_DEFAULTS read \"$domain\" 2>/dev/null)\n\
-      \        \n        if [ $? -eq 0 ] && [ -n \"$domain_output\" ]; then\n    \
-      \        # Check each protocol and output URLs immediately\n            for\
-      \ protocol in $URL_PROTOCOLS; do\n                local urls\n             \
-      \   urls=$(echo \"$domain_output\" | grep -o \"${protocol}://[^[:space:]]*\"\
-      )\n                if [ -n \"$urls\" ]; then\n                    echo \"===\
-      \ $protocol URLs from $domain ===\"\n                    echo \"$urls\"\n  \
-      \                  echo \"\"\n                fi\n            done\n       \
-      \ fi\n    done\n    \n    return 0\n} "
-updated: '2025-05-30'
+    code: |
+      discover_urls() {
+          core_debug_print "Discovering URLs from common preference domains"
+          
+          for domain in $URL_DOMAINS; do
+              local domain_output
+              domain_output=$($CMD_DEFAULTS read "$domain" 2>/dev/null)
+              
+              if [ $? -eq 0 ] && [ -n "$domain_output" ]; then
+                  # Check each protocol and output URLs immediately
+                  for protocol in $URL_PROTOCOLS; do
+                      local urls
+                      urls=$(echo "$domain_output" | grep -o "${protocol}://[^[:space:]]*")
+                      if [ -n "$urls" ]; then
+                          echo "=== $protocol URLs from $domain ==="
+                          echo "$urls"
+                          echo ""
+                      fi
+                  done
+              fi
+          done
+          
+          return 0
+      }
+updated: '2025-06-03'
