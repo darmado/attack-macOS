@@ -1,15 +1,25 @@
 # Send Key Via Dns
 
-## Purpose
-
+### Purpose
 core_send_key_via_dns function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `CMD_BASE64` | "base64" |
+| Global Variable | `CMD_DIG` | "dig" |
+| Global Variable | `CMD_PRINTF` | "printf" |
+| Global Variable | `CMD_SLEEP` | "sleep" |
+| Global Variable | `ENCRYPT` | "none" |
+| Global Variable | `ENCRYPT_KEY` | "" |
+| Global Variable | `JOB_ID` | "" |
+| Function | `core_debug_print()` | For debug print |
+| Function | `core_send_key_via_dns()` | For send key via dns |
+| Command | `tr` | For tr operations |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_send_key_via_dns() {
 local domain="$1"
     local encrypted_key=""
@@ -48,12 +58,4 @@ local domain="$1"
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
