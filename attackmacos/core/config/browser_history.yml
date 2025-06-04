@@ -4,7 +4,7 @@ ttp_id: T1217
 guid: 67929a7e-8431-4893-a4e1-5a6743c5605d
 intent: Extract browser history from Safari, Chrome, Firefox, and Brave on macOS.
 author: '@darmado | https://x.com/darmad0'
-version: 2.0.3
+version: 2.0.5
 created: '2025-05-27'
 updated: '2025-06-03'
 detection:
