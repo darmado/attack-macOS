@@ -1,15 +1,17 @@
 # Format As Csv
 
-## Purpose
-
+### Purpose
 core_format_as_csv function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `CMD_PRINTF` | "printf" |
+| Function | `core_format_as_csv()` | For format as csv |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_format_as_csv() {
 local output="$1"
     local csv_output=""
@@ -26,7 +28,8 @@ local output="$1"
         if [ -z "$csv_output" ]; then
             csv_output="$csv_line"
         else
-            csv_output="${csv_output}\n$csv_line"
+            csv_output="${csv_output}
+$csv_line"
         fi
     done <<< "$output"
     
@@ -35,12 +38,4 @@ local output="$1"
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
