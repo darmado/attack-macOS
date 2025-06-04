@@ -1,12 +1,12 @@
 procedure_name: browser_history
 tactic: Discovery
 ttp_id: T1217
-guid: caedce56-e7e0-4814-b479-ac81ed36940e
+guid: 67929a7e-8431-4893-a4e1-5a6743c5605d
 intent: Extract browser history from Safari, Chrome, Firefox, and Brave on macOS.
 author: '@darmado | https://x.com/darmad0'
-version: 2.0.0
+version: 2.0.3
 created: '2025-05-27'
-updated: '2025-05-30'
+updated: '2025-06-03'
 detection:
 - ioc: Event ID 10
 - ioc: binary.exe spawned
@@ -45,18 +45,22 @@ procedure:
     type: string
     input_required: true
     argument_required: false
+    execute_function: []
   - option: --last
     description: Last N days to search
     input_required: true
     type: integer
+    execute_function: []
   - option: --starttime
     description: Start time in YY-MM-DD HH:MM:SS format
     input_required: true
     type: string
+    execute_function: []
   - option: --endtime
     description: End time in YY-MM-DD HH:MM:SS format
     input_required: true
     type: string
+    execute_function: []
   global_variable:
   - name: INPUT_LAST
     type: integer
@@ -84,48 +88,16 @@ procedure:
     default_value: $HOME/Library/Application Support/Firefox/Profiles/*.default-release/places.sqlite
   - name: SAFARI_HDB_QUERY
     type: string
-    default_value: 'WITH headers AS ( SELECT ''source'' as source, ''domain'' as domain,
-      ''title'' as title,  ''visit_date'' as visit_date, ''url'' as url, ''visit_count''
-      as visit_count ) SELECT * FROM headers UNION ALL SELECT  ''Safari'' as source,
-      hi.domain_expansion as domain, hv.title, datetime(hv.visit_time + 978307200,
-      ''unixepoch'', ''localtime'') as visit_date, hi.url, hi.visit_count FROM history_items
-      hi JOIN history_visits hv ON hi.id = hv.history_item WHERE hv.visit_time > (strftime(''%s'',
-      ''now'') - 978307200 - (\$INPUT_LAST * 86400)) \$INPUT_SEARCH ORDER BY visit_date
-      DESC
-
-      '
+    default_value: "WITH headers AS ( SELECT 'source' as source, 'domain' as domain, 'title' as title,  'visit_date' as visit_date, 'url' as url, 'visit_count' as visit_count ) SELECT * FROM headers UNION ALL SELECT  'Safari' as source, hi.domain_expansion as domain, hv.title, datetime(hv.visit_time + 978307200, 'unixepoch', 'localtime') as visit_date, hi.url, hi.visit_count FROM history_items hi JOIN history_visits hv ON hi.id = hv.history_item WHERE hv.visit_time > (strftime('%s', 'now') - 978307200 - (\\$INPUT_LAST * 86400)) \\$INPUT_SEARCH ORDER BY visit_date DESC"
   - name: CHROME_HDB_QUERY
     type: string
-    default_value: 'WITH headers AS ( SELECT ''source'' as source, ''url'' as url,
-      ''title'' as title,  ''visit_date'' as visit_date, ''visit_count'' as visit_count
-      ) SELECT * FROM headers UNION ALL SELECT  ''Chrome'' as source, url, title,
-      datetime(last_visit_time/1000000 + (strftime(''%s'', ''1601-01-01'')), ''unixepoch'',
-      ''localtime'') as last_visit, visit_count FROM urls WHERE last_visit_time >
-      ((strftime(''%s'', ''now'') - \$INPUT_LAST * 86400) * 1000000) \$INPUT_SEARCH
-      ORDER BY last_visit DESC
-
-      '
+    default_value: "WITH headers AS ( SELECT 'source' as source, 'url' as url, 'title' as title,  'visit_date' as visit_date, 'visit_count' as visit_count ) SELECT * FROM headers UNION ALL SELECT  'Chrome' as source, url, title, datetime(last_visit_time/1000000 + (strftime('%s', '1601-01-01')), 'unixepoch', 'localtime') as last_visit, visit_count FROM urls WHERE last_visit_time > ((strftime('%s', 'now') - \\$INPUT_LAST * 86400) * 1000000) \\$INPUT_SEARCH ORDER BY last_visit DESC"
   - name: FIREFOX_HDB_QUERY
     type: string
-    default_value: 'WITH headers AS ( SELECT ''source'' as source, ''url'' as url,
-      ''title'' as title,  ''visit_date'' as visit_date, ''visit_count'' as visit_count
-      ) SELECT * FROM headers UNION ALL SELECT  ''Firefox'' as source, url, title,
-      datetime(last_visit_date/1000000, ''unixepoch'', ''localtime'') as last_visit,
-      visit_count FROM moz_places WHERE last_visit_date > ((strftime(''%s'', ''now'')
-      - \$INPUT_LAST * 86400) * 1000000) \$INPUT_SEARCH ORDER BY last_visit DESC
-
-      '
+    default_value: "WITH headers AS ( SELECT 'source' as source, 'url' as url, 'title' as title,  'visit_date' as visit_date, 'visit_count' as visit_count ) SELECT * FROM headers UNION ALL SELECT  'Firefox' as source, url, title, datetime(last_visit_date/1000000, 'unixepoch', 'localtime') as last_visit, visit_count FROM moz_places WHERE last_visit_date > ((strftime('%s', 'now') - \\$INPUT_LAST * 86400) * 1000000) \\$INPUT_SEARCH ORDER BY last_visit DESC"
   - name: BRAVE_HDB_QUERY
     type: string
-    default_value: 'WITH headers AS ( SELECT ''source'' as source, ''url'' as url,
-      ''title'' as title,  ''visit_date'' as visit_date, ''visit_count'' as visit_count
-      ) SELECT * FROM headers UNION ALL SELECT  ''Brave'' as source, url, title, datetime(last_visit_time/1000000
-      + (strftime(''%s'', ''1601-01-01'')), ''unixepoch'', ''localtime'') as last_visit,
-      visit_count FROM urls WHERE last_visit_time > ((strftime(''%s'', ''now'') -
-      \$INPUT_LAST * 86400) * 1000000) \$INPUT_SEARCH ORDER BY last_visit DESC LIMIT
-      1000
-
-      '
+    default_value: "WITH headers AS ( SELECT 'source' as source, 'url' as url, 'title' as title,  'visit_date' as visit_date, 'visit_count' as visit_count ) SELECT * FROM headers UNION ALL SELECT  'Brave' as source, url, title, datetime(last_visit_time/1000000 + (strftime('%s', '1601-01-01')), 'unixepoch', 'localtime') as last_visit, visit_count FROM urls WHERE last_visit_time > ((strftime('%s', 'now') - \\$INPUT_LAST * 86400) * 1000000) \\$INPUT_SEARCH ORDER BY last_visit DESC LIMIT 1000"
   functions:
   - name: query_safari_history
     type: main
@@ -145,16 +117,24 @@ procedure:
         write: false
         execute: false
         exit_on_failure: true
-    code: "query_safari_history() {\n    # Build search clause locally like the working\
-      \ script\n    local search_clause=\"\"\n    if [ -n \"$INPUT_SEARCH\" ]; then\n\
-      \        local input_search_escaped=\"${INPUT_SEARCH//\\'/\\'\\'}\"\n      \
-      \  search_clause=\"AND (hi.url LIKE '%${input_search_escaped}%' OR hi.domain_expansion\
-      \ LIKE '%${input_search_escaped}%' OR hv.title LIKE '%${input_search_escaped}%')\"\
-      \n    fi\n\n    # Use the exact pattern from the working script\n    local query=\"\
-      ${SAFARI_HDB_QUERY//\\$INPUT_LAST/$INPUT_LAST}\"\n    local query_final=\"${query//\\\
-      $INPUT_SEARCH/$search_clause}\"\n\n    local result=$(query_browser_db \"$DB_HISTORY_SAFARI\"\
-      \ \"$query_final\")\n    core_debug_print \"Query result length: ${#result}\
-      \ characters\"\n    printf \"%s\\n\" \"$result\"\n    return 0\n}\n"
+    code: |
+      query_safari_history() {
+          # Build search clause locally like the working script
+          local search_clause=""
+          if [ -n "$INPUT_SEARCH" ]; then
+              local input_search_escaped="${INPUT_SEARCH//\'/\'\'}"
+              search_clause="AND (hi.url LIKE '%${input_search_escaped}%' OR hi.domain_expansion LIKE '%${input_search_escaped}%' OR hv.title LIKE '%${input_search_escaped}%')"
+          fi
+
+          # Use the exact pattern from the working script
+          local query="${SAFARI_HDB_QUERY//\$INPUT_LAST/$INPUT_LAST}"
+          local query_final="${query//\$INPUT_SEARCH/$search_clause}"
+
+          local result=$(query_browser_db "$DB_HISTORY_SAFARI" "$query_final")
+          core_debug_print "Query result length: ${#result} characters"
+          printf "%s\n" "$result"
+          return 0
+      }
   - name: query_chrome_history
     type: main
     execute_condition:
@@ -173,14 +153,23 @@ procedure:
         write: false
         execute: false
         exit_on_failure: true
-    code: "query_chrome_history() {\n    local search_clause=\"\"\n    if [ -n \"\
-      $INPUT_SEARCH\" ]; then\n        local input_search_escaped=\"${INPUT_SEARCH//\\\
-      '/\\'\\'}\"\n        search_clause=\"AND (url LIKE '%${input_search_escaped}%'\
-      \ OR title LIKE '%${input_search_escaped}%')\"\n    fi\n\n    local query=\"\
-      ${CHROME_HDB_QUERY//\\$INPUT_LAST/$INPUT_LAST}\"\n    local query_final=\"${query//\\\
-      $INPUT_SEARCH/$search_clause}\"\n    \n    core_debug_print \"Executing Chrome\
-      \ history query\"\n    \n    local result=$(query_browser_db \"$DB_HISTORY_CHROME\"\
-      \ \"$query_final\")\n    printf \"%s\\n\" \"$result\"\n    return 0\n}\n"
+    code: |
+      query_chrome_history() {
+          local search_clause=""
+          if [ -n "$INPUT_SEARCH" ]; then
+              local input_search_escaped="${INPUT_SEARCH//\'/\'\'}"
+              search_clause="AND (url LIKE '%${input_search_escaped}%' OR title LIKE '%${input_search_escaped}%')"
+          fi
+
+          local query="${CHROME_HDB_QUERY//\$INPUT_LAST/$INPUT_LAST}"
+          local query_final="${query//\$INPUT_SEARCH/$search_clause}"
+          
+          core_debug_print "Executing Chrome history query"
+          
+          local result=$(query_browser_db "$DB_HISTORY_CHROME" "$query_final")
+          printf "%s\n" "$result"
+          return 0
+      }
   - name: query_firefox_history
     type: main
     execute_condition:
@@ -204,15 +193,25 @@ procedure:
         database_path: ${DB_HISTORY_FIREFOX}
         exit_on_failure: true
         error_message: Firefox database is locked - close Firefox browser first
-    code: "query_firefox_history() {\n    local firefox_db=$(resolve_firefox_db)\n\
-      \n    local search_clause=\"\"\n    if [ -n \"$INPUT_SEARCH\" ]; then\n    \
-      \    local input_search_escaped=\"${INPUT_SEARCH//\\'/\\'\\'}\"\n        search_clause=\"\
-      AND (url LIKE '%${input_search_escaped}%' OR title LIKE '%${input_search_escaped}%')\"\
-      \n    fi\n\n    local query=\"${FIREFOX_HDB_QUERY//\\$INPUT_LAST/$INPUT_LAST}\"\
-      \n    local query_final=\"${query//\\$INPUT_SEARCH/$search_clause}\"\n    \n\
-      \    core_debug_print \"Executing Firefox history query\"\n    \n    local result=$(query_browser_db\
-      \ \"$firefox_db\" \"$query_final\")\n    printf \"%s\\n\" \"$result\"\n    return\
-      \ 0\n}\n"
+    code: |
+      query_firefox_history() {
+          local firefox_db=$(resolve_firefox_db)
+
+          local search_clause=""
+          if [ -n "$INPUT_SEARCH" ]; then
+              local input_search_escaped="${INPUT_SEARCH//\'/\'\'}"
+              search_clause="AND (url LIKE '%${input_search_escaped}%' OR title LIKE '%${input_search_escaped}%')"
+          fi
+
+          local query="${FIREFOX_HDB_QUERY//\$INPUT_LAST/$INPUT_LAST}"
+          local query_final="${query//\$INPUT_SEARCH/$search_clause}"
+          
+          core_debug_print "Executing Firefox history query"
+          
+          local result=$(query_browser_db "$firefox_db" "$query_final")
+          printf "%s\n" "$result"
+          return 0
+      }
   - name: query_brave_history
     type: main
     execute_condition:
@@ -231,15 +230,24 @@ procedure:
         write: false
         execute: false
         exit_on_failure: false
-    code: "query_brave_history() {\n    local search_clause=\"\"\n    if [ -n \"$INPUT_SEARCH\"\
-      \ ]; then\n        local input_search_escaped=\"${INPUT_SEARCH//\\'/\\'\\'}\"\
-      \n        search_clause=\"AND (url LIKE '%${input_search_escaped}%' OR title\
-      \ LIKE '%${input_search_escaped}%')\"\n    fi\n\n    # Use the exact pattern\
-      \ from the working script\n    local query=\"${BRAVE_HDB_QUERY//\\$INPUT_LAST/$INPUT_LAST}\"\
-      \n    local query_final=\"${query//\\$INPUT_SEARCH/$search_clause}\"\n    \n\
-      \    core_debug_print \"Executing Brave history query\"\n    \n    local result=$(query_browser_db\
-      \ \"$DB_HISTORY_BRAVE\" \"$query_final\")\n    printf \"%s\\n\" \"$result\"\n\
-      \    return 0\n}\n"
+    code: |
+      query_brave_history() {
+          local search_clause=""
+          if [ -n "$INPUT_SEARCH" ]; then
+              local input_search_escaped="${INPUT_SEARCH//\'/\'\'}"
+              search_clause="AND (url LIKE '%${input_search_escaped}%' OR title LIKE '%${input_search_escaped}%')"
+          fi
+
+          # Use the exact pattern from the working script
+          local query="${BRAVE_HDB_QUERY//\$INPUT_LAST/$INPUT_LAST}"
+          local query_final="${query//\$INPUT_SEARCH/$search_clause}"
+          
+          core_debug_print "Executing Brave history query"
+          
+          local result=$(query_browser_db "$DB_HISTORY_BRAVE" "$query_final")
+          printf "%s\n" "$result"
+          return 0
+      }
   - name: resolve_firefox_db
     type: helper
     language:
@@ -247,8 +255,11 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "resolve_firefox_db() {\n    ls \"$HOME/Library/Application Support/Firefox/Profiles/\"\
-      *.default-release/places.sqlite 2>/dev/null | head -n 1\n    return $?\n}\n"
+    code: |
+      resolve_firefox_db() {
+          ls "$HOME/Library/Application Support/Firefox/Profiles/"*.default-release/places.sqlite 2>/dev/null | head -n 1
+          return $?
+      }
   - name: query_browser_db
     type: helper
     language:
@@ -256,22 +267,39 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "query_browser_db() {\n    local db=\"$1\"\n    local query=\"$2\"\n   \
-      \ local db_name=$(basename \"$db\")\n    \n    core_debug_print \"=== Database\
-      \ Query Debug ===\"\n    core_debug_print \"Database: '$db'\"\n    core_debug_print\
-      \ \"Command: '$CMD_QUERY_BROWSER_DB'\"\n    core_debug_print \"Full command:\
-      \ $CMD_QUERY_BROWSER_DB '$db' '$query'\"\n    core_debug_print \"Executing query...\"\
-      \n    \n    # Execute query and capture both stdout and stderr\n    local result\n\
-      \    local error_output\n    error_output=$($CMD_QUERY_BROWSER_DB \"$db\" \"\
-      $query\" 2>&1)\n    local exit_code=$?\n    \n    if [ $exit_code -ne 0 ]; then\n\
-      \        # Check if it's a database lock error\n        if echo \"$error_output\"\
-      \ | grep -q \"database is locked\"; then\n            core_handle_error \"Database\
-      \ '$db_name' is locked - close the browser first or wait for it to finish\"\n\
-      \        elif echo \"$error_output\" | grep -q \"no such file\"; then\n    \
-      \        core_handle_error \"Database file not found: '$db'\"\n        elif\
-      \ echo \"$error_output\" | grep -q \"permission denied\"; then\n           \
-      \ core_handle_error \"Permission denied accessing database: '$db_name'\"\n \
-      \       else\n            core_handle_error \"Database query failed for '$db_name':\
-      \ $error_output\"\n        fi\n        return $exit_code\n    fi\n    \n   \
-      \ # Output the result if successful\n    echo \"$error_output\"\n    return\
-      \ 0\n}\n"
+    code: |
+      query_browser_db() {
+          local db="$1"
+          local query="$2"
+          local db_name=$(basename "$db")
+          
+          core_debug_print "=== Database Query Debug ==="
+          core_debug_print "Database: '$db'"
+          core_debug_print "Command: '$CMD_QUERY_BROWSER_DB'"
+          core_debug_print "Full command: $CMD_QUERY_BROWSER_DB '$db' '$query'"
+          core_debug_print "Executing query..."
+          
+          # Execute query and capture both stdout and stderr
+          local result
+          local error_output
+          error_output=$($CMD_QUERY_BROWSER_DB "$db" "$query" 2>&1)
+          local exit_code=$?
+          
+          if [ $exit_code -ne 0 ]; then
+              # Check if it's a database lock error
+              if echo "$error_output" | grep -q "database is locked"; then
+                  core_handle_error "Database '$db_name' is locked - close the browser first or wait for it to finish"
+              elif echo "$error_output" | grep -q "no such file"; then
+                  core_handle_error "Database file not found: '$db'"
+              elif echo "$error_output" | grep -q "permission denied"; then
+                  core_handle_error "Permission denied accessing database: '$db_name'"
+              else
+                  core_handle_error "Database query failed for '$db_name': $error_output"
+              fi
+              return $exit_code
+          fi
+          
+          # Output the result if successful
+          echo "$error_output"
+          return 0
+      }

