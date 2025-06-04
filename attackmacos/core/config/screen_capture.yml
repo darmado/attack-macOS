@@ -4,7 +4,7 @@ tactic: Collection
 guid: 629c194e-c952-4cbc-bfa6-9c224b31d118
 intent: Capture screenshots of the desktop for reconnaissance and data collection
 author: '@darmado | https://x.com/darmad0'
-version: 1.0.3
+version: 1.0.4
 created: '2025-05-28'
 updated: '2025-06-03'
 procedure:
