@@ -1,7 +1,7 @@
 # Steganography
 
 ### Purpose
-core_steganography function implementation from base.sh.
+Hides data in image files using native macOS tools by appending Base64-encoded data with special markers to the end of image files. Image viewers ignore the appended data while preserving file functionality.
 
 ### Dependencies
 | Type | Name | Value |
