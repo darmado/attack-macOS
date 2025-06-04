@@ -5,7 +5,7 @@ guid: 427311de-a065-4b2c-b190-5feb4bfdff75
 intent: Discover URLs and web-related configuration data using macOS defaults command
   to enumerate browsing history, bookmarks, and web service endpoints.
 author: '@darmado | https://x.com/darmad0'
-version: 1.0.3
+version: 1.0.4
 created: '2025-01-27'
 detection:
 - ioc: defaults command execution
