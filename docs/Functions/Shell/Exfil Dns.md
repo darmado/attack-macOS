@@ -1,15 +1,29 @@
 # Exfil Dns
 
-## Purpose
-
+### Purpose
 core_exfil_dns function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `CHUNK_SIZE` | 50 |
+| Global Variable | `CMD_BASE64` | "base64" |
+| Global Variable | `CMD_DIG` | "dig" |
+| Global Variable | `CMD_PRINTF` | "printf" |
+| Global Variable | `CMD_SLEEP` | "sleep" |
+| Global Variable | `ENCODE` | "none" |
+| Global Variable | `ENCRYPT` | "none" |
+| Global Variable | `ENCRYPT_KEY` | "" |
+| Global Variable | `EXFIL_URI` | "" |
+| Global Variable | `JOB_ID` | "" |
+| Function | `core_debug_print()` | For debug print |
+| Function | `core_dns_safe_encode()` | For dns safe encode |
+| Function | `core_exfil_dns()` | For exfil dns |
+| Command | `tr` | For tr operations |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_exfil_dns() {
 local data="$1"
     
@@ -82,12 +96,4 @@ local data="$1"
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
