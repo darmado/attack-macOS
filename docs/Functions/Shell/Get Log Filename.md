@@ -1,15 +1,19 @@
 # Get Log Filename
 
-## Purpose
-
+### Purpose
 core_get_log_filename function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `LOG_FILE_NAME` | "${TTP_ID}_${NAME}.log" |
+| Global Variable | `PROCEDURE_NAME` | "" |
+| Global Variable | `TTP_ID` | "" |
+| Function | `core_get_log_filename()` | For get log filename |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_get_log_filename() {
 if [ -z "$LOG_FILE_NAME" ]; then
         if [ -n "$PROCEDURE_NAME" ]; then
@@ -24,12 +28,4 @@ if [ -z "$LOG_FILE_NAME" ]; then
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
