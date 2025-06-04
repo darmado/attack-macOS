@@ -1,15 +1,18 @@
 # Get Content Type
 
-## Purpose
-
+### Purpose
 core_get_content_type function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `CMD_PRINTF` | "printf" |
+| Global Variable | `ENCODE` | "none" |
+| Function | `core_get_content_type()` | For get content type |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_get_content_type() {
 local content_type="text/plain"
     if [ "$ENCODE" = "base64" ] || [ "$ENCODE" = "b64" ]; then
@@ -21,12 +24,4 @@ local content_type="text/plain"
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
