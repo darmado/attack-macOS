@@ -1,13 +1,13 @@
 procedure_name: local_accounts
 ttp_id: T1087.001
 tactic: Discovery
-guid: 858d5344-87cc-4ce8-9662-242cc19d6f1b
+guid: 9de32223-071c-4911-8dfc-f0242de37a12
 intent: Identifies valid local accounts and groups on macOS systems using various
   native commands
 author: '@darmado | https://x.com/darmad0'
 created: '2023-10-06'
-updated: '2025-05-30'
-version: 1.5.0
+updated: '2025-06-03'
+version: 1.5.3
 procedure:
   arguments:
   - option: -a|--all
@@ -165,7 +165,10 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "get_user() {\n    USER=$(whoami)\n}\n"
+    code: |
+      get_user() {
+          USER=$(whoami)
+      }
   - name: get_timestamp
     type: helper
     language:
@@ -173,7 +176,10 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "get_timestamp() {\n    date +\"%Y-%m-%d %H:%M:%S\"\n}\n"
+    code: |
+      get_timestamp() {
+          date +"%Y-%m-%d %H:%M:%S"
+      }
   - name: list_user_dirs
     type: main
     language:
@@ -186,9 +192,13 @@ procedure:
         path: /Users
         read: true
         exit_on_failure: true
-    code: "list_user_dirs() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
-      \ $USER; msg: Discovered user directories; command: \\\"$CMD_LIST_USER_DIRS\\\
-      \"\\n\"\n    $CMD_LIST_USER_DIRS\n    return 0\n}\n"
+    code: |
+      list_user_dirs() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Discovered user directories; command: \"$CMD_LIST_USER_DIRS\"\n"
+          $CMD_LIST_USER_DIRS
+          return 0
+      }
   - name: list_dscl_users
     type: main
     language:
@@ -196,9 +206,13 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "list_dscl_users() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
-      \ $USER; msg: Listed users; command: \\\"$CMD_LIST_DSCL_USERS\\\"\\n\"\n   \
-      \ $CMD_LIST_DSCL_USERS\n    return 0\n}\n"
+    code: |
+      list_dscl_users() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Listed users; command: \"$CMD_LIST_DSCL_USERS\"\n"
+          $CMD_LIST_DSCL_USERS
+          return 0
+      }
   - name: extract_passwd_users
     type: main
     language:
@@ -211,9 +225,13 @@ procedure:
         path: /etc/passwd
         read: true
         exit_on_failure: true
-    code: "extract_passwd_users() {\n    get_user\n    printf \"[$(get_timestamp)]:\
-      \ user: $USER; msg: Retrieved content of /etc/passwd file; command: \\\"$CMD_EXTRACT_PASSWD_USERS\\\
-      \"\\n\"\n    $CMD_EXTRACT_PASSWD_USERS\n    return 0\n}\n"
+    code: |
+      extract_passwd_users() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Retrieved content of /etc/passwd file; command: \"$CMD_EXTRACT_PASSWD_USERS\"\n"
+          $CMD_EXTRACT_PASSWD_USERS
+          return 0
+      }
   - name: show_id_info
     type: main
     language:
@@ -221,9 +239,13 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "show_id_info() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
-      \ $USER; msg: Obtained current user info; command: \\\"$CMD_SHOW_ID_INFO\\\"\
-      \\n\"\n    $CMD_SHOW_ID_INFO\n    return 0\n}\n"
+    code: |
+      show_id_info() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Obtained current user info; command: \"$CMD_SHOW_ID_INFO\"\n"
+          $CMD_SHOW_ID_INFO
+          return 0
+      }
   - name: list_logged_users
     type: main
     language:
@@ -231,9 +253,13 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "list_logged_users() {\n    get_user\n    printf \"[timestamp=$(get_timestamp)]\
-      \ user: $USER; msg: Listed logged in users; command: \\\"$CMD_LIST_LOGGED_USERS\\\
-      \"\\n\"\n    $CMD_LIST_LOGGED_USERS\n    return 0\n}\n"
+    code: |
+      list_logged_users() {
+          get_user
+          printf "[timestamp=$(get_timestamp)] user: $USER; msg: Listed logged in users; command: \"$CMD_LIST_LOGGED_USERS\"\n"
+          $CMD_LIST_LOGGED_USERS
+          return 0
+      }
   - name: read_loginwindow_plist
     type: main
     language:
@@ -246,9 +272,13 @@ procedure:
         path: /Library/Preferences/com.apple.loginwindow.plist
         read: true
         exit_on_failure: true
-    code: "read_loginwindow_plist() {\n    get_user\n    printf \"[$(get_timestamp)]:\
-      \ user: $USER; msg: Read content of loginwindow plist; command: \\\"$CMD_READ_LOGINWINDOW_PLIST\\\
-      \"\\n\"\n    $CMD_READ_LOGINWINDOW_PLIST\n    return 0\n}\n"
+    code: |
+      read_loginwindow_plist() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Read content of loginwindow plist; command: \"$CMD_READ_LOGINWINDOW_PLIST\"\n"
+          $CMD_READ_LOGINWINDOW_PLIST
+          return 0
+      }
   - name: list_groups_dscacheutil
     type: main
     language:
@@ -256,9 +286,13 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "list_groups_dscacheutil() {\n    get_user\n    printf \"[$(get_timestamp)]:\
-      \ user: $USER; msg: Listed groups; command: \\\"$CMD_LIST_GROUPS_DSCACHEUTIL\\\
-      \"\\n\"\n    $CMD_LIST_GROUPS_DSCACHEUTIL\n    return 0\n}\n"
+    code: |
+      list_groups_dscacheutil() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Listed groups; command: \"$CMD_LIST_GROUPS_DSCACHEUTIL\"\n"
+          $CMD_LIST_GROUPS_DSCACHEUTIL
+          return 0
+      }
   - name: list_groups_dscl
     type: main
     language:
@@ -266,9 +300,13 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "list_groups_dscl() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
-      \ $USER; msg: Listed groups; command: \\\"$CMD_LIST_GROUPS_DSCL\\\"\\n\"\n \
-      \   $CMD_LIST_GROUPS_DSCL\n    return 0\n}\n"
+    code: |
+      list_groups_dscl() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Listed groups; command: \"$CMD_LIST_GROUPS_DSCL\"\n"
+          $CMD_LIST_GROUPS_DSCL
+          return 0
+      }
   - name: list_groups_etc
     type: main
     language:
@@ -281,9 +319,13 @@ procedure:
         path: /etc/group
         read: true
         exit_on_failure: true
-    code: "list_groups_etc() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
-      \ $USER; msg: Listed groups from /etc/group; command: \\\"$CMD_LIST_GROUPS_ETC\\\
-      \"\\n\"\n    $CMD_LIST_GROUPS_ETC\n    return 0\n}\n"
+    code: |
+      list_groups_etc() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Listed groups from /etc/group; command: \"$CMD_LIST_GROUPS_ETC\"\n"
+          $CMD_LIST_GROUPS_ETC
+          return 0
+      }
   - name: list_groups_id
     type: main
     language:
@@ -291,9 +333,13 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "list_groups_id() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
-      \ $USER; msg: Listed groups for the current user; command: \\\"$CMD_LIST_GROUPS_ID\\\
-      \"\\n\"\n    $CMD_LIST_GROUPS_ID\n    return 0\n}\n"
+    code: |
+      list_groups_id() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Listed groups for the current user; command: \"$CMD_LIST_GROUPS_ID\"\n"
+          $CMD_LIST_GROUPS_ID
+          return 0
+      }
   - name: list_groups_cmd
     type: main
     language:
@@ -301,9 +347,13 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "list_groups_cmd() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
-      \ $USER; msg: Listed groups for the current user; command: \\\"$CMD_LIST_GROUPS_CMD\\\
-      \"\\n\"\n    $CMD_LIST_GROUPS_CMD\n    return 0\n}\n"
+    code: |
+      list_groups_cmd() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Listed groups for the current user; command: \"$CMD_LIST_GROUPS_CMD\"\n"
+          $CMD_LIST_GROUPS_CMD
+          return 0
+      }
   - name: list_dscacheutil_users
     type: main
     language:
@@ -311,9 +361,13 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "list_dscacheutil_users() {\n    get_user\n    printf \"[$(get_timestamp)]:\
-      \ user: $USER; msg: Listed local users; command: \\\"$CMD_LIST_DSCACHEUTIL_USERS\\\
-      \"\\n\"\n    $CMD_LIST_DSCACHEUTIL_USERS\n    return 0\n} "
+    code: |
+      list_dscacheutil_users() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Listed local users; command: \"$CMD_LIST_DSCACHEUTIL_USERS\"\n"
+          $CMD_LIST_DSCACHEUTIL_USERS
+          return 0
+      }
   - name: find_user_defaults
     type: main
     language:
@@ -321,9 +375,13 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "find_user_defaults() {\n    get_user\n    printf \"[$(get_timestamp)]:\
-      \ user: $USER; msg: Found user account defaults; command: \\\"$CMD_FIND_USER_DEFAULTS\\\
-      \"\\n\"\n    $CMD_FIND_USER_DEFAULTS\n    return 0\n}"
+    code: |
+      find_user_defaults() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Found user account defaults; command: \"$CMD_FIND_USER_DEFAULTS\"\n"
+          $CMD_FIND_USER_DEFAULTS
+          return 0
+      }
   - name: show_last_logins
     type: main
     language:
@@ -331,9 +389,13 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "show_last_logins() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
-      \ $USER; msg: Retrieved last login records; command: \\\"$CMD_SHOW_LAST_LOGINS\\\
-      \"\\n\"\n    $CMD_SHOW_LAST_LOGINS\n    return 0\n}"
+    code: |
+      show_last_logins() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Retrieved last login records; command: \"$CMD_SHOW_LAST_LOGINS\"\n"
+          $CMD_SHOW_LAST_LOGINS
+          return 0
+      }
   - name: list_user_profiles
     type: main
     language:
@@ -341,9 +403,13 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "list_user_profiles() {\n    get_user\n    printf \"[$(get_timestamp)]:\
-      \ user: $USER; msg: Listed user configuration profiles; command: \\\"$CMD_LIST_USER_PROFILES\\\
-      \"\\n\"\n    $CMD_LIST_USER_PROFILES\n    return 0\n}"
+    code: |
+      list_user_profiles() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Listed user configuration profiles; command: \"$CMD_LIST_USER_PROFILES\"\n"
+          $CMD_LIST_USER_PROFILES
+          return 0
+      }
   - name: show_user_profile_details
     type: main
     language:
@@ -351,14 +417,20 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: "show_user_profile_details() {\n    get_user\n    # Check if profiles exist\
-      \ for user first\n    local profile_check\n    profile_check=$($CMD_LIST_USER_PROFILES\
-      \ 2>/dev/null)\n    if [ -n \"$profile_check\" ] && ! echo \"$profile_check\"\
-      \ | grep -q \"no configuration profiles\"; then\n        printf \"[$(get_timestamp)]:\
-      \ user: $USER; msg: Retrieved user profile details; command: \\\"$CMD_SHOW_USER_PROFILE\
-      \ $USER\\\"\\n\"\n        $CMD_SHOW_USER_PROFILE \"$USER\"\n    else\n     \
-      \   printf \"[$(get_timestamp)]: user: $USER; msg: No configuration profiles\
-      \ found for user\\n\"\n    fi\n    return 0\n}"
+    code: |
+      show_user_profile_details() {
+          get_user
+          # Check if profiles exist for user first
+          local profile_check
+          profile_check=$($CMD_LIST_USER_PROFILES 2>/dev/null)
+          if [ -n "$profile_check" ] && ! echo "$profile_check" | grep -q "no configuration profiles"; then
+              printf "[$(get_timestamp)]: user: $USER; msg: Retrieved user profile details; command: \"$CMD_SHOW_USER_PROFILE $USER\"\n"
+              $CMD_SHOW_USER_PROFILE "$USER"
+          else
+              printf "[$(get_timestamp)]: user: $USER; msg: No configuration profiles found for user\n"
+          fi
+          return 0
+      }
   - name: show_all_profiles
     type: main
     language:
@@ -369,7 +441,10 @@ procedure:
       check_sudo:
         enabled: true
         exit_on_failure: true
-    code: "show_all_profiles() {\n    get_user\n    printf \"[$(get_timestamp)]: user:\
-      \ $USER; msg: Retrieved all configuration profiles (requires sudo); command:\
-      \ \\\"$CMD_SHOW_ALL_PROFILES\\\"\\n\"\n    $CMD_SHOW_ALL_PROFILES\n    return\
-      \ 0\n}"
+    code: |
+      show_all_profiles() {
+          get_user
+          printf "[$(get_timestamp)]: user: $USER; msg: Retrieved all configuration profiles (requires sudo); command: \"$CMD_SHOW_ALL_PROFILES\"\n"
+          $CMD_SHOW_ALL_PROFILES
+          return 0
+      }
