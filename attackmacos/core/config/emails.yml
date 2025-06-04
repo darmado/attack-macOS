@@ -1,13 +1,13 @@
 procedure_name: emails
 ttp_id: T1087.003
 tactic: Discovery
-guid: 72dbdc57-deeb-4947-9618-49ed4897edc9
+guid: 04a65e77-5f4a-4a0d-90d0-bf45e96aa070
 intent: Discover email addresses from verified macOS databases containing confirmed
   email data
 author: '@darmado'
-version: 1.0.0
+version: 1.0.3
 created: '2025-01-27'
-updated: '2025-05-30'
+updated: '2025-06-03'
 platform:
 - macOS
 procedure:
@@ -48,64 +48,126 @@ procedure:
     type: main
     language:
     - shell
-    code: "discover_messages_emails() {\n    local db_path=\"${DB_MESSAGES}\"\n  \
-      \  if [ ! -f \"${db_path}\" ]; then\n      printf \"[-] Messages database not\
-      \ found: %s\\n\" \"${db_path}\"\n      return 1\n    fi\n    \n    printf \"\
-      [+] Extracting emails from Messages database...\\n\"\n    \n    # Extract from\
-      \ handle.id (primary source - 34 emails)\n    printf \"=== HANDLE.ID EMAILS\
-      \ ===\\n\"\n    sqlite3 \"${db_path}\" \"\n    SELECT DISTINCT id as email_address\n\
-      \    FROM handle \n    WHERE id LIKE '%@%' \n    ORDER BY id;\" 2>/dev/null\n\
-      \    \n    # Extract from message.account (sender accounts - 2 emails with high\
-      \ message counts)\n    printf \"\\n=== MESSAGE.ACCOUNT EMAILS ===\\n\"\n   \
-      \ sqlite3 \"${db_path}\" \"\n    SELECT DISTINCT account as email_address\n\
-      \    FROM message \n    WHERE account LIKE '%@%' \n    ORDER BY account;\" 2>/dev/null\n\
-      \    \n    # Extract from message.destination_caller_id (recipients - 7 emails)\n\
-      \    printf \"\\n=== DESTINATION_CALLER_ID EMAILS ===\\n\"\n    sqlite3 \"${db_path}\"\
-      \ \"\n    SELECT DISTINCT destination_caller_id as email_address\n    FROM message\
-      \ \n    WHERE destination_caller_id LIKE '%@%' \n    ORDER BY destination_caller_id;\"\
-      \ 2>/dev/null\n    \n    # Extract from chat.account_login (user credentials\
-      \ - 2 emails)\n    printf \"\\n=== CHAT.ACCOUNT_LOGIN EMAILS ===\\n\"\n    sqlite3\
-      \ \"${db_path}\" \"\n    SELECT DISTINCT account_login as email_address\n  \
-      \  FROM chat \n    WHERE account_login LIKE '%@%' \n    ORDER BY account_login;\"\
-      \ 2>/dev/null\n    \n    return 0\n}\n"
+    code: |
+      discover_messages_emails() {
+          local db_path="${DB_MESSAGES}"
+          if [ ! -f "${db_path}" ]; then
+            printf "[-] Messages database not found: %s\n" "${db_path}"
+            return 1
+          fi
+          
+          printf "[+] Extracting emails from Messages database...\n"
+          
+          # Extract from handle.id (primary source - 34 emails)
+          printf "=== HANDLE.ID EMAILS ===\n"
+          sqlite3 "${db_path}" "
+          SELECT DISTINCT id as email_address
+          FROM handle 
+          WHERE id LIKE '%@%' 
+          ORDER BY id;" 2>/dev/null
+          
+          # Extract from message.account (sender accounts - 2 emails with high message counts)
+          printf "\n=== MESSAGE.ACCOUNT EMAILS ===\n"
+          sqlite3 "${db_path}" "
+          SELECT DISTINCT account as email_address
+          FROM message 
+          WHERE account LIKE '%@%' 
+          ORDER BY account;" 2>/dev/null
+          
+          # Extract from message.destination_caller_id (recipients - 7 emails)
+          printf "\n=== DESTINATION_CALLER_ID EMAILS ===\n"
+          sqlite3 "${db_path}" "
+          SELECT DISTINCT destination_caller_id as email_address
+          FROM message 
+          WHERE destination_caller_id LIKE '%@%' 
+          ORDER BY destination_caller_id;" 2>/dev/null
+          
+          # Extract from chat.account_login (user credentials - 2 emails)
+          printf "\n=== CHAT.ACCOUNT_LOGIN EMAILS ===\n"
+          sqlite3 "${db_path}" "
+          SELECT DISTINCT account_login as email_address
+          FROM chat 
+          WHERE account_login LIKE '%@%' 
+          ORDER BY account_login;" 2>/dev/null
+          
+          return 0
+      }
   - name: discover_entities_emails
     type: main
     language:
     - shell
-    code: "discover_entities_emails() {\n    local db_path=\"${DB_ENTITIES}\"\n  \
-      \  if [ ! -f \"${db_path}\" ]; then\n      printf \"[-] Entities database not\
-      \ found: %s\\n\" \"${db_path}\"\n      return 1\n    fi\n    \n    printf \"\
-      [+] Extracting emails from Apple Suggestions entities.db...\\n\"\n    \n   \
-      \ # Extract from contactDetails where type=2 (email addresses - 28 emails)\n\
-      \    printf \"=== CONTACTDETAILS EMAIL ADDRESSES (type=2) ===\\n\"\n    sqlite3\
-      \ \"${db_path}\" \"\n    SELECT DISTINCT value as email_address\n    FROM contactDetails\
-      \ \n    WHERE type = 2 AND value LIKE '%@%'\n    ORDER BY value;\" 2>/dev/null\n\
-      \    \n    # Extract from emailMetadata.author (sender emails with metadata\
-      \ - 28 emails)\n    printf \"\\n=== EMAILMETADATA SENDER EMAILS ===\\n\"\n \
-      \   sqlite3 \"${db_path}\" \"\n    SELECT DISTINCT author as email_address\n\
-      \    FROM emailMetadata \n    WHERE author LIKE '%@%'\n    ORDER BY author;\"\
-      \ 2>/dev/null\n    \n    # Extract from emailMetadata.key (message identifiers\
-      \ - 69 emails)\n    printf \"\\n=== EMAILMETADATA KEY FIELD EMAILS ===\\n\"\n\
-      \    sqlite3 \"${db_path}\" \"\n    SELECT DISTINCT \n        CASE \n      \
-      \      WHEN key LIKE '%iMessage;-;%@%' THEN \n                SUBSTR(key, INSTR(key,\
-      \ 'iMessage;-;') + 10)\n            ELSE key\n        END as email_address\n\
-      \    FROM emailMetadata \n    WHERE key LIKE '%@%'\n    ORDER BY email_address;\"\
-      \ 2>/dev/null\n    \n    return 0\n}\n"
+    code: |
+      discover_entities_emails() {
+          local db_path="${DB_ENTITIES}"
+          if [ ! -f "${db_path}" ]; then
+            printf "[-] Entities database not found: %s\n" "${db_path}"
+            return 1
+          fi
+          
+          printf "[+] Extracting emails from Apple Suggestions entities.db...\n"
+          
+          # Extract from contactDetails where type=2 (email addresses - 28 emails)
+          printf "=== CONTACTDETAILS EMAIL ADDRESSES (type=2) ===\n"
+          sqlite3 "${db_path}" "
+          SELECT DISTINCT value as email_address
+          FROM contactDetails 
+          WHERE type = 2 AND value LIKE '%@%'
+          ORDER BY value;" 2>/dev/null
+          
+          # Extract from emailMetadata.author (sender emails with metadata - 28 emails)
+          printf "\n=== EMAILMETADATA SENDER EMAILS ===\n"
+          sqlite3 "${db_path}" "
+          SELECT DISTINCT author as email_address
+          FROM emailMetadata 
+          WHERE author LIKE '%@%'
+          ORDER BY author;" 2>/dev/null
+          
+          # Extract from emailMetadata.key (message identifiers - 69 emails)
+          printf "\n=== EMAILMETADATA KEY FIELD EMAILS ===\n"
+          sqlite3 "${db_path}" "
+          SELECT DISTINCT 
+              CASE 
+                  WHEN key LIKE '%iMessage;-;%@%' THEN 
+                      SUBSTR(key, INSTR(key, 'iMessage;-;') + 10)
+                  ELSE key
+              END as email_address
+          FROM emailMetadata 
+          WHERE key LIKE '%@%'
+          ORDER BY email_address;" 2>/dev/null
+          
+          return 0
+      }
   - name: discover_whatsapp_emails
     type: main
     language:
     - shell
-    code: "discover_whatsapp_emails() {\n    local db_path=\"${DB_WHATSAPP_CHAT}\"\
-      \n    if [ ! -f \"${db_path}\" ]; then\n      printf \"[-] WhatsApp chat database\
-      \ not found: %s\\n\" \"${db_path}\"\n      return 1\n    fi\n    \n    printf\
-      \ \"[+] Extracting emails from WhatsApp message content...\\n\"\n    \n    #\
-      \ Extract email addresses from message text content (ZTEXT field)\n    printf\
-      \ \"=== WHATSAPP MESSAGE CONTENT EMAILS ===\\n\"\n    sqlite3 \"${db_path}\"\
-      \ \"\n    SELECT DISTINCT ZTEXT as message_content\n    FROM ZWAMESSAGE \n \
-      \   WHERE ZTEXT LIKE '%@gmail.%' \n       OR ZTEXT LIKE '%@yahoo.%' \n     \
-      \  OR ZTEXT LIKE '%@hotmail.%' \n       OR ZTEXT LIKE '%@outlook.%' \n     \
-      \  OR ZTEXT LIKE '%@icloud.%'\n       OR ZTEXT LIKE '%@apple.%'\n       OR (ZTEXT\
-      \ LIKE '%@%.%' \n           AND ZTEXT NOT LIKE '%@s.whatsapp.net%' \n      \
-      \     AND ZTEXT NOT LIKE '%@g.us%'\n           AND ZTEXT NOT LIKE '%@media.whatsapp.com%'\n\
-      \           AND LENGTH(ZTEXT) < 200)\n    ORDER BY message_content;\" 2>/dev/null\n\
-      \    \n    return 0\n}\n"
+    code: |
+      discover_whatsapp_emails() {
+          local db_path="${DB_WHATSAPP_CHAT}"
+          if [ ! -f "${db_path}" ]; then
+            printf "[-] WhatsApp chat database not found: %s\n" "${db_path}"
+            return 1
+          fi
+          
+          printf "[+] Extracting emails from WhatsApp message content...\n"
+          
+          # Extract email addresses from message text content (ZTEXT field)
+          printf "=== WHATSAPP MESSAGE CONTENT EMAILS ===\n"
+          sqlite3 "${db_path}" "
+          SELECT DISTINCT ZTEXT as message_content
+          FROM ZWAMESSAGE 
+          WHERE ZTEXT LIKE '%@gmail.%' 
+             OR ZTEXT LIKE '%@yahoo.%' 
+             OR ZTEXT LIKE '%@hotmail.%' 
+             OR ZTEXT LIKE '%@outlook.%' 
+             OR ZTEXT LIKE '%@icloud.%'
+             OR ZTEXT LIKE '%@apple.%'
+             OR (ZTEXT LIKE '%@%.%' 
+                 AND ZTEXT NOT LIKE '%@s.whatsapp.net%' 
+                 AND ZTEXT NOT LIKE '%@g.us%'
+                 AND ZTEXT NOT LIKE '%@media.whatsapp.com%'
+                 AND LENGTH(ZTEXT) < 200)
+          ORDER BY message_content;" 2>/dev/null
+          
+          return 0
+      }
