@@ -1,15 +1,17 @@
 # Prepare Exfil Data
 
-## Purpose
-
+### Purpose
 core_prepare_exfil_data function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `CMD_PRINTF` | "printf" |
+| Function | `core_prepare_exfil_data()` | For prepare exfil data |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_prepare_exfil_data() {
 local data="$1"
     
@@ -24,12 +26,4 @@ local data="$1"
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
