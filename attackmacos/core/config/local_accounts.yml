@@ -7,7 +7,7 @@ intent: Identifies valid local accounts and groups on macOS systems using variou
 author: '@darmado | https://x.com/darmad0'
 created: '2023-10-06'
 updated: '2025-06-03'
-version: 1.5.3
+version: 1.5.4
 procedure:
   arguments:
   - option: -a|--all
