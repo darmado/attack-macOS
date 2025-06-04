@@ -1,15 +1,22 @@
 # Extract Steganography
 
-## Purpose
-
+### Purpose
 core_extract_steganography function implementation from base.sh.
 
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `CMD_BASE64` | "base64" |
+| Global Variable | `CMD_GREP` | "grep" |
+| Global Variable | `CMD_PRINTF` | "printf" |
+| Global Variable | `CMD_STRINGS` | "strings" |
+| Global Variable | `CMD_TAIL` | "tail" |
+| Function | `core_extract_steganography()` | For extract steganography |
+| Function | `core_handle_error()` | For handle error |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_extract_steganography() {
 local steg_file="$1"
     
@@ -43,12 +50,4 @@ local steg_file="$1"
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
