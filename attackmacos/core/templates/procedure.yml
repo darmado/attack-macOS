@@ -9,13 +9,13 @@
 
 # Required fields
 procedure_name: ""  # Name of the procedure
-tactic: ""         # MITRE ATT&CK Tactic
-ttp_id: ""         # MITRE ATT&CK TTP ID (e.g., T1087)
-guid: $GUID
-intent: ""         # Purpose and goal of the procedure
+tactic: ""          # MITRE ATT&CK Tactic
+ttp_id: ""          # MITRE ATT&CK TTP ID (e.g., T1087)
+guid: $GUID.        # GUID VAR. is used by the build tool after tests pass.
+intent: ""          # Purpose and goal of the procedure
 author: ""         # Author name and contact
 created: ""        # Creation date (YYYY-MM-DD)
-updated: $UPDATED
+updated: $UPDATED  # UPDATED VAR. is used by the build tool after tests pass.
 version: ""        # Semantic versioning (e.g., 1.0.0)
 
 
@@ -45,25 +45,32 @@ acknowledgement:   # Credits and acknowledgements
 # Required procedure section
 procedure:         # Core procedure definition
   arguments:       # Command-line arguments
-    - option: ""   # Argument name
-      description: "" # Argument description
-      type: ""     # Argument type
+    - option: ""   # Argument name (must use --long format only)
+      description: "" # Argument description (5-100 chars)
+      type: ""     # Argument type (string|integer) - only for input_required arguments
       option_required: false # Whether option is required
-      input_required: false  # Whether input is required
-      input_values: []      # Valid input values
+      input_required: false  # Whether argument accepts user input (creates INPUT_* variable)
+                            # Set to true for arguments like --gatekeeper enable/disable
+                            # Requires corresponding INPUT_* global variable
+                            # Naming: --gatekeeper → INPUT_GATEKEEPER
+                            #         --appfw-defaults → INPUT_APPFW_DEFAULTS
+      input_values: []      # Valid input values for validation (optional)
       argument_required: false # Whether argument is required
       execute_function: []  # Functions to execute
 
   global_variable: # Global variables
-    - name: ""     # Variable name
-      type: ""     # Variable type
-      default_value: "" # Default value
+    - name: ""     # Variable name (UPPER_CASE format)
+                   # For input_required arguments, create INPUT_* variables:
+                   # INPUT_GATEKEEPER, INPUT_APPFW, INPUT_SETBLOCKALL, etc.
+      type: ""     # Variable type (string|integer|boolean|array)
+      default_value: "" # Default value (use '' for empty INPUT_* variables)
       array_elements: [] # Array elements if applicable
 
   functions:       # Procedure functions
     - name: ""     # Function name
       type: ""     # Function type
       language: [] # Supported languages (cmd, sh, bash, zsh, python, powershell, javascript, JXA, go)
+      sudo_required: false # Whether function commands require sudo privileges (build script auto-adds $CMD_SUDO)
       execute_condition: # Execution conditions
         global_variable: "" # Required global variable
         exists: false      # Whether variable must exist
@@ -83,4 +90,4 @@ procedure:         # Core procedure definition
           database_path: "" # Database path
           exit_on_failure: true # Exit on failure
           error_message: "" # Error message
-      code: |      # Function code
+      code: |      # Function code 

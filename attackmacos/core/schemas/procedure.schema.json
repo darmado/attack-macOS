@@ -18,8 +18,8 @@
   "properties": {
     "procedure_name": {
       "type": "string",
-      "description": "Unique procedure name for the generated script (e.g., security_software_comprehensive)",
-      "examples": ["security_software_comprehensive", "browser_history", "system_info"]
+      "description": "Unique procedure name for the generated script (e.g., security_software_)",
+      "examples": ["security_software_", "browser_history", "system_info"]
     },
     "ttp_id": {
       "type": "string", 
@@ -204,7 +204,21 @@
               "input_required": {
                 "type": "boolean", 
                 "default": false,
-                "description": "Whether input validation is required for this argument"
+                "description": "Whether this argument requires user input. When true, creates a corresponding INPUT_* global variable. Naming convention: --gatekeeper → INPUT_GATEKEEPER, --appfw-defaults → INPUT_APPFW_DEFAULTS. Functions should validate input using case statements supporting multiple formats (enable/disable, on/off, yes/no, true/false, 1/0). For socketfilterfw commands, convert input to uppercase ON/OFF format.",
+                "examples": [
+                  {
+                    "argument": "--gatekeeper",
+                    "input_required": true,
+                    "creates_variable": "INPUT_GATEKEEPER",
+                    "usage": "./script.sh --gatekeeper enable"
+                  },
+                  {
+                    "argument": "--setblockall", 
+                    "input_required": true,
+                    "creates_variable": "INPUT_SETBLOCKALL",
+                    "usage": "./script.sh --setblockall ON"
+                  }
+                ]
               },
               "input_values": {
                 "type": "array",
@@ -285,6 +299,11 @@
                 },
                 "minItems": 1,
                 "description": "Programming/scripting languages used by this function for logging and detection purposes"
+              },
+              "sudo_required": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this function's commands require sudo privileges. When true, the build script automatically adds $CMD_SUDO to command executions. Write function code without $CMD_SUDO - the build system handles it."
               },
               "execute_condition": {
                 "type": "object",

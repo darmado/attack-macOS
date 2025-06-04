@@ -1,0 +1,61 @@
+procedure_name: caffeinate
+tactic: ''
+ttp_id: ''
+guid: $GUID.
+intent: Prevent the system from sleeping on behalf of a utility.
+author: Ethan Nay
+created: '2023-07-12'
+updated: '2023-07-12'
+version: ''
+platform: []
+detection: []
+resources:
+- link: https://macosbin.com/bin/caffeinate
+  description: macOS/binaries/caffeinate
+- link: https://ss64.com/osx/caffeinate.html
+  description: caffeinate man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --fork-a-process
+    description: Make caffeinate fork a process and hold an assertion that prevents
+      idle sleep as long as that proces
+    execute_function:
+    - execute_fork_a_process
+  - option: --prevent-a-sleep
+    description: Prevent a macOS from going to sleep for 4 hours (14400 seconds)
+    execute_function:
+    - execute_prevent_a_sleep
+  global_variable:
+  - name: BINARY_PATH
+    type: string
+    default_value: /usr/bin/caffeinate
+  functions:
+  - name: execute_fork_a_process
+    type: main
+    language:
+    - shell
+    sudo_required: false
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_fork_a_process() {\n    local result\n    result=$(caffeinate -i\
+      \ /tmp/evil 2>&1)\n    \n    if [ $? -eq 0 ]; then\n        $CMD_PRINTF \"SUCCESS|%s\\\
+      n\" \"$result\"\n    else\n        $CMD_PRINTF \"ERROR|%s\\n\" \"$result\"\n\
+      \        return 1\n    fi\n    \n    return 0\n}"
+  - name: execute_prevent_a_sleep
+    type: main
+    language:
+    - shell
+    sudo_required: false
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_prevent_a_sleep() {\n    local result\n    result=$(caffeinate\
+      \ -u -t 14400 2>&1)\n    \n    if [ $? -eq 0 ]; then\n        $CMD_PRINTF \"\
+      SUCCESS|%s\\n\" \"$result\"\n    else\n        $CMD_PRINTF \"ERROR|%s\\n\" \"\
+      $result\"\n        return 1\n    fi\n    \n    return 0\n}"

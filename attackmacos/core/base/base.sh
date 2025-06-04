@@ -96,6 +96,9 @@ CMD_LSOF="lsof"
 
 # PLACEHOLDER_GLOBAL_VARIABLES
 
+# Project root path (set by build system)
+PROJECT_ROOT=""  # Set by build system to project root directory
+
 # Procedure Information (set by build system)
 PROCEDURE_NAME=""  # Set by build system from YAML procedure_name field
 
@@ -104,7 +107,7 @@ FUNCTION_LANG=""  # Ued by log_output at execution time
 
 # Logging Settings
 HOME_DIR="${HOME}"
-LOG_DIR="./logs"  # Simple path to logs in current directory
+LOG_DIR="${PROJECT_ROOT}/logs"  # Project root logs directory (PROJECT_ROOT set by build system)
 LOG_FILE_NAME="${TTP_ID}_${PROCEDURE_NAME}.log"
 LOG_MAX_SIZE=$((5 * 1024 * 1024))  # 5MB
 LOG_ENABLED=false
@@ -117,11 +120,6 @@ SHOW_HELP=false
 STEG_TRANSFORM=false # Enable steganography transformation
 STEG_EXTRACT=false # Extract hidden data from steganography
 STEG_EXTRACT_FILE="" # File to extract hidden data from
-
-# Sudo settings
-USE_SUDO=false
-SUDO_OPTION=""
-CMD_SUDO=""
 
 # OPSEC Check Settings (enabled by build script based on YAML configuration)
 CHECK_PERMS="false"
@@ -231,12 +229,45 @@ core_log_output() {
     local skip_data="${3:-false}"
     
     if [ "$LOG_ENABLED" = true ]; then
-        # Ensure log directory exists
-            if [ ! -d "$LOG_DIR"  ] || [ ! -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
+        # Ensure log directory exists and is writable
+        if [ ! -d "$LOG_DIR" ]; then
             $CMD_MKDIR -p "$LOG_DIR" 2>/dev/null || {
                 $CMD_PRINTF "Warning: Failed to create log directory.\n" >&2
                 return 1
             }
+        fi
+        
+        # Check if directory is writable
+        if [ ! -w "$LOG_DIR" ]; then
+            $CMD_PRINTF "Warning: Log directory not writable: %s\n" "$LOG_DIR" >&2
+            return 1
+        fi
+        
+        # Ensure LOG_FILE_NAME is set and not empty
+        if [ -z "$LOG_FILE_NAME" ]; then
+            $CMD_PRINTF "Warning: LOG_FILE_NAME is empty or not set.\n" >&2
+            return 1
+        fi
+        
+        # Check if log file exists and handle ownership/permission issues
+        if [ -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
+            if [ ! -w "$LOG_DIR/$LOG_FILE_NAME" ]; then
+                # File exists but not writable - create new log with timestamp suffix
+                local timestamp=$(date +%Y%m%d_%H%M%S)
+                local base_name="${LOG_FILE_NAME%.*}"
+                local extension="${LOG_FILE_NAME##*.}"
+                LOG_FILE_NAME="${base_name}_${timestamp}.${extension}"
+                core_debug_print "Original log not writable, using: $LOG_FILE_NAME"
+            fi
+        fi
+        
+        # Create log file if it doesn't exist
+        if [ ! -f "$LOG_DIR/$LOG_FILE_NAME" ]; then
+            if ! touch "$LOG_DIR/$LOG_FILE_NAME" 2>/dev/null; then
+                $CMD_PRINTF "Error: Failed to create log file: %s\n" "$LOG_DIR/$LOG_FILE_NAME" >&2
+                return 1
+            fi
+            core_debug_print "Created new log file: $LOG_DIR/$LOG_FILE_NAME"
         fi
         
         # Check log size and rotate if needed
@@ -244,6 +275,8 @@ core_log_output() {
             $CMD_MV "$LOG_DIR/$LOG_FILE_NAME" "$LOG_DIR/${LOG_FILE_NAME}.$(date +%Y%m%d%H%M%S)" 2>/dev/null
             core_debug_print "Log file rotated due to size limit"
         fi
+        
+        core_debug_print "Writing log entry to: $LOG_DIR/$LOG_FILE_NAME"
         
         # Log detailed entry
         "$CMD_PRINTF" "[%s] [%s] [PID:%d] [job:%s] owner=%s parent=%s ttp_id=%s tactic=%s format=%s encoding=%s encryption=%s exfil=%s language=%s status=%s\\n" \
@@ -567,29 +600,6 @@ core_parse_args() {
                     MISSING_VALUES="$MISSING_VALUES $1"
                 fi
                 ;;
-            --sudo)
-                USE_SUDO=true
-                if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
-                    # Next arg starts with -, so no sudo option provided - use default
-                    SUDO_OPTION=""
-                elif [ -n "$2" ]; then
-                    SUDO_OPTION="$2"
-                    shift
-                else
-                    # No value provided, use default
-                    SUDO_OPTION=""
-                fi
-                ;;
-            --thread-delay)
-                if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
-                    MISSING_VALUES="$MISSING_VALUES $1"
-                elif [ -n "$2" ]; then
-                    THREAD_DELAY="$2"
-                    shift
-                else
-                    MISSING_VALUES="$MISSING_VALUES $1"
-                fi
-                ;;
             --verbose)
                 DEBUG=true
                 ;;
@@ -607,7 +617,7 @@ core_parse_args() {
         shift
     done
     
-    core_debug_print "Arguments parsed: DEBUG=$DEBUG, FORMAT=$FORMAT, ENCODE=$ENCODE, ENCRYPT=$ENCRYPT"
+    core_debug_print "Arguments parsed: DEBUG=$DEBUG, LOG_ENABLED=$LOG_ENABLED, FORMAT=$FORMAT, ENCODE=$ENCODE, ENCRYPT=$ENCRYPT"
     
     # Report unknown arguments as warnings but don't exit
     if [ -n "$UNKNOWN_ARGS" ]; then
@@ -628,43 +638,49 @@ Usage: ${0##*/} [OPTIONS]
 Description: Base script for ATT&CK macOS techniques
 MITRE ATT&CK: ${TTP_ID} - ${TACTIC}
 
-Basic Options:
-  -h, --help           Display this help message
-  -d, --debug          Enable debug output (includes verbose output)
-  -a, --all            Process all available data (technique-specific)
-  --sudo [OPTION]      Execute commands with sudo privileges (optional: user=name, group=name, etc.)
+HELP:
+  -h, --help                    Display this help message
+  -d, --debug                   Enable debug output (includes verbose output)
+
+SCRIPT:
 # PLACEHOLDER_HELP_TEXT
 
 Output Options:
-  --format TYPE        Output format: 
-                        - json: Structured JSON output
-                        - csv: Comma-separated values
-                        - raw: Default pipe-delimited text
+  --format TYPE                 
+                                - json: Structured JSON output
+                                - csv: Comma-separated values
+                                - raw: Default pipe-delimited text
 
-Encoding/Obfuscation Options:
-  --encode TYPE        Encode output using:
-                        - base64/b64: Base64 encoding using base64 command
-                        - hex/xxd: Hexadecimal encoding using xxd command
-                        - perl_b64: Perl Base64 implementation using perl
-                        - perl_utf8: Perl UTF8 encoding using perl
-  --steganography      Hide output in image file using native macOS tools
-  --steg-extract [FILE] Extract hidden data from steganography image (default: ./hidden_data.png)
+ENCODING/OBFUSCATION
+  --encode TYPE                
+                                - base64/b64: Base64 encoding using base64 command
+                                - hex/xxd: Hexadecimal encoding using xxd command
+                                - perl_b64: Perl Base64 implementation using perl
+                                - perl_utf8: Perl UTF8 encoding using perl
 
-Encryption Options:
-  --encrypt TYPE       Encrypt output using:
-                        - aes: AES-256-CBC encryption using openssl command
-                        - gpg: GPG symmetric encryption using gpg command
-                        - xor: XOR encryption with cyclic key (custom implementation)
+  --steganography              Hide output in image file using native macOS tools
+  --steg-extract [FILE]        Extract hidden data from steganography image (default: ./hidden_data.png)
 
-Exfiltration Options:
-  --exfil-dns DOMAIN   Exfiltrate data via DNS queries using dig command
-                        Data is automatically base64 encoded and chunked
-  --exfil-http URL     Exfiltrate data via HTTP POST using curl command
-                        Data is sent in the request body
-  --exfil-uri URL      Legacy parameter - Exfiltrate via HTTP GET using curl
-                        Data is automatically chunked to avoid URL length limits
-  --chunk-size SIZE    Size of chunks for DNS/HTTP exfiltration (default: $CHUNK_SIZE bytes)
-  --proxy URL          Use proxy for HTTP requests (format: protocol://host:port)
+ENCRYPTION:
+  --encrypt TYPE               
+                                - aes: AES-256-CBC encryption using openssl command
+                                - gpg: GPG symmetric encryption using gpg command
+                                - xor: XOR encryption with cyclic key (custom implementation)
+
+EXFILTRATION:
+  --exfil-dns DOMAIN            Exfiltrate data via DNS queries using dig command
+                                Data is automatically base64 encoded and chunked
+
+  --exfil-http URL              Exfiltrate data via HTTP POST using curl command
+                                Data is sent in the request body
+                                Data is automatically chunked to avoid URL length limits
+
+  --chunk-size SIZE           Size of chunks for DNS/HTTP exfiltration (default: $CHUNK_SIZE bytes)
+  --proxy URL                 Use proxy for HTTP requests (format: protocol://host:port)
+
+  LOGGING:
+
+  -l, --log                     Create a log file (creates logs in ./logs directory)
 
 Notes:
 - When using encryption with exfiltration, keys are automatically sent via DNS TXT records
@@ -1800,77 +1816,6 @@ core_check_db_lock() {
     return 0
 }
 
-# Purpose: Check if current user has sudo/root privileges
-# Inputs: 
-#   $1 - (optional) exit_on_failure flag (true/false), defaults to false
-#   $2 - (optional) custom error message for failure
-# Outputs: 0 if sudo available, 1 if not
-# - Logs debug information about sudo status
-# - Optionally exits with error message if exit_on_failure is true
-core_check_sudo() {
-    local exit_on_failure="${1:-false}"
-    local custom_error="${2:-Root privileges required for this operation}"
-    
-    # Check if already running as root
-    if [ "$(id -u)" -eq 0 ]; then
-        core_debug_print "Already running as root user"
-        return 0
-    fi
-    
-    # Check if sudo command is available
-    if ! command -v sudo > /dev/null 2>&1; then
-        core_debug_print "sudo command not available"
-        if [ "$exit_on_failure" = "true" ]; then
-            $CMD_PRINTF "[OPSEC] [%s] %s - sudo command not available on system\n" "$(core_get_timestamp)" "$custom_error" >&2
-            exit 1
-        fi
-        return 1
-    fi
-    
-    # Check if user can use sudo without prompting (cached credentials)
-    # Use a non-invasive check that doesn't prompt for password
-    if sudo -n true > /dev/null 2>&1; then
-        core_debug_print "sudo privileges confirmed (cached credentials)"
-        return 0
-    fi
-    
-    core_debug_print "sudo requires password authentication"
-    if [ "$exit_on_failure" = "true" ]; then
-        $CMD_PRINTF "[OPSEC] [%s] %s - requires sudo authentication (no cached credentials)\n" "$(core_get_timestamp)" "$custom_error" >&2
-        exit 1
-    fi
-    
-    return 1
-}
-
-# Purpose: Build sudo command with specified options
-# Inputs: None (uses global USE_SUDO and SUDO_OPTION variables)
-# Outputs: Sets CMD_SUDO global variable
-# - Constructs appropriate sudo command based on provided options
-core_sudo() {
-    if [ "$USE_SUDO" = true ]; then
-        if [ -n "$SUDO_OPTION" ]; then
-            case "$SUDO_OPTION" in
-                *=*)
-                    # Handle options with values (user=someuser, group=somegroup, etc.)
-                    CMD_SUDO="sudo --${SUDO_OPTION}"
-                    ;;
-                *)
-                    # Handle boolean options (login, shell, background, etc.)
-                    CMD_SUDO="sudo --${SUDO_OPTION}"
-                    ;;
-            esac
-        else
-            # Default sudo without options
-            CMD_SUDO="sudo"
-        fi
-        core_debug_print "Sudo command set to: $CMD_SUDO"
-    else
-        CMD_SUDO=""
-        core_debug_print "Sudo not requested, CMD_SUDO is empty"
-    fi
-}
-
 # Purpose: Execute command stored in variable using direct expansion (EDR detection test)
 # Inputs: $1 - Command string to execute
 # Outputs: Command execution result
@@ -1998,19 +1943,10 @@ core_main() {
     # Step 3: Validate parsed arguments
     core_validate_parsed_args || exit 1
     
-    # Step 4: Build sudo command if needed
-    core_sudo
-    
-    # Step 4a: If user explicitly requested sudo, honor their choice
-    if [ "$USE_SUDO" = true ]; then
-        core_debug_print "User explicitly requested sudo execution with CMD_SUDO: $CMD_SUDO"
-        # Don't override user's explicit choice - they know what they're doing
-    fi
-    
-    # Step 5: Generate encryption key if needed
+    # Step 4: Generate encryption key if needed
     core_generate_encryption_key
     
-    # Step 6: Validate required commands
+    # Step 5: Validate required commands
     core_validate_command || exit 1
     
     # Process OPSEC checks from YAML configuration
@@ -2208,6 +2144,8 @@ core_generate_encryption_key() {
 }
 
 # Generate job ID now that core functions are defined
+
+# PLACEHOLDER_INPUT_PROCESSING
 
 # PLACEHOLDER_FUNCTIONS
 

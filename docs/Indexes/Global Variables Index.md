@@ -1,7 +1,7 @@
 # Global Variables Blueprint
 
 ## Overview
-This document defines the standard structure and organization of global variables in attack-macOS scripts.
+All global variables defined in this document are used by the core base script located at `attackmacos/core/base/base.sh`. 
 
 ## Variable Categories
 

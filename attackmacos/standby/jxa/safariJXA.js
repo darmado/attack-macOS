@@ -749,7 +749,7 @@ function checkCurrentAppPermissions() {
     }
 }
 
-// Check permissions specifically for Safari
+// Check permissions for Safari
 function checkSafariPermissions() {
     try {
         // Try to create a Safari application object and access a property

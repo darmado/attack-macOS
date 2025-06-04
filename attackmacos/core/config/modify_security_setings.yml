@@ -1,0 +1,363 @@
+procedure_name: modify_security_settings
+ttp_id: T1562.001
+tactic: Defense Evasion
+guid: 562bfb9d-a679-4384-b5ca-61151e284a55
+intent: Modify macOS security settings including Gatekeeper, firewall, SIP, login items, and system logs
+author: '@darmado | https://x.com/darmad0'
+version: 1.0.2
+created: '2025-01-02'
+updated: '2025-06-03'
+resources:
+- link: https://www.loobins.io/binaries/defaults/
+  description: LOOBins defaults commands for Gatekeeper and firewall modification
+- link: https://www.loobins.io/binaries/csrutil/
+  description: LOOBins csrutil commands for System Integrity Protection control
+- link: https://www.loobins.io/binaries/sfltool/
+  description: LOOBins sfltool commands for managing login items and shared file lists
+- link: https://www.loobins.io/binaries/log/
+  description: LOOBins log commands for system log management and evasion
+- link: https://attack.mitre.org/techniques/T1562/001/
+  description: MITRE ATT&CK T1562.001 - Impair Defenses Disable or Modify Tools
+procedure:
+  arguments:
+  - option: --gatekeeper-defaults
+    description: Enable or disable Gatekeeper auto-rearm functionality
+    input_required: true
+    type: string
+    execute_function:
+    - gatekeeper_defaults
+  - option: --appfw-socketfilter
+    description: Enable or disable application firewall globally
+    input_required: true
+    type: string
+    execute_function:
+    - appfw_socketfilter
+  - option: --appfw-defaults
+    description: Enable or disable ALF (Application Layer Firewall) through preferences
+    input_required: true
+    type: string
+    execute_function:
+    - appfw_defaults
+  - option: --gatekeeper-spctl
+    description: Enable or disable security assessment policy subsystem entirely
+    input_required: true
+    type: string
+    execute_function:
+    - gatekeeper_spctl
+  - option: --restore-defaults
+    description: Restore all security settings to their default enabled state
+    execute_function:
+    - restore_security_defaults
+  - option: --show-fw-settings
+    description: Display firewall settings and configuration
+    execute_function:
+    - show_fw_settings
+  - option: --set-blockall
+    description: Block all incoming connections through the firewall
+    input_required: true
+    type: string
+    execute_function:
+    - setblockall_fw
+  - option: --set-stealthmode
+    description: Enable or disable firewall stealth mode
+    input_required: true
+    type: string
+    execute_function:
+    - setstealthmode_fw
+  - option: --set-loggingmode
+    description: Enable or disable firewall connection logging
+    input_required: true
+    type: string
+    execute_function:
+    - setloggingmode_fw
+  - option: --block-app
+    description: Block specific application from network access
+    input_required: true
+    type: string
+    execute_function:
+    - blockapp_fw
+  - option: --unblock-app
+    description: Unblock specific application for network access
+    input_required: true
+    type: string
+    execute_function:
+    - unblockapp_fw
+  - option: --remove-app
+    description: Remove application from firewall rules entirely
+    input_required: true
+    type: string
+    execute_function:
+    - remove_fw
+  - option: --disable-sip
+    description: Disable System Integrity Protection (requires recovery mode)
+    execute_function:
+    - disable_sip
+  - option: --disable-authenticated-root
+    description: Disable authenticated-root (requires recovery mode)
+    execute_function:
+    - disable_authenticated_root
+  - option: --reset-login-items
+    description: Reset all third-party Login Items to installation defaults
+    execute_function:
+    - reset_login_items
+  - option: --erase-logs
+    description: Remove all log messages from the system
+    execute_function:
+    - erase_all_logs
+  - option: --show-sip-status
+    description: Display current System Integrity Protection status
+    execute_function:
+    - show_sip_status
+  - option: --disable-quarantine
+    description: Disable LSQuarantine warnings for downloaded files
+    execute_function:
+    - disable_quarantine
+  global_variable:
+  - name: FILE_GATEKEEPER_PREF
+    type: string
+    default_value: /Library/Preferences/com.apple.security
+  - name: KEY_GATEKEEPER
+    type: string
+    default_value: GKAutoRearm
+  - name: FILE_ALF_PREF
+    type: string
+    default_value: /Library/Preferences/com.apple.alf
+  - name: KEY_ALF_GLOBALSTATE
+    type: string
+    default_value: globalstate
+  - name: CMD_SOCKETFILTERFW
+    type: string
+    default_value: /usr/libexec/ApplicationFirewall/socketfilterfw
+  - name: CMD_DEFAULTS
+    type: string
+    default_value: defaults
+  - name: CMD_SPCTL
+    type: string
+    default_value: spctl
+  - name: CMD_SUDO
+    type: string
+    default_value: sudo
+  - name: INPUT_GATEKEEPER
+    type: string
+    default_value: ''
+  - name: INPUT_APPFW
+    type: string
+    default_value: ''
+  - name: INPUT_APPFW_DEFAULTS
+    type: string
+    default_value: ''
+  - name: INPUT_GATEKEEPER_ENFORCEMENT
+    type: string
+    default_value: ''
+  - name: INPUT_SETBLOCKALL
+    type: string
+    default_value: ''
+  - name: INPUT_SETSTEALTHMODE
+    type: string
+    default_value: ''
+  - name: INPUT_SETLOGGINGMODE
+    type: string
+    default_value: ''
+  - name: INPUT_BLOCKAPP
+    type: string
+    default_value: ''
+  - name: INPUT_UNBLOCKAPP
+    type: string
+    default_value: ''
+  - name: INPUT_REMOVE
+    type: string
+    default_value: ''
+  - name: CMD_CSRUTIL
+    type: string
+    default_value: /usr/bin/csrutil
+  - name: CMD_SFLTOOL
+    type: string
+    default_value: /usr/bin/sfltool
+  - name: CMD_LOG
+    type: string
+    default_value: /usr/bin/log
+  functions:
+  - name: gatekeeper_defaults
+    type: main
+    language:
+    - shell
+    code: |
+      gatekeeper_defaults() {
+          local output=$("$CMD_SUDO" "$CMD_DEFAULTS" write "$FILE_GATEKEEPER_PREF" "$KEY_GATEKEEPER" -bool "$INPUT_GATEKEEPER" 2>&1)
+          $CMD_PRINTF "GATEKEEPER|%s\n" "$output"
+      }
+  - name: appfw_socketfilter
+    type: main
+    language:
+    - shell
+    code: |
+      appfw_socketfilter() {
+          local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --setglobalstate "$INPUT_APPFW" 2>&1)
+          $CMD_PRINTF "APPFW|%s\n" "$output"
+      }
+  - name: appfw_defaults
+    type: main
+    language:
+    - shell
+    code: |
+      appfw_defaults() {
+          local output=$("$CMD_SUDO" "$CMD_DEFAULTS" write "$FILE_ALF_PREF" "$KEY_ALF_GLOBALSTATE" -int "$INPUT_APPFW_DEFAULTS" 2>&1)
+          $CMD_PRINTF "ALF|%s\n" "$output"
+      }
+  - name: gatekeeper_spctl
+    type: main
+    language:
+    - shell
+    code: |
+      gatekeeper_spctl() {
+          local output=$("$CMD_SUDO" "$CMD_SPCTL" --master-"$INPUT_SPCTL" 2>&1)
+          $CMD_PRINTF "SPCTL|%s\n" "$output"
+      }
+  - name: restore_security_defaults
+    type: main
+    language:
+    - shell
+    code: |
+      restore_security_defaults() {
+          local output1=$("$CMD_SUDO" "$CMD_DEFAULTS" write "$FILE_GATEKEEPER_PREF" "$KEY_GATEKEEPER" -bool YES 2>&1)
+          local output2=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --setglobalstate ON 2>&1)
+          local output3=$("$CMD_SUDO" "$CMD_SPCTL" --master-enable 2>&1)
+          $CMD_PRINTF "RESTORE_DEFAULTS|%s|%s|%s\n" "$output1" "$output2" "$output3"
+      }
+  - name: show_fw_settings
+    type: main
+    language:
+    - shell
+    code: |
+      show_fw_settings() {
+          local output1=$("$CMD_DEFAULTS" read "$FILE_GATEKEEPER_PREF" "$KEY_GATEKEEPER" 2>&1)
+          local output2=$("$CMD_SOCKETFILTERFW" --getglobalstate 2>&1)
+          local output3=$("$CMD_SPCTL" --status 2>&1)
+          $CMD_PRINTF "FW_SETTINGS|%s|%s|%s\n" "$output1" "$output2" "$output3"
+      }
+  - name: setblockall_fw
+    type: main
+    language:
+    - shell
+    code: |
+      setblockall_fw() {
+          local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --setblockall "$INPUT_BLOCKALL" 2>&1)
+          $CMD_PRINTF "BLOCKALL|%s\n" "$output"
+      }
+  - name: setstealthmode_fw
+    type: main
+    language:
+    - shell
+    code: |
+      setstealthmode_fw() {
+          local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --setstealthmode "$INPUT_STEALTH" 2>&1)
+          $CMD_PRINTF "STEALTH|%s\n" "$output"
+      }
+  - name: setallowsigned_fw
+    type: main
+    language:
+    - shell
+    code: |
+      setallowsigned_fw() {
+          local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --setallowsigned "$INPUT_ALLOWSIGNED" 2>&1)
+          $CMD_PRINTF "ALLOWSIGNED|%s\n" "$output"
+      }
+  - name: setloggingmode_fw
+    type: main
+    language:
+    - shell
+    code: |
+      setloggingmode_fw() {
+          local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --setloggingmode "$INPUT_LOGGING" 2>&1)
+          $CMD_PRINTF "LOGGING|%s\n" "$output"
+      }
+  - name: blockapp_fw
+    type: main
+    language:
+    - shell
+    code: |
+      blockapp_fw() {
+          local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --blockapp "$INPUT_BLOCKAPP" 2>&1)
+          $CMD_PRINTF "BLOCKAPP|%s\n" "$output"
+      }
+  - name: unblockapp_fw
+    type: main
+    language:
+    - shell
+    code: |
+      unblockapp_fw() {
+          local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --unblockapp "$INPUT_UNBLOCKAPP" 2>&1)
+          $CMD_PRINTF "UNBLOCKAPP|%s\n" "$output"
+      }
+  - name: add_fw
+    type: main
+    language:
+    - shell
+    code: |
+      add_fw() {
+          local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --add "$INPUT_ADD" 2>&1)
+          $CMD_PRINTF "FIREWALL_ADD|%s\n" "$output"
+      }
+  - name: remove_fw
+    type: main
+    language:
+    - shell
+    code: |
+      remove_fw() {
+          local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --remove "$INPUT_REMOVE" 2>&1)
+          $CMD_PRINTF "FIREWALL_REMOVE|%s\n" "$output"
+      }
+  - name: disable_sip
+    type: main
+    language:
+    - shell
+    code: |
+      disable_sip() {
+          local output=$("$CMD_CSRUTIL" disable 2>&1)
+          $CMD_PRINTF "SIP_DISABLE|%s\n" "$output"
+      }
+  - name: disable_authenticated_root
+    type: main
+    language:
+    - shell
+    code: |
+      disable_authenticated_root() {
+          local output=$("$CMD_CSRUTIL" authenticated-root disable 2>&1)
+          $CMD_PRINTF "AUTHENTICATED_ROOT_DISABLE|%s\n" "$output"
+      }
+  - name: reset_login_items
+    type: main
+    language:
+    - shell
+    code: |
+      reset_login_items() {
+          local output=$("$CMD_SFLTOOL" resetbtm 2>&1)
+          $CMD_PRINTF "LOGIN_ITEMS_RESET|%s\n" "$output"
+      }
+  - name: erase_all_logs
+    type: main
+    language:
+    - shell
+    code: |
+      erase_all_logs() {
+          local output=$("$CMD_SUDO" "$CMD_LOG" erase --all 2>&1)
+          $CMD_PRINTF "LOGS_ERASED|%s\n" "$output"
+      }
+  - name: show_sip_status
+    type: main
+    language:
+    - shell
+    code: |
+      show_sip_status() {
+          local output=$("$CMD_CSRUTIL" status 2>&1)
+          $CMD_PRINTF "SIP_STATUS|%s\n" "$output"
+      }
+  - name: disable_quarantine
+    type: main
+    language:
+    - shell
+    code: |
+      disable_quarantine() {
+          local output=$("$CMD_SUDO" "$CMD_DEFAULTS" write com.apple.LaunchServices LSQuarantine -bool NO 2>&1)
+          $CMD_PRINTF "QUARANTINE_DISABLED|%s\n" "$output"
+      } 

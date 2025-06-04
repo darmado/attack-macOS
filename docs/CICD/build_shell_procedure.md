@@ -4,7 +4,36 @@ Builds executable shell scripts from YAML procedure definitions implementing MIT
 
 ## Purpose
 
-Converts YAML procedure files into production-ready shell scripts with logging, encoding, encryption, and exfiltration capabilities. Automates script generation for security testing frameworks.
+Converts YAML procedure files into production-ready shell scripts with logging, encoding, encryption, and exfiltration capabilities. Automates script generation for security testing frameworks with intelligent help text generation.
+
+## Key Features
+
+- **Smart Help Text Generation**: Automatically detects input format from argument descriptions
+- **Proper Spacing**: Matches base.sh formatting standards with 34-character field width
+- **Input Format Detection**: Shows `ENABLE|DISABLE`, `APP_PATH`, `FILE_PATH`, etc. instead of generic `VALUE`
+- **Consistent Formatting**: Maintains professional appearance across all generated scripts
+
+## Help Text Generation Logic
+
+The build script intelligently determines input format descriptions:
+
+- **Enable/Disable options**: Shows `ENABLE|DISABLE` for arguments containing "enable", "disable", "on", "off"
+- **Application paths**: Shows `APP_PATH` for arguments referencing applications with block/unblock actions  
+- **File paths**: Shows `FILE_PATH` for arguments mentioning "file" or "path"
+- **Numeric values**: Shows `NUMBER` for integer type arguments
+- **Size parameters**: Shows `SIZE` for arguments containing "size"
+- **Default fallback**: Shows `VALUE` for other input-required arguments
+
+## Generated Help Format
+
+```bash
+Script Options:
+  --gatekeeper ENABLE|DISABLE    Enable or disable Gatekeeper auto-rearm functionality
+  --appfw ENABLE|DISABLE         Enable or disable application firewall globally
+  --blockapp APP_PATH            Block specific application from network access
+  --chunk-size SIZE              Size of chunks for DNS/HTTP exfiltration
+  --restore-defaults             Restore all security settings to their default enabled state
+```
 
 ## CI/CD Integration
 
@@ -142,108 +171,3 @@ attackmacos/
 - Base script: `procedure_name.sh`
 - Versioned: `procedure_name_v1.sh`, `procedure_name_v2.sh`
 - Test files: `test_procedure_name.sh`
-
-## Requirements
-
-- Python 3.6+
-- PyYAML
-- jsonschema
-- Valid YAML procedure files
-- Write access to attackmacos/ directory
-
-## Automation Patterns
-
-### Jenkins Pipeline - Full Build
-
-```groovy
-pipeline {
-    agent any
-    stages {
-        stage('Install Dependencies') {
-            steps {
-                sh 'pip install pyyaml jsonschema'
-            }
-        }
-        stage('Validate') {
-            steps {
-                script {
-                    def yamls = sh(
-                        script: 'find procedures -name "*.yml"',
-                        returnStdout: true
-                    ).trim().split('\n')
-                    
-                    for (yaml in yamls) {
-                        sh "python3 cicd/build_shell_procedure.py --validate ${yaml}"
-                    }
-                }
-            }
-        }
-        stage('Build') {
-            when {
-                changeset "procedures/**/*.yml"
-            }
-            steps {
-                sh 'python3 cicd/build_shell_procedure.py --all --force'
-                sh 'git add attackmacos/'
-                sh 'git commit -m "Auto-build procedures" || true'
-            }
-        }
-    }
-}
-```
-
-### Azure DevOps Pipeline
-
-```yaml
-trigger:
-  paths:
-    include:
-      - procedures/*.yml
-
-pool:
-  vmImage: 'ubuntu-latest'
-
-steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '3.x'
-
-- script: pip install pyyaml jsonschema
-  displayName: 'Install dependencies'
-
-- script: |
-    for file in procedures/*.yml; do
-      python3 cicd/build_shell_procedure.py --validate "$file"
-    done
-  displayName: 'Validate procedures'
-
-- script: python3 cicd/build_shell_procedure.py --all --force
-  displayName: 'Build procedures'
-
-- script: |
-    git config user.email "azure@devops.com"
-    git config user.name "Azure DevOps"
-    git add attackmacos/
-    git diff --staged --quiet || git commit -m "Auto-build procedures"
-    git push
-  displayName: 'Commit generated scripts'
-```
-
-## Error Handling
-
-- **YAML Syntax Errors**: Reports line and column of syntax issues
-- **Schema Validation**: Shows specific validation failures with fix suggestions
-- **File Permissions**: Handles write access errors gracefully
-- **Missing Dependencies**: Validates required Python packages
-
-## Integration Notes
-
-- **Version Control**: Generated scripts include auto-versioning
-- **Directory Structure**: Organizes by MITRE ATT&CK tactic and implementation language
-- **Overwrite Protection**: Requires --force flag to overwrite existing scripts
-- **Schema Validation**: Enforces consistent YAML structure across procedures
-
-## Dependencies
-
-- pyyaml: YAML parsing
-- jsonschema: Schema validation 

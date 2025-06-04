@@ -1,0 +1,90 @@
+name: "Keychain Credential Dumping"
+description: "Dump credentials, keys, certificates, and sensitive information from macOS Keychain using security command"
+guid: $GUID
+updated: $UPDATED
+
+tactic: credential_access
+technique:
+  attack_id: T1555.001
+  name: "Keychain"
+
+platforms:
+  - "macOS"
+
+executor: shell
+
+global_variables:
+  TTP_ID: "T1555.001"
+  TACTIC: "credential_access"
+  PROCEDURE_NAME: "keychain_security"
+  FUNCTION_LANG: "shell"
+
+functions:
+  dump_login_keychain:
+    description: "Dump passwords from login keychain"
+    depends_on: []
+    return_type: "output"
+    execution_flow: [dump_login_keychain_impl]
+    opsec_considerations:
+      - "Requires sudo privileges"
+      - "Creates audit logs in security.log"
+      - "May trigger keychain access prompts"
+
+  dump_system_keychain:
+    description: "Dump passwords from system keychain"
+    depends_on: []
+    return_type: "output" 
+    execution_flow: [dump_system_keychain_impl]
+    opsec_considerations:
+      - "Requires sudo privileges"
+      - "High privilege operation likely monitored"
+
+  chrome_safe_storage:
+    description: "Retrieve Chrome Safe Storage password manager secret"
+    depends_on: []
+    return_type: "output"
+    execution_flow: [chrome_safe_storage_impl]
+    opsec_considerations:
+      - "Specific to Chrome browser usage"
+      - "May prompt for keychain access"
+
+arguments:
+  - name: "technique"
+    description: "Keychain access technique to use"
+    type: "choice"
+    default: "login"
+    choices: ["login", "system", "chrome", "all"]
+    required: true
+  - name: "output_format"
+    description: "Output format for extracted data"
+    type: "choice"
+    default: "text"
+    choices: ["text", "json", "csv"]
+  - name: "keychain_path"
+    description: "Custom keychain path to dump"
+    type: "string"
+    default: ""
+
+argument_map:
+  all:
+    enabled: true
+    procedure_list: [dump_login_keychain, dump_system_keychain, chrome_safe_storage]
+  login:
+    enabled: true
+    procedure_list: [dump_login_keychain]
+  system:
+    enabled: true
+    procedure_list: [dump_system_keychain]
+  chrome:
+    enabled: true
+    procedure_list: [chrome_safe_storage]
+
+references:
+  - "https://www.netmeister.org/blog/keychain-passwords.html"
+  - "https://ss64.com/osx/security.html"
+
+detections:
+  - name: "Sigma: Credentials from Password Stores - Keychain"
+    url: "https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_creds_from_keychain.yml"
+  - name: "Elastic: Access to Keychain Credentials Directories"
+    url: "https://github.com/elastic/detection-rules/blob/main/rules/macos/credential_access_credentials_keychains.toml" 

