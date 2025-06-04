@@ -1,15 +1,22 @@
 # Format As Json
 
-## Purpose
+### Purpose
+Converts output to structured JSON format with metadata including timestamp, job ID, encoding/encryption status, and data array.
 
-core_format_as_json function implementation from base.sh.
-
-## Implementation
+### Dependencies
+| Type | Name | Value |
+|------|------|-------|
+| Global Variable | `CMD_GREP` | "grep" |
+| Global Variable | `CMD_PRINTF` | "printf" |
+| Global Variable | `JOB_ID` | "" |
+| Global Variable | `PROCEDURE_NAME` | "" |
+| Global Variable | `SCRIPT_CMD` | "" |
+| Global Variable | `STEG_OUTPUT_IMAGE` | "" |
+| Function | `core_format_as_json()` | For format as json |
 
 <details>
-<summary>Function Code</summary>
 
-```bash
+```shell
 core_format_as_json() {
 local output="$1"
     local data_source="${2:-generic}"
@@ -79,7 +86,7 @@ local output="$1"
         fi
         
         # Escape special characters
-        line=$("$CMD_PRINTF"  "$line" | sed 's/\\/\\\\/g; s/"/\\"/g')
+        line=$("$CMD_PRINTF"  "$line" | sed 's/\/\\/g; s/"/\"/g')
         
         # Check if line is a number and JSON_DETECT_NUMBERS is true
         if [ "$JSON_DETECT_NUMBERS" = true ] && "$CMD_PRINTF"  "$line" | $CMD_GREP -E '^[0-9]+$' > /dev/null; then
@@ -100,12 +107,4 @@ local output="$1"
 }
 ```
 
-</details>
-
-## Usage
-
-Document usage examples and parameters here.
-
-## Notes
-
-Add any implementation notes or considerations.
+</details> 
