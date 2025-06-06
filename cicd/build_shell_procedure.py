@@ -24,6 +24,7 @@ Usage:
     python3 build_procedure.py --force <file>     Force overwrite existing file
     python3 build_procedure.py --all --force      Force overwrite all files
     python3 build_procedure.py --validate <file>  Validate YAML only
+    python3 build_procedure.py --sync-caldera     Sync built scripts to Caldera plugin
     python3 build_procedure.py --help             Show this help
 
 Example:
@@ -59,12 +60,14 @@ def show_usage():
     print(f"  python3 build_procedure.py --force <file>     Force overwrite existing file")
     print(f"  python3 build_procedure.py --all --force      Force overwrite all files")
     print(f"  python3 build_procedure.py --validate <file>  Validate YAML only")
+    print(f"  python3 build_procedure.py --sync-caldera     Sync built scripts to Caldera plugin")
     print(f"  python3 build_procedure.py --help             Show this help")
     print(f"\n{BOLD}EXAMPLES:{RESET}")
     print(f"  python3 build_procedure.py system_info.yml")
     print(f"  python3 build_procedure.py --force system_info.yml")
     print(f"  python3 build_procedure.py --all --force")
     print(f"  python3 build_procedure.py --validate browser_history.yml")
+    print(f"  python3 build_procedure.py --sync-caldera")
     print()
 
 
@@ -767,10 +770,10 @@ def main():
     
     if len(sys.argv) == 2 and sys.argv[1] == "--all":
         build_all(force=force)
-    elif len(sys.argv) == 2 and sys.argv[1] not in ["--help", "--all"]:
-        # Single YAML file
-        yaml_file = sys.argv[1]
-        build_script(yaml_file, force=force)
+    elif len(sys.argv) == 2 and sys.argv[1] == "--help":
+        show_usage()
+    elif len(sys.argv) == 2 and sys.argv[1] == "--sync-caldera":
+        sync_to_caldera()
     elif len(sys.argv) == 3 and sys.argv[1] == "--validate":
         yaml_file = sys.argv[2]
         yaml_data = read_yaml(yaml_file)
@@ -778,8 +781,15 @@ def main():
             print(f"\n{BOLD}{GREEN}VALIDATION PASSED:{RESET} {Path(yaml_file).name}")
         else:
             print(f"\n{BOLD}{RED}VALIDATION FAILED:{RESET} {Path(yaml_file).name}")
-    elif len(sys.argv) == 2 and sys.argv[1] == "--help":
-        show_usage()
+    elif len(sys.argv) == 2 and sys.argv[1] not in ["--help", "--all", "--sync-caldera"]:
+        # Check if it's an unknown option
+        if sys.argv[1].startswith('--'):
+            print(f"{BOLD}{RED}ERROR:{RESET} Unknown option: {sys.argv[1]}")
+            show_usage()
+            sys.exit(1)
+        # Single YAML file
+        yaml_file = sys.argv[1]
+        build_script(yaml_file, force=force)
     else:
         show_usage()
         sys.exit(1)
@@ -940,6 +950,206 @@ def increment_version(version_str):
         return f"{major}.{minor}.{patch}"
     except:
         return '1.0.1'  # Fallback if parsing fails
+
+
+def sync_to_caldera():
+    """Sync all built scripts to Caldera plugin with one ability per script"""
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+    
+    # Define paths
+    ttp_dir = project_root / "attackmacos" / "ttp"
+    config_dir = project_root / "attackmacos" / "core" / "config"
+    caldera_plugin_dir = project_root / "integrations" / "caldera" / "plugins" / "attackmacos"
+    
+    # Create Caldera plugin directories
+    payloads_dir = caldera_plugin_dir / "data" / "payloads"
+    abilities_dir = caldera_plugin_dir / "data" / "abilities"
+    
+    payloads_dir.mkdir(parents=True, exist_ok=True)
+    abilities_dir.mkdir(parents=True, exist_ok=True)
+    
+    print(f"\n{BOLD}Syncing attack-macOS to Caldera plugin (one ability per script){RESET}")
+    
+    script_count = 0
+    ability_count = 0
+    
+    for yaml_file in config_dir.glob("*.yml"):
+        try:
+            yaml_data = read_yaml(yaml_file)
+            if 'procedure_name' not in yaml_data:
+                continue
+            
+            procedure_name = yaml_data['procedure_name']
+            tactic = yaml_data.get('tactic', 'Discovery')
+            tactic_dir = get_tactic_directory(tactic)
+            
+            # Find the corresponding built script
+            script_path = ttp_dir / tactic_dir / "shell" / f"{procedure_name}.sh"
+            if not script_path.exists():
+                print(f"{BOLD}{YELLOW}SKIP:{RESET} {procedure_name}.sh not found, run build first")
+                continue
+            
+            # Copy script to payloads (once per script)
+            payload_dest = payloads_dir / f"{procedure_name}.sh"
+            import shutil
+            shutil.copy2(script_path, payload_dest)
+            script_count += 1
+            
+            # Generate single ability for this script
+            ability_data = generate_comprehensive_ability(yaml_data)
+            
+            # Create tactic-specific ability directory
+            tactic_abilities_dir = abilities_dir / tactic_dir
+            tactic_abilities_dir.mkdir(exist_ok=True)
+            
+            # Write the ability
+            ability_uuid = ability_data['id']
+            ability_yaml = ability_data['yaml']
+            ability_name = ability_data['name']
+            
+            ability_file = tactic_abilities_dir / f"{ability_uuid}.yml"
+            with open(ability_file, 'w') as f:
+                f.write(ability_yaml)
+            ability_count += 1
+            
+            print(f"{BOLD}Created:{RESET} {ability_name} → {ability_uuid}.yml")
+            
+        except Exception as e:
+            print(f"{BOLD}{RED}ERROR:{RESET} Failed to sync {yaml_file.name}: {e}")
+    
+    # Sync documentation
+    sync_documentation(config_dir, caldera_plugin_dir)
+    
+    print(f"\n{BOLD}SYNC COMPLETE:{RESET}")
+    print(f"  Payloads copied: {script_count}")
+    print(f"  Abilities generated: {ability_count}")
+    print(f"  Documentation synced")
+    print(f"  Location: {caldera_plugin_dir}")
+    
+    if ability_count > 0:
+        print(f"\n{BOLD}Next steps:{RESET}")
+        print(f"  1. Copy plugin to your Caldera instance")
+        print(f"  2. Add 'attackmacos' to your Caldera config")
+        print(f"  3. Rebuild Caldera Docker container")
+    else:
+        print(f"\n{BOLD}{RED}No abilities generated due to errors.{RESET}")
+        print(f"Check the error messages above and fix the YAML files.")
+
+
+def sync_documentation(config_dir, caldera_plugin_dir):
+    """Generate abilities.md from actual YAML data"""
+    docs_dir = caldera_plugin_dir / "docs"
+    docs_dir.mkdir(exist_ok=True)
+    
+    abilities_content = ["# Abilities Reference", ""]
+    
+    # Group by tactic
+    tactics = {}
+    
+    for yaml_file in config_dir.glob("*.yml"):
+        try:
+            yaml_data = read_yaml(yaml_file)
+            if 'procedure_name' not in yaml_data:
+                continue
+                
+            procedure_name = yaml_data['procedure_name']
+            tactic = yaml_data.get('tactic', 'Discovery')
+            ttp_id = yaml_data.get('ttp_id', 'T1082')
+            intent = yaml_data.get('intent', f'{procedure_name} implementation')
+            
+            if tactic not in tactics:
+                tactics[tactic] = []
+            
+            # Build ability entry
+            ability_entry = [
+                f"### {procedure_name}",
+                intent,
+                "",
+                "| Property | Value |",
+                "|----------|-------|",
+                f"| Technique | {ttp_id} |",
+                f"| Platform | darwin |",
+                f"| Executor | sh |",
+                "",
+                "| Argument | Description |",
+                "|----------|-------------|"
+            ]
+            
+            # Extract arguments directly from YAML
+            arguments = yaml_data.get('procedure', {}).get('arguments', [])
+            for arg in arguments:
+                option = arg.get('option', '')
+                description = arg.get('description', '')
+                if option:
+                    # Clean option to show only long form
+                    if '|' in option:
+                        clean_option = option.split('|')[1]
+                    else:
+                        clean_option = option
+                    ability_entry.append(f"| `{clean_option}` | {description} |")
+            
+            ability_entry.append("")  # Empty line after each ability
+            tactics[tactic].append('\n'.join(ability_entry))
+            
+        except Exception as e:
+            print(f"{BOLD}{YELLOW}WARNING:{RESET} Failed to process {yaml_file.name} for docs: {e}")
+    
+    # Write tactics in order
+    for tactic in sorted(tactics.keys()):
+        abilities_content.append(f"## {tactic}")
+        abilities_content.append("")
+        for ability in tactics[tactic]:
+            abilities_content.append(ability)
+    
+    # Write abilities.md
+    abilities_file = docs_dir / "abilities.md"
+    with open(abilities_file, 'w') as f:
+        f.write('\n'.join(abilities_content))
+    
+    print(f"{BOLD}Updated:{RESET} abilities.md with actual YAML data")
+
+
+def generate_comprehensive_ability(yaml_data):
+    """Generate single Caldera ability per script with user.arg fact"""
+    procedure_name = yaml_data['procedure_name']
+    base_guid = yaml_data.get('guid', '00000000-0000-0000-0000-000000000000')
+    
+    # Simple command with user.arg fact
+    command = f"#{{location}}/{procedure_name}.sh #{{user.arg}}"
+    
+    # Generate YAML with user.arg fact
+    ability_yaml = f"""---
+- id: {base_guid}
+  name: {procedure_name}
+  description: {yaml_data.get('description', f'Execute {procedure_name} with user-defined arguments')}
+  tactic: {yaml_data.get('tactic', 'discovery').lower()}
+  technique:
+    attack_id: {yaml_data.get('ttp_id', 'T1082')}
+    name: {yaml_data.get('technique_name', 'System Information Discovery')}
+  platforms:
+    darwin:
+      sh:
+        command: {command}
+        payloads:
+          - {procedure_name}.sh
+        cleanup:
+          - rm -f #{{location}}/{procedure_name}.sh
+        timeout: 300
+        parsers:
+          - module: base64
+            property: attackmacos.{procedure_name}.output
+        delete_payload: true
+  singleton: true
+  requirements:
+    - user.arg:
+        edge: has_property"""
+    
+    return {
+        'id': base_guid,
+        'name': procedure_name,
+        'yaml': ability_yaml
+    }
 
 
 if __name__ == "__main__":

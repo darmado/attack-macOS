@@ -49,7 +49,7 @@ procedure:         # Core procedure definition
       description: "" # Argument description (5-100 chars)
       type: ""     # Argument type (string|integer) - only for input_required arguments
       option_required: false # Whether option is required
-      input_required: false  # Whether argument accepts user input (creates INPUT_* variable)
+      input_required: false  # Whether argument accepts user.arg (creates INPUT_* variable)
                             # Set to true for arguments like --gatekeeper enable/disable
                             # Requires corresponding INPUT_* global variable
                             # Naming: --gatekeeper → INPUT_GATEKEEPER

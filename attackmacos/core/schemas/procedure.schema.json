@@ -163,7 +163,7 @@
       "description": "Target platforms",
       "items": {
         "type": "string",
-        "enum": ["macOS", "iOS", "Linux"]
+        "enum": ["darwin", "ios", "linux"]
       },
       "minItems": 1
     },
@@ -204,7 +204,7 @@
               "input_required": {
                 "type": "boolean", 
                 "default": false,
-                "description": "Whether this argument requires user input. When true, creates a corresponding INPUT_* global variable. Naming convention: --gatekeeper → INPUT_GATEKEEPER, --appfw-defaults → INPUT_APPFW_DEFAULTS. Functions should validate input using case statements supporting multiple formats (enable/disable, on/off, yes/no, true/false, 1/0). For socketfilterfw commands, convert input to uppercase ON/OFF format.",
+                "description": "Whether this argument requires user.arg. When true, creates a corresponding INPUT_* global variable. Naming convention: --gatekeeper → INPUT_GATEKEEPER, --appfw-defaults → INPUT_APPFW_DEFAULTS. Functions should validate input using case statements supporting multiple formats (enable/disable, on/off, yes/no, true/false, 1/0). For socketfilterfw commands, convert input to uppercase ON/OFF format.",
                 "examples": [
                   {
                     "argument": "--gatekeeper",

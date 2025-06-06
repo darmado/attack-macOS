@@ -59,12 +59,12 @@ The `arguments` section defines command-line options that users can specify when
 | **option** | string | ✅ | Must use `--long` format only | `--edr-processes` |
 | **description** | string | ✅ | Help text (5-100 chars) - use adversary language | `Discover EDR processes using ps` |
 | **type** | string | ❌ | Only for value args: `string` or `integer` | `string` |
-| **input_required** | boolean | ❌ | Whether this argument requires user input (default: false) | `true` |
+| **input_required** | boolean | ❌ | Whether this argument requires user.arg (default: false) | `true` |
 | **execute_function** | array | ✅ | Functions to call when option used | `[discover_edr_processes]` |
 
 ### Arguments with User Input
 
-When `input_required: true` is set, the argument accepts user input that gets stored in a corresponding global variable. This is essential for arguments that need user-provided values like enable/disable states, file paths, or configuration options.
+When `input_required: true` is set, the argument accepts user.arg that gets stored in a corresponding global variable. This is essential for arguments that need user-provided values like enable/disable states, file paths, or configuration options.
 
 **Input Variable Naming Convention:**
 - Argument: `--gatekeeper` → Input Variable: `INPUT_GATEKEEPER`
@@ -75,7 +75,7 @@ When `input_required: true` is set, the argument accepts user input that gets st
 
 ### Input Validation Best Practices
 
-When creating functions that handle user input, implement validation to accept multiple input formats and provide clear error messages:
+When creating functions that handle user.arg, implement validation to accept multiple input formats and provide clear error messages:
 
 **Standard Input Patterns:**
 - **Boolean-style**: `enable/disable`, `on/off`, `yes/no`, `true/false`, `1/0`
@@ -105,7 +105,7 @@ function_name() {
 
 ### socketfilterfw Input Conversion
 
-macOS `socketfilterfw` commands require uppercase "ON"/"OFF" values. Convert user input to the required format:
+macOS `socketfilterfw` commands require uppercase "ON"/"OFF" values. Convert user.arg to the required format:
 
 ```bash
 appfw_function() {

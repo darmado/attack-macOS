@@ -410,7 +410,7 @@ def create_documentation_file(doc_path: str, func_name: str, func_code: str) -> 
 </details> 
 """
         else:
-            template = f"""# {clean_name}
+        template = f"""# {clean_name}
 
 ## Purpose
 

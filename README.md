@@ -41,7 +41,7 @@ Attack-macOS is a library of scripts that security teams can use to evaluate mac
 ```mermaid
 flowchart TD
     A1("🚫 Limited OSS testing tools")
-    A2("⚡ Existing tools are tier II/III (advanced)")
+    A2("⚡ Existing tools are tier II/III (advanced C2s)")
     A3("🛡️ Commercial tools focus on hardening and MDM")
 
     style A1 stroke:#ff6b35,stroke-width:2px,fill:transparent
@@ -82,6 +82,7 @@ flowchart TD
 | **Encoding and Encryption** | Multiple data encoding options and integrated encryption functions including AES-256-CBC, GPG, and XOR. [Encode Output](wiki/R&D%20Library/Functions/Shell/Encode%20Output.md) • [Encrypt Output](wiki/R&D%20Library/Functions/Shell/Encrypt%20Output.md) | Improves test realism by simulating actual evasion techniques |
 | **Exfiltration** | Simulates data exfiltration via HTTP/S or DNS protocols. [Exfiltrate Data](wiki/R&D%20Library/Functions/Shell/Exfiltrate%20Data.md) | Tests complete attack chains to identify detection gaps in data loss prevention |
 | **CI/CD Pipeline Ready** | Integrates with existing security tools, automation pipelines, and CI/CD workflows. | Enables continuous security testing without manual intervention |
+| **Caldera Integration** | Native Caldera plugin for seamless integration with red team operations. [Caldera Plugin](integrations/caldera/plugins/attackmacos/) | Streamlines deployment and execution in enterprise red team frameworks |
 
 ##
 
@@ -262,6 +263,25 @@ cd attack-macOS
 ./attackmacos/attackmacos.sh --banner --help
 ```
 
+### Caldera Integration
+
+```sh
+# 1. Build and sync Caldera plugin
+python cicd/build_shell_procedure.py --sync-caldera
+
+# 2. Copy plugin to Caldera
+cp -r integrations/caldera/plugins/attackmacos /path/to/caldera/plugins/
+
+# 3. Restart Caldera server
+# Plugin abilities will be available in operations
+
+# 4. Use with facts in Caldera
+# Set fact: user.arg = "--safari --chrome --search malware"
+# Execute ability: browser_history
+```
+
+**Caldera Documentation:** [Caldera Plugin Guide](integrations/caldera/plugins/attackmacos/docs/)
+
 ### Local Execution (Direct)
 
 ```sh
@@ -293,14 +313,20 @@ curl -s https://raw.githubusercontent.com/yourusername/attack-macOS/main/ttp/cre
 wget -qO- https://raw.githubusercontent.com/yourusername/attack-macOS/main/ttp/discovery/shell/browser_history.sh | bash
 ```
 
-## License
+##
 
-This project is licensed under the Apache License 2.0.  [LICENSE](LICENSE) 
+### License
 
-## Acknowledgements
+Apache License 2.0.  [LICENSE](LICENSE) 
 
-For contributor acknowledgements and project credits, see [Acknowledgements.md](docs/Acknowledgements.md).
+##
 
-## References
+### Acknowledgements
 
-For research references and technical documentation, see [References.md](docs/References.md).
+Contributor acknowledgements and project credits [Acknowledgements.md](docs/Acknowledgements.md).
+
+##
+
+### References
+
+Research references see [References.md](docs/References.md).

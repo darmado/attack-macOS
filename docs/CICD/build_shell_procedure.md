@@ -135,6 +135,9 @@ python3 cicd/build_shell_procedure.py --all --force
 
 # Validate YAML only
 python3 cicd/build_shell_procedure.py --validate browser_history.yml
+
+# Sync Caldera plugin
+python3 cicd/build_shell_procedure.py --sync-caldera
 ```
 
 ## Process
@@ -171,3 +174,113 @@ attackmacos/
 - Base script: `procedure_name.sh`
 - Versioned: `procedure_name_v1.sh`, `procedure_name_v2.sh`
 - Test files: `test_procedure_name.sh`
+
+## Caldera Integration
+
+The build system includes native support for generating Caldera plugins from attack-macOS procedures.
+
+### Sync Process
+
+```bash
+python3 cicd/build_shell_procedure.py --sync-caldera
+```
+
+**Generated Components:**
+- **Abilities**: One ability per procedure using `#{user.arg}` fact system
+- **Payloads**: Built shell scripts copied as Caldera payloads  
+- **Documentation**: Auto-generated abilities reference and usage guides
+- **Plugin Structure**: Complete Caldera plugin with hook.py integration
+
+### Plugin Architecture
+
+**Directory Structure:**
+```
+integrations/caldera/plugins/attackmacos/
+├── hook.py                          # Plugin registration
+├── data/
+│   ├── abilities/
+│   │   ├── discovery/
+│   │   │   ├── browser_history.yml  # Ability definitions
+│   │   │   └── system_info.yml
+│   │   └── credential_access/
+│   │       └── keychain.yml
+│   └── payloads/
+│       ├── browser_history.sh       # Built scripts
+│       ├── system_info.sh
+│       └── keychain.sh
+└── docs/
+    ├── attackmacos.md               # Plugin overview
+    ├── abilities.md                 # Abilities reference  
+    └── usage.md                     # Technical usage guide
+```
+
+**Ability Template:**
+```yaml
+id: browser_history
+name: browser_history
+description: Extract browser history from Safari, Chrome, Firefox, and Brave
+tactic: discovery
+technique:
+  attack_id: T1217
+  name: Browser Information Discovery
+platforms:
+  darwin:
+    sh:
+      command: #{location}/browser_history.sh #{user.arg}
+      cleanup:
+        - rm #{location}/browser_history.sh
+requirements:
+  - user.arg:
+      edge: has_property
+delete_payload: true
+timeout: 300
+```
+
+### Integration Workflow
+
+1. **Build Scripts**: Generate shell scripts from YAML procedures
+2. **Copy Payloads**: Copy built scripts to Caldera payload directory  
+3. **Generate Abilities**: Create Caldera ability definitions with fact integration
+4. **Update Documentation**: Generate plugin documentation from source data
+5. **Plugin Registration**: Configure hook.py for Caldera integration
+
+### Deployment
+
+**Manual Installation:**
+```bash
+# Build and sync plugin
+python3 cicd/build_shell_procedure.py --sync-caldera
+
+# Copy to Caldera
+cp -r integrations/caldera/plugins/attackmacos /path/to/caldera/plugins/
+
+# Restart Caldera
+sudo systemctl restart caldera
+```
+
+**Automated CI/CD:**
+```yaml
+- name: Deploy Caldera Plugin
+  run: |
+    python3 cicd/build_shell_procedure.py --sync-caldera
+    rsync -av integrations/caldera/plugins/attackmacos/ caldera-server:/opt/caldera/plugins/attackmacos/
+    ssh caldera-server 'sudo systemctl restart caldera'
+```
+
+### Usage in Operations
+
+**Setting Facts:**
+- Fact Name: `user.arg`
+- Fact Value: Any combination of script arguments
+- Example: `"--safari --chrome --search malware --last 7"`
+
+**Ability Execution:**
+- Select attack-macOS ability from plugin
+- Set `user.arg` fact with desired arguments
+- Execute ability on target
+- Built-in cleanup removes payload automatically
+
+**Documentation Links:**
+- [Plugin Documentation](../integrations/caldera/plugins/attackmacos/docs/)
+- [Abilities Reference](../integrations/caldera/plugins/attackmacos/docs/abilities.md)
+- [Technical Usage Guide](../integrations/caldera/plugins/attackmacos/docs/usage.md)

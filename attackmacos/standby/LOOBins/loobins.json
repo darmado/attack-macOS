@@ -1034,7 +1034,7 @@
                 "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/osascript_gather_system_information"
             },
             {
-                "name": "Jamf Protect: Detect activity that is related to generating dialogs using osascript and asking for specific user input",
+                "name": "Jamf Protect: Detect activity that is related to generating dialogs using osascript and asking for specific user.arg",
                 "url": "https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/osascript_dialog_activity"
             }
         ],

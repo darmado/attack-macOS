@@ -344,7 +344,7 @@ Example (Steganography):
 
 3. **Proper Error Handling**: Use `core_handle_error()` and `core_debug_print()` for consistent messaging
 
-4. **Input Validation**: Use `core_validate_input()` for all user inputs
+4. **Input Validation**: Use `core_validate_input()` for all user.args
 
 5. **POSIX Compatibility**: Ensure shell compatibility across Zsh, Bash, and Sh
 

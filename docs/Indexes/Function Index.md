@@ -50,7 +50,7 @@ Always refer to the actual script implementations for the most up-to-date and co
 | `log_output` | Log output with metadata | `output`: str, `status`: str, `skip_data`: bool | None | Writes to log file and syslog |
 | `prepare_encryption` | Setup encryption system | `method`: str | int | Sets encryption key |
 | `rate_limit` | Implement rate limiting | None | None | Sleeps for specified duration |
-| `sanitize_input` | Sanitize user input | `input`: str | str | None |
+| `sanitize_input` | Sanitize user.arg | `input`: str | str | None |
 | `validate_encryption_method` | Validate encryption method | `method`: str | bool | None |
 | `validate_input` | Validate input against pattern | `input`: str, `pattern`: str | bool | None |
 

@@ -64,7 +64,7 @@ The purpose of these guide is to:
    ```
 
 4. Minimize Dependency on User Input
-   Rationale: Excessive reliance on user input can lead to inconsistent behavior, increased error potential, and reduced script reliability. By minimizing user input dependencies, we can create more robust, predictable, and automated scripts.
+   Rationale: Excessive reliance on user.arg can lead to inconsistent behavior, increased error potential, and reduced script reliability. By minimizing user.arg dependencies, we can create more robust, predictable, and automated scripts.
 
    Example from browser_history.sh:
    ```bash
@@ -221,7 +221,7 @@ The purpose of these guide is to:
 22. Use lowercase with underscores for local variables and functions
     Example:
     ```bash
-    local user_input
+    local user.arg
     validate_input() {
         # Function body
     }

@@ -90,7 +90,7 @@ set_config()
 log_error()
 
 # Avoid - too verbose or unclear
-validate_user_input_for_security_compliance()
+validate_user.arg_for_security_compliance()
 perform_permission_verification_check()
 retrieve_and_process_user_data_information()
 ```
@@ -133,7 +133,7 @@ PROCEDURE_NAME="keychain_access"
 Examples:
 ```bash
 # Function-scoped variables
-local user_input
+local user.arg
 local temp_file
 local error_count
 local validation_result
@@ -308,7 +308,7 @@ output_file="results_$(date +%Y%m%d).txt"
 #### Overly Verbose Names
 ```bash
 # Bad - too verbose
-validate_user_input_for_security_compliance()
+validate_user.arg_for_security_compliance()
 retrieve_and_process_user_configuration_data()
 
 # Good - clear and direct  
