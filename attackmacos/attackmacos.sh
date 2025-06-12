@@ -23,7 +23,7 @@ cleanup() {
 # Configuration
 #------------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-GIT_URL="https://raw.githubusercontent.com/darmado/attack-macOS/main/attackmacos/ttp/{tactic}/{ttp}/{ttp}.sh"
+GIT_URL="https://raw.githubusercontent.com/armadoinc/attack-macOS/main/ttp/{tactic}/shell/{ttp}.sh"
 DEFAULT_METHOD="curl"
 VERBOSE="${ATTACKMACOS_VERBOSE:-false}"
 LOG_ENABLED="${ATTACKMACOS_LOG:-false}"
@@ -247,7 +247,7 @@ get_remote_ttps() {
     # Note: This HTML scraping method is fragile and may break if GitHub changes its page structure.
     # Future improvement could involve using the GitHub API, potentially with jq.
     curl -sSL -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)" \
-        "https://github.com/darmado/attack-macOS/tree/main/attackmacos/ttp/$tactic" 2>/dev/null | \
+        "https://github.com/armadoinc/attack-macOS/tree/main/attackmacos/ttp/$tactic" 2>/dev/null | \
     grep -o '{"name":"[^"]*","path":"attackmacos/ttp/'$tactic'/[^"]*","contentType":"directory"}' | \
     grep -o '"name":"[^"]*"' | \
     sed 's/"name":"//;s/"//' | \
@@ -317,12 +317,15 @@ execute_curl() {
     tactic="$1"
     ttp="$2"
     args="$3"
-    url="$GIT_URL"
-    url="$(echo "$url" | sed "s/{tactic}/$tactic/;s/{ttp}/$ttp/;s/{ttp}.sh/${ttp}.sh/")" # Ensure .sh is appended if not already
+    local url # Declare url local to the function
     
     validate_input "$tactic" "tactic" || return "$?"
     validate_input "$ttp" "TTP" || return "$?"
     [ -n "$args" ] && validate_input "$args" "arguments" || return "$?"
+
+    local ttp_name="${ttp%.sh}"
+    local temp_url="${GIT_URL//\{tactic\}/$tactic}"
+    url="${temp_url//\{ttp\}/$ttp_name}"
     
     # Dependency already checked by check_dependencies in main
 
@@ -340,12 +343,15 @@ execute_wget() {
     tactic="$1"
     ttp="$2"
     args="$3"
-    url="$GIT_URL"
-    url="$(echo "$url" | sed "s/{tactic}/$tactic/;s/{ttp}/$ttp/;s/{ttp}.sh/${ttp}.sh/")"
+    local url # Declare url local to the function
     
     validate_input "$tactic" "tactic" || return "$?"
     validate_input "$ttp" "TTP" || return "$?"
     [ -n "$args" ] && validate_input "$args" "arguments" || return "$?"
+
+    local ttp_name="${ttp%.sh}"
+    local temp_url="${GIT_URL//\{tactic\}/$tactic}"
+    url="${temp_url//\{ttp\}/$ttp_name}"
 
     # Dependency already checked by check_dependencies in main
 
@@ -371,15 +377,18 @@ execute_osascript() {
     tactic="$1"
     ttp="$2"
     args="$3"
-    url="$GIT_URL"
-    url="$(echo "$url" | sed "s/{tactic}/$tactic/;s/{ttp}/$ttp/;s/{ttp}.sh/${ttp}.sh/")"
+    local url # Declare url local to the function
     
     validate_input "$tactic" "tactic" || return "$?"
     validate_input "$ttp" "TTP" || return "$?"
     [ -n "$args" ] && validate_input "$args" "arguments" || return "$?"
 
+    local ttp_name="${ttp%.sh}"
+    local temp_url="${GIT_URL//\{tactic\}/$tactic}"
+    url="${temp_url//\{ttp\}/$ttp_name}"
+
     # Dependencies (osascript, curl) already checked by check_dependencies in main
-    
+
     # Validate URL using curl within the osascript context (less direct feedback)
     # This is tricky because osascript -e "do shell script" has limitations.
     # A simpler approach is to let the inner curl handle it, and if it fails, sh -s will get empty input.

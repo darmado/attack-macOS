@@ -28,7 +28,7 @@
 <br>
 <br>
 
-Security teams can use the Attack-macOS library of scripts to evaluate macOS endpoint detection and response capabilities. This project helps security teams simplify executing [Living Off The Orchard (LOObins)](https://www.loobins.io/) techniques by providing standalone scripts with built-in encoding, encryption, formatting, logging, and exfiltration over DNS and HTTPS/S.
+Attack-macOS offers scripts for security teams to evaluate macOS endpoint detection and response. It simplifies executing Living Off The Orchard (LOObins) techniques via standalone scripts with built-in data handling (encoding, encryption, formatting, logging) and exfiltration (DNS, HTTP/S).
 
 ##
 
@@ -73,16 +73,16 @@ flowchart TD
 
 | Feature | Description | Benefit |
 |:--------|:------------|:--------|
-| **Builder Tool** | Includes a YAML template, schema, and builder tool for creating new scripts with built-in argument parsing and validation. [Parse Args](wiki/R&D%20Library/Functions/Shell/Parse%20Args.md) | Eliminates script development time and reduces errors through automated validation |
-| **Modular Design** | Users can use these self-contained scripts independently or combine them, easily integrating them with existing security test frameworks. | Enables quick deployment without complex tool chains or infrastructure changes |
-| **Standardized Help** | All scripts include `--help` menus for standalone execution via custom deployment frameworks or attackmacos.sh handler. | Accelerates execution by eliminating documentation lookup and deployment confusion |
-| **macOS Native** | This project executes techniques by extensively utilizing the vast array of built-in command-line binaries and native APIs available on macOS (often referred to as Living Off The Orchard Binaries - LOObins). This approach ensures that TTPs generate realistic telemetry commonly associated with legitimate system activity, making detection more challenging. While most TTPs achieve their goals using these native binaries via shell scripts, some also employ standard macOS interpreters like `osascript` (for JXA/AppleScript), or may use `python3` or `swift` for specific tasks or wrapper scripts when those are the most direct or appropriate tools. The `attackmacos.sh` handler itself maintains minimal dependencies. | Generates realistic macOS telemetry, mirroring how adversaries often operate by using legitimate system utilities and scripting languages. |
-| **MITRE ATT&CK Mapped** | The project directly maps all scripts and arguments to the MITRE ATT&CK framework. | Streamlines compliance reporting and threat model alignment |
-| **Logging** | Built-in syslog logging capability with output formatting in JSON or CSV for analysis. [Log Output](wiki/R&D%20Library/Functions/Shell/Log%20Output.md) | Automates evidence collection and accelerates post-test analysis |
-| **Encoding and Encryption** | Multiple data encoding options and integrated encryption functions including AES-256-CBC, GPG, and XOR. [Encode Output](wiki/R&D%20Library/Functions/Shell/Encode%20Output.md) • [Encrypt Output](wiki/R&D%20Library/Functions/Shell/Encrypt%20Output.md) | Improves test realism by simulating actual evasion techniques |
-| **Exfiltration** | Simulates data exfiltration via HTTP/S or DNS protocols. [Exfiltrate Data](wiki/R&D%20Library/Functions/Shell/Exfiltrate%20Data.md) | Tests complete attack chains to identify detection gaps in data loss prevention |
-| **CI/CD Pipeline Ready** | Integrates with existing security tools, automation pipelines, and CI/CD workflows. | Enables continuous security testing without manual intervention |
-| **Caldera Integration** | Native Caldera plugin for seamless integration with red team operations. [Caldera Plugin](integrations/caldera/plugins/attackmacos/) | This integration streamlines how enterprise red teams deploy and execute procedures using their frameworks. |
+| **Builder Tool** | YAML template, schema, and builder tool for new scripts with built-in argument parsing/validation. [Parse Args](wiki/R&D%20Library/Functions/Shell/Parse%20Args.md) | Reduces script development time and errors via automated validation. |
+| **Modular Design** | Self-contained scripts for independent use or easy integration with security test frameworks. | Allows quick deployment without complex toolchains. |
+| **Standardized Help** | All scripts include `--help` menus for standalone or handler-based execution. | Speeds up execution by reducing documentation lookup. |
+| **macOS Native** | TTPs primarily use native macOS command-line binaries and APIs (LOObins) via shell scripts. Some TTPs use `osascript` (for JXA/AppleScript), `python3`, or `swift` for specific tasks or wrappers. The `attackmacos.sh` handler has minimal dependencies. | Produces realistic macOS telemetry by leveraging system utilities and scripting languages. |
+| **MITRE ATT&CK Mapped** | Scripts and arguments map directly to the MITRE ATT&CK framework. | Aids compliance reporting and threat model alignment. |
+| **Logging** | Syslog logging with JSON/CSV output formatting. [Log Output](wiki/R&D%20Library/Functions/Shell/Log%20Output.md) | Automates evidence collection; speeds up post-test analysis. |
+| **Encoding and Encryption** | Offers multiple data encoding (Base64, Hex, Perl) and encryption (AES, GPG, XOR) options. [Encode Output](wiki/R&D%20Library/Functions/Shell/Encode%20Output.md) • [Encrypt Output](wiki/R&D%20Library/Functions/Shell/Encrypt%20Output.md) | Simulates evasion techniques for improved test realism. |
+| **Exfiltration** | Simulates data exfiltration via HTTP/S and DNS. [Exfiltrate Data](wiki/R&D%20Library/Functions/Shell/Exfiltrate%20Data.md) | Tests attack chains to find data loss prevention gaps. |
+| **CI/CD Pipeline Ready** | Integrates with security tools, automation pipelines, and CI/CD workflows. | Supports continuous security testing with less manual effort. |
+| **Caldera Integration** | Native Caldera plugin for integration with red team operations. [Caldera Plugin](integrations/caldera/plugins/attackmacos/) | Streamlines Caldera deployment and execution for red teams. |
 
 ##
 
