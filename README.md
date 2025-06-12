@@ -76,7 +76,7 @@ flowchart TD
 | **Builder Tool** | Includes a YAML template, schema, and builder tool for creating new scripts with built-in argument parsing and validation. [Parse Args](wiki/R&D%20Library/Functions/Shell/Parse%20Args.md) | Eliminates script development time and reduces errors through automated validation |
 | **Modular Design** | Self-contained scripts that can be used independently or combined, easily integrating with existing security test frameworks. | Enables quick deployment without complex tool chains or infrastructure changes |
 | **Standardized Help** | All scripts include `--help` menus for standalone execution via custom deployment frameworks or attackmacos.sh handler. | Accelerates execution by eliminating documentation lookup and deployment confusion |
-| **macOS Native** | Uses native tools and interpreters without external dependencies. See [LOOBins](https://www.loobins.io/). | Produces macOS telemetry often attrivbuted to threat actors. |
+| **macOS Native** | Primarily uses native macOS tools and common interpreters (shell, osascript). While the `attackmacos.sh` handler itself is low-dependency, some TTPs (or specific functionalities within them, e.g., Python or Swift based execution paths) may require additional interpreters like `python3` or `swift` to be available on the target system. | Produces macOS telemetry often attrivbuted to threat actors. |
 | **MITRE ATT&CK Mapped** | All scripts and arguments directly mapped to the MITRE ATT&CK framework. | Streamlines compliance reporting and threat model alignment |
 | **Logging** | Built-in syslog logging capability with output formatting in JSON or CSV for analysis. [Log Output](wiki/R&D%20Library/Functions/Shell/Log%20Output.md) | Automates evidence collection and accelerates post-test analysis |
 | **Encoding and Encryption** | Multiple data encoding options and integrated encryption functions including AES-256-CBC, GPG, and XOR. [Encode Output](wiki/R&D%20Library/Functions/Shell/Encode%20Output.md) • [Encrypt Output](wiki/R&D%20Library/Functions/Shell/Encrypt%20Output.md) | Improves test realism by simulating actual evasion techniques |
@@ -130,6 +130,9 @@ flowchart TD
     style D fill:#0D0D0D,stroke:#7A6AB7,stroke-width:2px,color:#fff
     style D1 fill:#1a237e,stroke:#47B7F8,stroke-width:2px,color:#fff
 ```
+
+**Note on Script Execution:** When `attackmacos.sh` executes scripts remotely (e.g., via `--method curl`), it downloads the script and runs it using `sh`. If you intend to run a JXA, Python, or Swift script from a remote source using the handler, ensure the remote URL points to a shell script that acts as a wrapper to correctly execute the JXA/Python/Swift code (e.g., by calling `osascript -l JavaScript <file>`, `python3 <file>`, or `swift <file>`). The `--method osascript` is also a way to invoke a *shell script* but wrapped within an AppleScript `do shell script` command. For local execution, TTPs are typically shell scripts that may, in turn, execute code in other languages.
+
 ##
 
 <div align="center">
@@ -262,6 +265,12 @@ cd attack-macOS
 # 5. Show banner and help
 ./attackmacos/attackmacos.sh --banner --help
 ```
+
+### Handler Dependencies
+The `./attackmacos/attackmacos.sh` handler script requires:
+*   A POSIX-compliant shell (e.g., bash, zsh, sh).
+*   `curl` or `wget` for remote script execution (when using `--method curl` or `--method wget` respectively).
+*   `osascript` if using the `--method osascript` (this is a standard component of macOS).
 
 ### Caldera Integration
 
