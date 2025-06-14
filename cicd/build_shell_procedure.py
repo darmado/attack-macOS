@@ -997,7 +997,7 @@ def sync_to_caldera():
             script_count += 1
             
             # Generate single ability for this script
-            ability_data = generate_comprehensive_ability(yaml_data)
+            ability_data = build_caldera_ability(yaml_data)
             
             # Create tactic-specific ability directory
             tactic_abilities_dir = abilities_dir / tactic_dir
@@ -1082,7 +1082,7 @@ def sync_documentation(config_dir, caldera_plugin_dir):
                 option = arg.get('option', '')
                 description = arg.get('description', '')
                 if option:
-                    # Clean option to show only long form
+                    # Clean option to show only long form - handle missing pipes safely
                     if '|' in option:
                         clean_option = option.split('|')[1]
                     else:
@@ -1110,7 +1110,7 @@ def sync_documentation(config_dir, caldera_plugin_dir):
     print(f"{BOLD}Updated:{RESET} abilities.md with actual YAML data")
 
 
-def generate_comprehensive_ability(yaml_data):
+def build_caldera_ability(yaml_data):
     """Generate single Caldera ability per script with user.arg fact"""
     procedure_name = yaml_data['procedure_name']
     base_guid = yaml_data.get('guid', '00000000-0000-0000-0000-000000000000')
@@ -1140,7 +1140,7 @@ def generate_comprehensive_ability(yaml_data):
           - module: base64
             property: attackmacos.{procedure_name}.output
         delete_payload: true
-  singleton: true
+  singleton: false
   requirements:
     - user.arg:
         edge: has_property"""
