@@ -10,8 +10,9 @@ updated: '2025-06-03'
 version: 1.5.4
 procedure:
   arguments:
-  - option: -a|--all
-    description: Run all account discovery techniques
+  - option: --all
+    description: Run all user and group discovery techniques (combines all options
+      below)
     execute_function:
     - list_user_dirs
     - list_dscl_users
@@ -19,45 +20,45 @@ procedure:
     - show_id_info
     - list_logged_users
     - read_loginwindow_plist
+    - list_dscacheutil_users
     - list_groups_dscacheutil
     - list_groups_dscl
     - list_groups_etc
     - list_groups_id
     - list_groups_cmd
-    - list_dscacheutil_users
     - find_user_defaults
     - show_last_logins
     - list_user_profiles
     - show_user_profile_details
-  - option: -d|--user-dirs
+  - option: --user-dirs
     description: List user directories using 'ls -la /Users'
     execute_function:
     - list_user_dirs
-  - option: -l|--dscl-users
+  - option: --dscl-users
     description: List users using 'dscl . -list /Users'
     execute_function:
     - list_dscl_users
-  - option: -p|--passwd
+  - option: --passwd
     description: Display content of '/etc/passwd'
     execute_function:
     - extract_passwd_users
-  - option: -i|--id
+  - option: --id
     description: Show current user info using 'id' command
     execute_function:
     - show_id_info
-  - option: -w|--who
+  - option: --who
     description: List logged-in users with 'who' command
     execute_function:
     - list_logged_users
-  - option: -s|--plist
+  - option: --plist
     description: Read user list from loginwindow plist
     execute_function:
     - read_loginwindow_plist
-  - option: -m|--dscacheutil
+  - option: --dscacheutil
     description: List local users using 'dscacheutil -q user'
     execute_function:
     - list_dscacheutil_users
-  - option: -g|--all-groups
+  - option: --all-groups
     description: Run all group discovery techniques
     execute_function:
     - list_groups_dscacheutil
@@ -65,40 +66,40 @@ procedure:
     - list_groups_etc
     - list_groups_id
     - list_groups_cmd
-  - option: -gc|--cache-groups
+  - option: --cache-groups
     description: List groups using 'dscacheutil -q group'
     execute_function:
     - list_groups_dscacheutil
-  - option: -gd|--dscl-groups
+  - option: --dscl-groups
     description: List groups using 'dscl . -list /Groups'
     execute_function:
     - list_groups_dscl
-  - option: -ge|--etc-groups
+  - option: --etc-groups
     description: List groups using 'grep /etc/group'
     execute_function:
     - list_groups_etc
-  - option: -gi|--id-groups
+  - option: --id-groups
     description: List groups using 'id -G'
     execute_function:
     - list_groups_id
-  - option: -gg|--groups-cmd
+  - option: --groups-cmd
     description: List groups using 'groups' command
     execute_function:
     - list_groups_cmd
-  - option: -df|--defaults-find
+  - option: --defaults-find
     description: Find user account info using 'defaults find'
     execute_function:
     - find_user_defaults
-  - option: -lt|--last-logins
+  - option: --last-logins
     description: Show last user logins using 'last' command
     execute_function:
     - show_last_logins
-  - option: -pf|--profiles
+  - option: --profiles
     description: List and show user configuration profiles
     execute_function:
     - list_user_profiles
     - show_user_profile_details
-  - option: -pa|--profiles-all
+  - option: --profiles-all
     description: Show all configuration profiles (requires sudo)
     execute_function:
     - show_all_profiles

@@ -10,7 +10,7 @@ A catalog of tools and scripts designed for testing macOS security controls and 
 | **MacHound** | macOS Active Directory assessment | [XMCyber/MacHound](https://github.com/XMCyber/MacHound) | AD Assessment | Python |
 | **BloodHound** | Active Directory attack path analysis (cross-platform) | [BloodHoundAD/BloodHound](https://github.com/BloodHoundAD/BloodHound) | AD Testing | C# |
 | **MobSF** | Mobile security framework with macOS app testing | [MobSF/Mobile-Security-Framework-MobSF](https://github.com/MobSF/Mobile-Security-Framework-MobSF) | Application Testing | Python |
-| **attack-macOS** | Library of scripts for testing macOS EDR capabilities | [darmado/attack-macOS](https://github.com/darmado/attack-macOS) | Attack Simulation | Shell/JXA/Swift |
+| **attack-macOS** | Library of scripts for testing macOS EDR capabilities | [armadoinc/attack-macOS](https://github.com/armadoinc/attack-macOS) | Attack Simulation | Shell/JXA/Swift |
 | **Atomic Red Team** | Library of tests including macOS techniques | [redcanaryco/atomic-red-team](https://github.com/redcanaryco/atomic-red-team) | Attack Simulation | YAML/Shell |
 | **Caldera** | Adversary emulation platform with macOS abilities | [mitre/caldera](https://github.com/mitre/caldera) | Adversary Emulation | Python |
 | **BeEF** | Browser exploitation framework (cross-platform) | [beefproject/beef](https://github.com/beefproject/beef) | Browser Testing | Ruby |

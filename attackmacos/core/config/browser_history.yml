@@ -24,19 +24,19 @@ platform:
 - macOS
 procedure:
   arguments:
-  - option: -s|--safari
+  - option: --safari
     description: Extract Safari history
     execute_function:
     - query_safari_history
-  - option: -c|--chrome
+  - option: --chrome
     description: Extract Chrome history
     execute_function:
     - query_chrome_history
-  - option: -f|--firefox
+  - option: --firefox
     description: Extract Firefox history
     execute_function:
     - query_firefox_history
-  - option: -b|--brave
+  - option: --brave
     description: Extract Brave history
     execute_function:
     - query_brave_history

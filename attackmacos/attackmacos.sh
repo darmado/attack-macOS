@@ -5,6 +5,10 @@
 # Version: 1.3
 # Created: 2023-09-30
 # License: Apache 2.0
+<<<<<<< HEAD
+=======
+# Repository: https://github.com/armadoinc/attack-macOS
+>>>>>>> c6f83ff (cleanup work)
 # Description: Tool to fetch and execute scripts from the attack-macOS repository
 # Dependencies: curl, wget, osascript (optional)
 
@@ -23,7 +27,11 @@ cleanup() {
 # Configuration
 #------------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+<<<<<<< HEAD
 GIT_URL="https://raw.githubusercontent.com/armadoinc/attack-macOS/main/ttp/{tactic}/shell/{ttp}.sh"
+=======
+GIT_URL="https://raw.githubusercontent.com/armadoinc/attack-macOS/main/attackmacos/ttp/{tactic}/{ttp}/{ttp}.sh"
+>>>>>>> c6f83ff (cleanup work)
 DEFAULT_METHOD="curl"
 VERBOSE="${ATTACKMACOS_VERBOSE:-false}"
 LOG_ENABLED="${ATTACKMACOS_LOG:-false}"

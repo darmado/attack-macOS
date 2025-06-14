@@ -9,11 +9,11 @@ created: '2025-05-28'
 updated: '2025-06-03'
 procedure:
   arguments:
-  - option: -s|--screenshot
+  - option: --screenshot
     description: Capture a silent screenshot
     execute_function:
     - capture_screenshot
-  - option: -d|--display
+  - option: --display
     description: Capture screenshot and display info
     execute_function:
     - capture_screenshot_with_info
@@ -69,7 +69,7 @@ procedure:
     description: Find and use apps with existing screen recording permissions
     execute_function:
     - capture_tcc_proxy_screenshot
-  - option: -a|--all-methods
+  - option: --all-methods
     description: Test ALL screenshot capture methods for maximum detection coverage
     execute_function:
     - capture_screenshot

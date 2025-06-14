@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://github.com/darmado/attack-macOS"><img src="https://github.com/user-attachments/assets/03a5c7dc-9dd6-49f9-a58b-2fdcdb6596f6" alt="attack-macOS" ></a>
+  <a href="https://github.com/armadoinc/attack-macOS"><img src="https://github.com/user-attachments/assets/03a5c7dc-9dd6-49f9-a58b-2fdcdb6596f6" alt="attack-macOS" ></a>
   <br>
 </h1>
 
@@ -9,10 +9,9 @@
   ![Shell](https://img.shields.io/badge/Shell-grey?style=for-the-badge&logo=gnu-bash)
   ![JXA](https://img.shields.io/badge/JXA-grey?style=for-the-badge)
   ![Swift](https://img.shields.io/badge/Swift-grey?style=for-the-badge&logo=swift)
-  [![MITRE ATT&CK](https://img.shields.io/badge/%20ATT%26CK%20v15-red?style=for-the-badge)](_DOCS/Procedures/Procedure%20Matrix.md)
+  [![MITRE ATT&CK](https://img.shields.io/badge/%20ATT%26CK%20v15-red?style=for-the-badge)](https://attack.mitre.org/)
   ![License](https://img.shields.io/badge/Apache%202.0-grey.svg?style=for-the-badge&logo=apache)
   ![macOS Compatibility](https://img.shields.io/badge/-blue?style=for-the-badge&logo=apple)
-  ![Join Community](https://img.shields.io/badge/Coming%20Soon-grey?style=for-the-badge&logo=discord)
   [![X Follow](https://img.shields.io/badge/-000000?style=for-the-badge&labelColor=black&logo=x&logoColor=white)](https://x.com/attackmacos)
 <br>
 ![Technique Coverage](https://img.shields.io/badge/Technique%20Coverage-11%20(3.43%25)-grey?style=for-the-badge)
@@ -24,11 +23,15 @@
   <a href="#mitre-attck-coverage-matrix">ATT&CK Matrix</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#quick-start">Quick Start</a> •
-  <a href="wiki/R&D%20Library">Research Library</a>
+  <a href="#integrations">Integrations</a>
 <br>
 <br>
 
+<<<<<<< HEAD
 Attack-macOS offers scripts for security teams to evaluate macOS endpoint detection and response. It simplifies executing Living Off The Orchard (LOObins) techniques via standalone scripts with built-in data handling (encoding, encryption, formatting, logging) and exfiltration (DNS, HTTP/S).
+=======
+Attack-macOS provides scripts for security teams to evaluate macOS endpoint detection and response capabilities. This project executes [Living Off The Orchard (LOLBins)](https://www.loobins.io/) techniques via standalone scripts with built-in encoding, encryption, formatting, logging, and exfiltration over DNS and HTTPS.
+>>>>>>> c6f83ff (cleanup work)
 
 ##
 
@@ -63,8 +66,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A1("✓ Build a library of attack scripts that help security teams evaluate and improve macOS endpoint detection and response capabilities.
-")
+    A1("✓ Build a library of attack scripts that help security teams evaluate and improve macOS endpoint detection and response capabilities.")
     style A1 stroke:#90EE90,stroke-width:2px,fill:transparent
 
 ```
@@ -73,6 +75,7 @@ flowchart TD
 
 | Feature | Description | Benefit |
 |:--------|:------------|:--------|
+<<<<<<< HEAD
 | **Builder Tool** | YAML template, schema, and builder tool for new scripts with built-in argument parsing/validation. [Parse Args](wiki/R&D%20Library/Functions/Shell/Parse%20Args.md) | Reduces script development time and errors via automated validation. |
 | **Modular Design** | Self-contained scripts for independent use or easy integration with security test frameworks. | Allows quick deployment without complex toolchains. |
 | **Standardized Help** | All scripts include `--help` menus for standalone or handler-based execution. | Speeds up execution by reducing documentation lookup. |
@@ -83,12 +86,21 @@ flowchart TD
 | **Exfiltration** | Simulates data exfiltration via HTTP/S and DNS. [Exfiltrate Data](wiki/R&D%20Library/Functions/Shell/Exfiltrate%20Data.md) | Tests attack chains to find data loss prevention gaps. |
 | **CI/CD Pipeline Ready** | Integrates with security tools, automation pipelines, and CI/CD workflows. | Supports continuous security testing with less manual effort. |
 | **Caldera Integration** | Native Caldera plugin for integration with red team operations. [Caldera Plugin](integrations/caldera/plugins/attackmacos/) | Streamlines Caldera deployment and execution for red teams. |
+=======
+| **YAML-First Configuration** | Each technique defined in YAML with complete metadata, arguments, and MITRE ATT&CK mapping | Automated ability generation and consistent deployments |
+| **Modular Design** | Self-contained scripts that work independently or combined, integrate with existing security test frameworks | Quick deployment without complex tool chains or infrastructure changes |
+| **Standardized Help** | All scripts include `--help` menus for standalone execution via custom deployment frameworks | Execute without documentation lookup |
+| **macOS Native** | Uses native tools and interpreters without external dependencies. See [LOLBins](https://www.loobins.io/) | Produces macOS telemetry attributed to threat actors |
+| **MITRE ATT&CK Mapped** | All scripts and arguments mapped to MITRE ATT&CK framework with proper technique IDs and names | Compliance reporting and threat model alignment |
+| **Multiple Output Formats** | JSON, CSV output formatting for analysis and integration | Evidence collection and post-test analysis |
+| **Encoding and Encryption** | Multiple data encoding options and encryption functions including AES-256-CBC, GPG, and XOR | Test realism using evasion techniques |
+| **Exfiltration** | Data exfiltration via HTTP/S or DNS protocols | Test complete attack chains and identify detection gaps in data loss prevention |
+| **CI/CD Pipeline Ready** | Integrates with existing security tools, automation pipelines, and CI/CD workflows | Continuous security testing without manual intervention |
+>>>>>>> c6f83ff (cleanup work)
 
 ##
 
-
 # Execution Workflow
-
 
 ```mermaid
 flowchart TD
@@ -243,13 +255,13 @@ flowchart TD
 </details>
 </div>
 
-## Quick Start Usage
+## Quick Start
 
-### Using attackmacos.sh Handler (Recommended)
+### Using attackmacos.sh Handler
 
 ```sh
 # 1. Clone the repository
-git clone https://github.com/yourusername/attack-macOS.git
+git clone https://github.com/armadoinc/attack-macOS.git
 cd attack-macOS
 
 # 2. Local execution using the handler
@@ -266,6 +278,7 @@ cd attack-macOS
 ./attackmacos/attackmacos.sh --banner --help
 ```
 
+<<<<<<< HEAD
 ### Handler Dependencies
 The `./attackmacos/attackmacos.sh` handler script requires:
 *   A POSIX-compliant shell (e.g., bash, zsh, sh).
@@ -291,11 +304,13 @@ cp -r integrations/caldera/plugins/attackmacos /path/to/caldera/plugins/
 
 **Caldera Documentation:** [Caldera Plugin Guide](integrations/caldera/plugins/attackmacos/docs/)
 
+=======
+>>>>>>> c6f83ff (cleanup work)
 ### Local Execution (Direct)
 
 ```sh
 # 1. Clone the repository
-git clone https://github.com/yourusername/attack-macOS.git
+git clone https://github.com/armadoinc/attack-macOS.git
 cd attack-macOS
 
 # 2. Run a technique directly
@@ -313,29 +328,26 @@ python3 build_shell_procedure.py --input ../attackmacos/ttp/discovery/shell/syst
 
 ```sh
 # 1. Execute directly from GitHub without cloning
-curl -s https://raw.githubusercontent.com/yourusername/attack-macOS/main/ttp/discovery/shell/system_info.sh | bash
+curl -s https://raw.githubusercontent.com/armadoinc/attack-macOS/main/ttp/discovery/shell/system_info.sh | bash
 
 # 2. Download and execute with parameters
-curl -s https://raw.githubusercontent.com/yourusername/attack-macOS/main/ttp/credential_access/shell/keychain.sh | bash -s -- --verbose --log-output --encode base64
+curl -s https://raw.githubusercontent.com/armadoinc/attack-macOS/main/ttp/credential_access/shell/keychain.sh | bash -s -- --verbose --log-output --encode base64
 
 # 3. Execute specific technique with wget
-wget -qO- https://raw.githubusercontent.com/yourusername/attack-macOS/main/ttp/discovery/shell/browser_history.sh | bash
+wget -qO- https://raw.githubusercontent.com/armadoinc/attack-macOS/main/ttp/discovery/shell/browser_history.sh | bash
 ```
+
+## Integrations
+
+### Caldera Plugin
+**Repository:** [https://github.com/armadoinc/caldera-plugin-attack-macos](https://github.com/armadoinc/caldera-plugin-attack-macos)
+
+Native Caldera plugin for seamless integration with red team operations. The plugin transforms attack-macOS YAML configurations into ready-to-execute abilities using a full command approach.
 
 ##
 
 ### License
 
-Apache License 2.0.  [LICENSE](LICENSE) 
+Apache License 2.0. [LICENSE](LICENSE)
 
 ##
-
-### Acknowledgements
-
-Contributor acknowledgements and project credits [Acknowledgements.md](docs/Acknowledgements.md).
-
-##
-
-### References
-
-Research references see [References.md](docs/References.md).

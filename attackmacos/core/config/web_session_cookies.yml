@@ -10,21 +10,21 @@ created: '2025-05-28'
 updated: '2025-06-03'
 procedure:
   arguments:
-  - option: -a|--all
+  - option: --all
     description: Steal credentials from all supported browsers
     execute_function:
     - steal_firefox_cookies
     - steal_chrome_credentials
     - steal_safari_cookies
-  - option: -f|--firefox
+  - option: --firefox
     description: Steal Firefox cookies and saved passwords
     execute_function:
     - steal_firefox_cookies
-  - option: -c|--chrome
+  - option: --chrome
     description: Steal Chrome credentials and session data
     execute_function:
     - steal_chrome_credentials
-  - option: -s|--safari
+  - option: --safari
     description: Steal Safari keychain credentials
     execute_function:
     - steal_safari_cookies
