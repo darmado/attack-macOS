@@ -49,7 +49,7 @@ Options:
   --query-acls              Query ACLs for all generic password items
   --query-acls-dev    Query ACLs using the original dev function
   --help                     Show this help message
-╭─darmado@MBPRO02-DA001 ~/Opensource/darmado/attack-ma
+╭─darmado@MBPRO02-DA001 ~/Opensource/armadoinc/attack-ma
 ```
 
 **Telemetry Details from `--help`** 
