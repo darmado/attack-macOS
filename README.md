@@ -72,7 +72,6 @@ flowchart TD
 
 | Feature | Description | Benefit |
 |:--------|:------------|:--------|
-<<<<<<< HEAD
 | **Builder Tool** | YAML template, schema, and builder tool for new scripts with built-in argument parsing/validation. [Parse Args](wiki/R&D%20Library/Functions/Shell/Parse%20Args.md) | Reduces script development time and errors via automated validation. |
 | **Modular Design** | Self-contained scripts for independent use or easy integration with security test frameworks. | Allows quick deployment without complex toolchains. |
 | **Standardized Help** | All scripts include `--help` menus for standalone or handler-based execution. | Speeds up execution by reducing documentation lookup. |
@@ -83,7 +82,6 @@ flowchart TD
 | **Exfiltration** | Simulates data exfiltration via HTTP/S and DNS. [Exfiltrate Data](wiki/R&D%20Library/Functions/Shell/Exfiltrate%20Data.md) | Tests attack chains to find data loss prevention gaps. |
 | **CI/CD Pipeline Ready** | Integrates with security tools, automation pipelines, and CI/CD workflows. | Supports continuous security testing with less manual effort. |
 | **Caldera Integration** | Native Caldera plugin for integration with red team operations. [Caldera Plugin](integrations/caldera/plugins/attackmacos/) | Streamlines Caldera deployment and execution for red teams. |
-=======
 | **YAML-First Configuration** | Each technique defined in YAML with complete metadata, arguments, and MITRE ATT&CK mapping | Automated ability generation and consistent deployments |
 | **Modular Design** | Self-contained scripts that work independently or combined, integrate with existing security test frameworks | Quick deployment without complex tool chains or infrastructure changes |
 | **Standardized Help** | All scripts include `--help` menus for standalone execution via custom deployment frameworks | Execute without documentation lookup |
@@ -93,7 +91,7 @@ flowchart TD
 | **Encoding and Encryption** | Multiple data encoding options and encryption functions including AES-256-CBC, GPG, and XOR | Test realism using evasion techniques |
 | **Exfiltration** | Data exfiltration via HTTP/S or DNS protocols | Test complete attack chains and identify detection gaps in data loss prevention |
 | **CI/CD Pipeline Ready** | Integrates with existing security tools, automation pipelines, and CI/CD workflows | Continuous security testing without manual intervention |
->>>>>>> c6f83ff (cleanup work)
+
 
 ##
 
@@ -139,8 +137,6 @@ flowchart TD
     style D fill:#0D0D0D,stroke:#7A6AB7,stroke-width:2px,color:#fff
     style D1 fill:#1a237e,stroke:#47B7F8,stroke-width:2px,color:#fff
 ```
-
-**Note on Script Execution:** When `attackmacos.sh` executes scripts remotely (e.g., via `--method curl`), it downloads the script and runs it using `sh`. If you intend to run a JXA, Python, or Swift script from a remote source using the handler, ensure the remote URL points to a shell script that acts as a wrapper to correctly execute the JXA/Python/Swift code (e.g., by calling `osascript -l JavaScript <file>`, `python3 <file>`, or `swift <file>`). The `--method osascript` also invokes a *shell script*, wrapping the execution within an AppleScript `do shell script` command. For local execution, TTPs typically consist of shell scripts that may, in turn, execute code in other languages.
 
 ##
 
@@ -218,7 +214,7 @@ flowchart TD
 |  |  |  |  | ![T1027.005](https://img.shields.io/badge/T1027.005-lightgrey?style=for-the-badge&label=%20-%20&labelColor=EB5454&color=494949)</br><sub>Indicator Removal from Tools</sub> |  |  |  |  |  |  |  |
 |  |  |  |  | ![[T1078](../../ttp/initial_access/guest_account.sh)](https://img.shields.io/badge/T1078-lightgrey?style=for-the-badge&label=%202%20&labelColor=3bc05a&color=494949)</br><sub>Valid Accounts</sub> |  |  |  |  |  |  |  |
 |  |  |  |  | ![T1564.009](https://img.shields.io/badge/T1564.009-lightgrey?style=for-the-badge&label=%20-%20&labelColor=EB5454&color=494949)</br><sub>Resource Forking</sub> |  |  |  |  |  |  |  |
-|  |  |  |  | ![[T1027](../../ttp/discovery/browser_history.sh)](https://img.shields.io/badge/T1027-lightgrey?style=for-the-badge&label=%202%20&labelColor=3bc05a&color=494949)</br><sub>Obfuscated Files or Information</sub> |  |  |  |  |  |  |  |
+|  |  |  |  | ![[T1027](../../ttp/discovery/browser_history.sh)](https://img.shields.io/badge/T1027-lightgrey?style=for-the-badge&label=%202%20&labelColor=3bc05a&color=494949)</br><sub>Obfuscated Files or Information</sub> |  |  |  |  |  |  |  
 |  |  |  |  | ![T1556.006](https://img.shields.io/badge/T1556.006-lightgrey?style=for-the-badge&label=%20-%20&labelColor=EB5454&color=494949)</br><sub>Multi-Factor Authentication</sub> |  |  |  |  |  |  |  |
 |  |  |  |  | ![T1036.001](https://img.shields.io/badge/T1036.001-lightgrey?style=for-the-badge&label=%20-%20&labelColor=EB5454&color=494949)</br><sub>Invalid Code Signature</sub> |  |  |  |  |  |  |  |
 |  |  |  |  | ![T1564.006](https://img.shields.io/badge/T1564.006-lightgrey?style=for-the-badge&label=%20-%20&labelColor=EB5454&color=494949)</br><sub>Run Virtual Instance</sub> |  |  |  |  |  |  |  |
@@ -275,7 +271,6 @@ cd attack-macOS
 ./attackmacos/attackmacos.sh --banner --help
 ```
 
-<<<<<<< HEAD
 ### Handler Dependencies
 The `./attackmacos/attackmacos.sh` handler script requires:
 *   A POSIX-compliant shell (e.g., bash, zsh, sh).
@@ -301,8 +296,8 @@ cp -r integrations/caldera/plugins/attackmacos /path/to/caldera/plugins/
 
 **Caldera Documentation:** [Caldera Plugin Guide](integrations/caldera/plugins/attackmacos/docs/)
 
-=======
->>>>>>> c6f83ff (cleanup work)
+
+
 ### Local Execution (Direct)
 
 ```sh
