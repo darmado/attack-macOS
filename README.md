@@ -20,18 +20,15 @@
 ![Estimated Known Procedures](https://img.shields.io/badge/Estimated%20Known%20Procedures-6420-grey?style=for-the-badge)
 <br>
 <br>
-  <a href="#mitre-attck-coverage-matrix">ATT&CK Matrix</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#integrations">Integrations</a>
 <br>
 <br>
 
-<<<<<<< HEAD
-Attack-macOS offers scripts for security teams to evaluate macOS endpoint detection and response. It simplifies executing Living Off The Orchard (LOObins) techniques via standalone scripts with built-in data handling (encoding, encryption, formatting, logging) and exfiltration (DNS, HTTP/S).
-=======
+
 Attack-macOS provides scripts for security teams to evaluate macOS endpoint detection and response capabilities. This project executes [Living Off The Orchard (LOLBins)](https://www.loobins.io/) techniques via standalone scripts with built-in encoding, encryption, formatting, logging, and exfiltration over DNS and HTTPS.
->>>>>>> c6f83ff (cleanup work)
+
 
 ##
 
