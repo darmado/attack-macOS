@@ -2,6 +2,8 @@
 
 **Quick Start**: YAML procedures make it easy to create LOTL shell scripts packaged with built-in logging, otput formmating, encoding, encryption, and exfiltration techniques with in just a few minutes.
 
+**Need the short version?** Use `docs/Guides/How To/Create a New TTP Fast.md` for a minimal workflow.
+
 ## Overview
 
 YAML procedures are used to build shell scripts on top of `base.sh` so you can take advantage of additional output encoding, logging, formatting, and exfiltration capabilities over DNS, and HTTP. 

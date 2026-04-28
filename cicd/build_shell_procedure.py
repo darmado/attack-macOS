@@ -36,6 +36,7 @@ import sys
 import json
 import uuid
 import subprocess
+import re
 from pathlib import Path
 import jsonschema
 from datetime import datetime
@@ -111,6 +112,52 @@ def read_yaml(yaml_file):
         sys.exit(1)
 
 
+def validate_native_tool_usage(yaml_data):
+    """Warn when function code bypasses framework CMD_* wrappers."""
+    procedure = yaml_data.get('procedure', {})
+    functions = procedure.get('functions', [])
+    function_names = {f.get('name', '') for f in functions}
+    warnings = []
+
+    # Shell builtins and safe keywords we should not flag.
+    allowed_tokens = {
+        '', 'if', 'then', 'else', 'elif', 'fi', 'for', 'in', 'do', 'done', 'case', 'esac',
+        'while', 'until', 'function', 'local', 'return', 'echo', 'printf', 'test', '[', '[[',
+        'true', 'false', 'break', 'continue', 'export', 'readonly', 'shift', 'set', 'unset',
+        'basename', 'dirname'
+    }
+
+    command_sub_pattern = re.compile(r'\$\(\s*(?!"?\$CMD_)([A-Za-z0-9_./-]+)')
+    absolute_cmd_pattern = re.compile(r'(^|[\s(])(/usr/bin/|/usr/sbin/|/bin/|/sbin/)[A-Za-z0-9._-]+')
+
+    for func in functions:
+        func_name = func.get('name', 'unknown_function')
+        code = func.get('code', '') or ''
+
+        # Absolute path command usage, e.g. /usr/sbin/sntp
+        abs_matches = absolute_cmd_pattern.findall(code)
+        if abs_matches:
+            warnings.append(
+                f"{func_name}: avoid absolute command paths; use base.sh CMD_* variables instead"
+            )
+
+        # Direct command substitutions, e.g. $(systemsetup ...)
+        for match in command_sub_pattern.finditer(code):
+            token = match.group(1).strip()
+            token_base = token.split('/')[-1]
+            if token.startswith('$'):
+                continue
+            if token_base in allowed_tokens:
+                continue
+            if token_base in function_names:
+                continue
+            warnings.append(
+                f"{func_name}: direct command '{token_base}' detected in $(); prefer $CMD_* wrapper"
+            )
+
+    return warnings
+
+
 def validate_yaml(yaml_data, yaml_file):
     """Validate YAML against schema"""
     try:
@@ -132,6 +179,15 @@ def validate_yaml(yaml_data, yaml_file):
             validation_data['updated'] = '2025-05-30'  # Valid date format
         
         jsonschema.validate(validation_data, schema)
+
+        native_tool_warnings = validate_native_tool_usage(validation_data)
+        if native_tool_warnings:
+            yaml_name = Path(yaml_file).name
+            print(f"\n{BOLD}{YELLOW}NATIVE TOOL VALIDATION WARNINGS: {yaml_name}{RESET}")
+            print("Use native macOS tools through base.sh CMD_* variables when possible:")
+            for warning in native_tool_warnings:
+                print(f"  - {warning}")
+
         return True
     except jsonschema.ValidationError as e:
         # Clean, human-readable error messages

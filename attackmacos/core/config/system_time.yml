@@ -1,0 +1,93 @@
+procedure_name: system_time
+ttp_id: T1124
+tactic: Discovery
+guid: f1e0ae1b-0091-46ab-b263-9960536d6f9a
+intent: Discover local system time, timezone, and network time configuration on macOS
+author: '@darmado | https://x.com/darmad0'
+version: 1.0.2
+created: '2026-04-27'
+updated: '2026-04-27'
+platform:
+- darwin
+resources:
+- link: https://attack.mitre.org/techniques/T1124/
+  description: MITRE ATT&CK - System Time Discovery
+procedure:
+  arguments:
+  - option: --local-time
+    description: Discover current local date and time using date command
+    execute_function:
+    - discover_local_time
+  - option: --timezone
+    description: Discover timezone details and configured timezone files
+    execute_function:
+    - discover_timezone
+  - option: --network-time
+    description: Discover network time service and synchronization settings
+    execute_function:
+    - discover_network_time
+  - option: --all
+    description: Run all system time discovery checks
+    execute_function:
+    - discover_local_time
+    - discover_timezone
+    - discover_network_time
+  global_variable:
+  - name: TZ_FILE
+    type: string
+    default_value: /etc/localtime
+  - name: DATETIME_PROFILE_TYPE
+    type: string
+    default_value: SPDateTimeDataType
+  functions:
+  - name: discover_local_time
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      discover_local_time() {
+          local now=$($CMD_DATE "+%Y-%m-%d %H:%M:%S %Z %z" 2>/dev/null)
+          local epoch=$($CMD_DATE "+%s" 2>/dev/null)
+          $CMD_PRINTF "SYSTEM_TIME|local|%s\n" "$now"
+          $CMD_PRINTF "SYSTEM_TIME|epoch|%s\n" "$epoch"
+          return 0
+      }
+  - name: discover_timezone
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      discover_timezone() {
+          local tz_name=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -i "Time Zone" | $CMD_HEAD -n 1)
+          local tz_env=$($CMD_DATE "+%Z %z" 2>/dev/null)
+          local tz_link=$($CMD_LS -l "$TZ_FILE" 2>/dev/null)
+          $CMD_PRINTF "SYSTEM_TIME|timezone_config|%s\n" "$tz_name"
+          $CMD_PRINTF "SYSTEM_TIME|timezone_runtime|%s\n" "$tz_env"
+          if [ -n "$tz_link" ]; then
+              $CMD_PRINTF "SYSTEM_TIME|timezone_file|%s\n" "$tz_link"
+          fi
+          return 0
+      }
+  - name: discover_network_time
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      discover_network_time() {
+          local ntp_status=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -Ei "Network Time|NTP|Time Server" | $CMD_HEAD -n 10)
+          if [ -n "$ntp_status" ]; then
+              $CMD_PRINTF "SYSTEM_TIME|ntp_probe|%s\n" "$ntp_status"
+          else
+              $CMD_PRINTF "SYSTEM_TIME|ntp_probe|not_available\n"
+          fi
+          return 0
+      }
