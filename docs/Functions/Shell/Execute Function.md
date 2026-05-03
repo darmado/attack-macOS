@@ -19,26 +19,22 @@ local func_name="$1"
     shift
     local func_args="$*"
     
-    if [ "$ISOLATED" = "true" ]; then
-        # Execute in memory isolated environment
+    if [ "$SACRIFICIAL_CHILD" = "true" ]; then
         local buffer_name="func_$(date +%s)"
-        core_debug_print "Executing $func_name in isolated mode"
+        core_debug_print "core_execute_function: $func_name via spawn_sacrificial_pid (--sacrificial-pid)"
         
-        if memory_create_buffer "$buffer_name"; then
-            # Execute function in isolated process
-            memory_spawn_isolated "$buffer_name" "$func_name $func_args"
+        if fifo_create "$buffer_name"; then
+            spawn_sacrificial_pid "$buffer_name" "$func_name $func_args"
             sleep 0.5  # Brief delay for execution
             
-            # Read results
-            local result=$(memory_read_buffer "${buffer_name}_proc")
+            local result=$(fifo_read "${buffer_name}_proc")
             
-            # Cleanup
-            memory_cleanup_buffer "$buffer_name"
+            fifo_cleanup "$buffer_name"
             
             printf "%s" "$result"
             return 0
         else
-            core_handle_error "Failed to create isolated execution environment"
+            core_handle_error "Failed FIFO setup for spawn_sacrificial_pid path"
             # Fallback to normal execution
             $func_name "$@"
             return $?

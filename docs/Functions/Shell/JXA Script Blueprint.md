@@ -172,3 +172,7 @@ Clearly state any assumptions about the execution environment.
    ```
 
 These examples demonstrate how to implement JXA scripts for macOS security tools, adhering to the principles outlined in the Code Principles document. They prioritize native macOS APIs, leverage the Objective-C bridge, and follow best practices for error handling, modularity, and code organization.
+
+## QA (automated)
+
+After adding or editing JXA under `attackmacos/ttp/`, run **`python3 cicd/audit/audit_jxa.py`** from the repo root (default scope: `attackmacos/ttp/collection/jxa/*.js`). The checker enforces a minimum bar: **`ObjC.import('Foundation')`**, no **`doShellScript`**, no **`includeStandardAdditions=true`**, no **`NSAppleScript` / `runAppleScript`**, no **`NSTask`**, **`popen`**, **`system`**, and no obvious **`/bin/*sh`** spawn strings—extend `cicd/audit/audit_jxa.py` as new project rules codify. Use **`--full`** to audit every `attackmacos/ttp/**/jxa/*.js` when triaging legacy scripts.

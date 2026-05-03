@@ -28,7 +28,7 @@
 | `version` | `"1.0.0"` | Default semantic version |
 | `created` | `datetime.now().strftime('%Y-%m-%d')` | Current date |
 | `updated` | Same as `created` | Same as created date |
-| `platform` | `["macOS"]` | Default platform |
+| `platform` | `["darwin"]` | Must match `procedure.schema.json` enum (not `macOS`) |
 
 ## Function Generation Logic
 
@@ -107,4 +107,17 @@ def clean_function_name(name):
 3. **Validate required fields** - Error if LOOBins missing critical data  
 4. **Handle edge cases** - Graceful fallbacks documented above
 5. **Preserve structure** - Use template as base, fill in mapped values
-6. **User review required** - Always output placeholder TTP_ID for manual update 
+6. **User review required** - Always output placeholder `ttp_id` (`T9999`) for manual update before promoting YAML to `attackmacos/core/config/`
+
+## Repo automation
+
+| Step | Command / path |
+|------|----------------|
+| Refresh catalog JSON | `bash cicd/sync/sync_loobins_json.sh` → `attackmacos/standby/LOOBins/loobins.json` |
+| Convert per-binary YAML | `python3 cicd/sync/convert_loobin_to_procedure.py attackmacos/standby/LOOBins/<bin>.yml` → `attackmacos/standby/LOOBins/staging/<bin>.yml` |
+| Convert all standby YAML | `python3 cicd/sync/convert_loobin_to_procedure.py --all-standby` |
+| Promote all to `core/config/` | `python3 cicd/sync/convert_loobin_to_procedure.py --promote-all` (optional `--force` to overwrite) |
+| Review inferred MITRE map | `attackmacos/standby/LOOBins/TTP_OVERLAY.yml` |
+| Field reference | This document; staging layout | [attackmacos/standby/README.md](../../attackmacos/standby/README.md) |
+
+The YAML builder runs **`sh -n`** on every successful build (same check as `attackmacos.sh --lint-local`); no separate lint step is required after build.

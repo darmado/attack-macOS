@@ -175,8 +175,8 @@ core_parse_args() {
             --verbose)
                 DEBUG=true
                 ;;
-            --isolated)
-                ISOLATED=true
+            --sacrificial-pid)
+                SACRIFICIAL_CHILD=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
 # PLACEHOLDER_ARGUMENT_PARSER_OPTIONS

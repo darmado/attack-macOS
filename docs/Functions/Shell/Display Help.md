@@ -30,7 +30,7 @@ SCRIPT:
 # PLACEHOLDER_HELP_TEXT
 
 EXECUTION:
-  --isolated                    Enable memory isolation mode (spawns isolated processes)
+  --sacrificial-pid             Run main logic in a child shell; parent reads child stdout from a FIFO
 
 Output Options:
   --format TYPE                 

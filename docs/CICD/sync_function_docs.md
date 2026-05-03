@@ -30,7 +30,7 @@ jobs:
         with:
           python-version: '3.x'
       - name: Sync function documentation
-        run: python3 cicd/sync_function_docs.py
+        run: python3 cicd/sync/sync_function_docs.py
       - name: Commit changes
         run: |
           git config --local user.email "action@github.com"
@@ -46,7 +46,7 @@ jobs:
 sync-docs:
   stage: docs
   script:
-    - python3 cicd/sync_function_docs.py
+    - python3 cicd/sync/sync_function_docs.py
     - git add docs/
     - git diff --staged --quiet || git commit -m "Auto-sync function docs"
     - git push origin $CI_COMMIT_REF_NAME
@@ -61,7 +61,7 @@ sync-docs:
 #!/bin/bash
 # .git/hooks/pre-commit
 if git diff --cached --name-only | grep -q "attackmacos/core/base/base.sh"; then
-    python3 cicd/sync_function_docs.py
+    python3 cicd/sync/sync_function_docs.py
     git add docs/
 fi
 ```
@@ -70,10 +70,10 @@ fi
 
 ```bash
 # Basic execution
-python3 cicd/sync_function_docs.py
+python3 cicd/sync/sync_function_docs.py
 
 # In automation
-python3 cicd/sync_function_docs.py && git add docs/
+python3 cicd/sync/sync_function_docs.py && git add docs/
 ```
 
 ## Process
@@ -103,7 +103,7 @@ python3 cicd/sync_function_docs.py && git add docs/
 #!/bin/bash
 # .git/hooks/post-merge
 if git diff HEAD@{1} --name-only | grep -q "attackmacos/core/base/base.sh"; then
-    python3 cicd/sync_function_docs.py
+    python3 cicd/sync/sync_function_docs.py
     if [ $? -eq 0 ]; then
         git add docs/
         git commit -m "Auto-sync function docs after merge"
@@ -122,7 +122,7 @@ pipeline {
                 changeset "attackmacos/core/base/base.sh"
             }
             steps {
-                sh 'python3 cicd/sync_function_docs.py'
+                sh 'python3 cicd/sync/sync_function_docs.py'
                 sh 'git add docs/'
                 sh 'git commit -m "Auto-sync function docs" || true'
             }

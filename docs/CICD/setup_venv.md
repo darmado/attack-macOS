@@ -9,8 +9,8 @@ Modern Python environment setup for attack-macOS build tools (2025).
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Run tools directly without environment management
-uv run cicd/build_shell_procedure.py --all
-uv run cicd/sync_function_docs.py
+uv run cicd/build/build_shell_procedure.py --all
+uv run cicd/sync/sync_function_docs.py
 ```
 
 ## Alternative: pipx
@@ -19,7 +19,7 @@ uv run cicd/sync_function_docs.py
 # Install tools globally with isolated dependencies
 pipx install --include-deps pyyaml
 pipx install --include-deps jsonschema
-python3 cicd/build_shell_procedure.py --all
+python3 cicd/build/build_shell_procedure.py --all
 ```
 
 ## CI/CD Integration
@@ -33,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
-      - run: uv run cicd/build_shell_procedure.py --all
+      - run: uv run cicd/build/build_shell_procedure.py --all
 ```
 
 ### GitLab CI
@@ -44,7 +44,7 @@ build:
   before_script:
     - pip install uv
   script:
-    - uv run cicd/build_shell_procedure.py --all
+    - uv run cicd/build/build_shell_procedure.py --all
 ```
 
 ### Docker
@@ -54,7 +54,7 @@ FROM python:3.12-slim
 RUN pip install uv
 WORKDIR /app
 COPY . .
-CMD ["uv", "run", "cicd/build_shell_procedure.py", "--help"]
+CMD ["uv", "run", "cicd/build/build_shell_procedure.py", "--help"]
 ```
 
 ## Development Container

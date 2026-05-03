@@ -1,6 +1,28 @@
 # R&D Sources
 
-This document provides R&D sources used for macOS security research required to build the Attack MacOS project.
+Reference material used when designing and validating macOS procedures for attack-macOS (techniques, tooling behavior, and detection context).
+
+## How we use these sources for new TTPs
+
+1. **Map to MITRE ATT&CK** — Pick or confirm a technique ID on [Enterprise ATT&CK / macOS](https://attack.mitre.org/matrices/enterprise/macos/) and write the `intent` so it matches the technique definition.
+2. **Prefer native execution** — Procedures should run with macOS-built-in binaries (LOLBins) only at runtime. Python (`pyyaml`, `jsonschema`) and similar dependencies are **build-time** for YAML validation and script generation, not for executing the technique on target hosts.
+3. **Trace provenance** — Add links under each procedure’s `resources:` in YAML when possible (MITRE page, LOOBins, vendor blog, Atomic test ID, etc.). This file is the **cross-cutting** bibliography; procedure YAML carries **per-TTP** citations.
+4. **Third-party playbooks** — Projects such as [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) and [Caldera](https://github.com/mitre/caldera) are used for **ideas and alignment**, not as runtime dependencies. When an upstream atomic uses a downloaded tool, we **re-express** the behavior with native macOS commands in YAML where feasible.
+5. **Community catalogs** — Sites like [LOOBins](https://www.loobins.io/) and curated defaults lists (for example [macos-defaults.com](https://macos-defaults.com/)) inform **command choice** and domains; they are not authoritative for MITRE mapping without cross-checking ATT&CK.
+
+### Trusted / recurring upstreams (summary)
+
+| Kind | Role |
+|------|------|
+| [MITRE ATT&CK](https://attack.mitre.org/) | Technique IDs, tactics, and procedure descriptions |
+| [MITRE Caldera](https://github.com/mitre/caldera) | Adversary emulation; this repo can **sync** built abilities via `python3 cicd/build/build_shell_procedure.py --sync-caldera` |
+| [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) | Large catalog of tests; macOS atomics are **reference** for parity checks |
+| Independent macOS security blogs (e.g. [Objective-See](https://objective-see.com/blog.html), vendor research) | Real-world behavior and detection notes |
+| [LOOBins](https://www.loobins.io/) | Native binary usage and argument patterns |
+
+### Future: upstream change monitoring (idea)
+
+A small **maintainer tool** could periodically fetch release feeds or API data from ATT&CK, Atomic Red Team (macOS paths), and LOOBins, then diff against local technique coverage (for example `attackmacos/core/config/*.yml`). That would flag **new or updated** upstream content for human review—**not** auto-add TTPs without validation.
 
 ## Tools and Research by MITRE ATT&CK Tactic
 

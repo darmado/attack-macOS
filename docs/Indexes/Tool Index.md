@@ -74,5 +74,5 @@ To add a new testing tool to this index:
 
 ---
 
-*Last updated: $UPDATED
+*Last updated: 2026-04-30*
 *Maintained by: attack-macOS project contributors* 

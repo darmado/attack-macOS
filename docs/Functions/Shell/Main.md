@@ -53,38 +53,32 @@ core_main() {
     # Step 5: Validate required commands
     core_validate_command || exit 1
     
-    # Step 6: Check if isolated execution is requested
-    if [ "$ISOLATED" = "true" ]; then
-        core_debug_print "Executing script in memory isolated mode"
+    # Step 6: Optional --sacrificial-pid (child PID + FIFO)
+    if [ "$SACRIFICIAL_CHILD" = "true" ]; then
+        core_debug_print "Executing script with --sacrificial-pid (child PID + FIFO under /tmp)"
         
-        # Create isolated execution environment
         local buffer_name="main_$(date +%s)"
-        if memory_create_buffer "$buffer_name"; then
-            # Execute main logic in isolated process
-            memory_spawn_isolated "$buffer_name" "$(declare -f core_execute_main_logic); core_execute_main_logic"
+        if fifo_create "$buffer_name"; then
+            spawn_sacrificial_pid "$buffer_name" "$(declare -f core_execute_main_logic); core_execute_main_logic"
             sleep 1  # Allow execution time
             
-            # Read results from isolated process
-            local isolated_result=$(memory_read_buffer "${buffer_name}_proc")
+            local child_stdout=$(fifo_read "${buffer_name}_proc")
             
-            # Cleanup isolation
-            memory_cleanup_buffer "$buffer_name"
+            fifo_cleanup "$buffer_name"
             
-            # Output results
-            if [ -n "$isolated_result" ]; then
-                printf "%s
-" "$isolated_result"
+            if [ -n "$child_stdout" ]; then
+                printf "%s\n" "$child_stdout"
             fi
             
-            core_debug_print "Isolated execution completed"
+            core_debug_print "Child-PID / FIFO path completed (parent PID unchanged)"
             return 0
         else
-            core_handle_error "Failed to create isolated execution environment, falling back to normal execution"
+            core_handle_error "Failed to create FIFO for sacrificial PID path, falling back to normal execution"
             # Fall through to normal execution
         fi
     fi
     
-    # Step 7: Normal execution (or fallback from failed isolation)
+    # Step 7: Normal execution (or fallback if FIFO/child path failed)
     core_execute_main_logic
 }
 ```

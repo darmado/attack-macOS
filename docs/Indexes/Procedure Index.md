@@ -75,7 +75,7 @@ The commands listed here are for reference only. Always refer to the actual scri
 
 ### T1555.001 - Credentials from Password Stores: Keychain
 
-**Source: keychain.sh**
+**Source: keychains.sh**
 
 | Description | Command |
 |-------------|---------|
@@ -167,10 +167,10 @@ The commands listed here are for reference only. Always refer to the actual scri
 | Description | Command |
 |-------------|---------|
 | Use sysctl to gather macOS hardware info. | `sysctl -n hw.model` |
-| Retrieving macOS Version Information | `sw_vers` |
-| Retrieving macOS Product Version | `sw_vers -productVersion` |
-| Retrieving macOS Product Name | `sw_vers -productName` |
-| Retrieving macOS Build Version | `sw_vers -buildVersion` |
+| Full sw_vers output (product, version, build) | [software_version.sh](../../attackmacos/ttp/discovery/shell/software_version.sh) `--full` |
+| Product version only (`sw_vers -productVersion`) | [software_version.sh](../../attackmacos/ttp/discovery/shell/software_version.sh) `--product-version` |
+| Product name only (`sw_vers -productName`) | [software_version.sh](../../attackmacos/ttp/discovery/shell/software_version.sh) `--product-name` |
+| Build number only (`sw_vers -buildVersion`) | [software_version.sh](../../attackmacos/ttp/discovery/shell/software_version.sh) `--build-version` |
 | Get nvram variables | `nvram -p` |
 | Retrieves the Active Directory configuration | `dsconfigad -show` |
 | Retrieves the Active Directory name | `dsconfigad -show |awk '/Active Directory Domain/{print $NF}'` |
@@ -204,7 +204,7 @@ The commands listed here are for reference only. Always refer to the actual scri
 
 ### T1217 - Browser Information Discovery
 
-**Source: [browser_history.sh](../../ttp/discovery/browser_history.sh)**
+**Source: [browser_history.sh](../../attackmacos/ttp/discovery/shell/browser_history.sh)**
 
 | Description | Procedure | Data Source | Data Component | Detections |
 |-------------|-----------|-------------|----------------|------------|
@@ -213,9 +213,28 @@ The commands listed here are for reference only. Always refer to the actual scri
 | Query Firefox history | ```sqlite3 -separator '|' "$FIREFOX_PROFILE/places.sqlite" "SELECT url, title, datetime(last_visit_date/1000000, 'unixepoch', 'localtime') as last_visit, visit_count FROM moz_places WHERE last_visit_date > (strftime('%s', 'now') - $INPUT_DAYS * 86400) * 1000000 ORDER BY last_visit_date DESC"``` | File | File Access | Monitor for access to Firefox history database |
 | Query Brave history | ```sqlite3 -separator '|' "$HOME/Library/Application Support/BraveSoftware/Brave-Browser/Default/History" "SELECT url, title, datetime(last_visit_time/1000000 + (strftime('%s', '1601-01-01')), 'unixepoch', 'localtime') as last_visit, visit_count FROM urls WHERE last_visit_time > (strftime('%s', 'now') - $INPUT_DAYS * 86400) * 1000000 ORDER BY last_visit_time DESC"``` | File | File Access | Monitor for access to Brave history database |
 
+### T1082 - System Information Discovery
+
+**Source: [defaults_domains.sh](../../attackmacos/ttp/discovery/shell/defaults_domains.sh), [search_urls.sh](../../attackmacos/ttp/discovery/shell/search_urls.sh), [system_info.sh](../../attackmacos/ttp/discovery/shell/system_info.sh)**
+
+| Description | Command |
+|-------------|---------|
+| List user preference domains | `defaults domains` |
+| Search defaults keys/values for a string | `defaults find <term>` |
+| Read URLs from application preference domains | `defaults read <domain>` (see `search_urls` domains list) |
+| System profiler / hardware / software discovery | `system_info` procedure options |
+
+### T1016 - System Network Configuration Discovery
+
+**Source: [network_defaults.sh](../../attackmacos/ttp/discovery/shell/network_defaults.sh)**
+
+| Description | Command |
+|-------------|---------|
+| Read Apple network preference domains (user) | `defaults read com.apple.networkextension`, `defaults read com.apple.airport.preferences` |
+
 ## T1041 - Exfiltration Over C2 Channel
 
-**Source: [browser_history.sh](../../ttp/discovery/browser_history.sh)**
+**Source: [browser_history.sh](../../attackmacos/ttp/discovery/shell/browser_history.sh)**
 
 | Description | Procedure | Data Source | Data Component | Detections |
 |-------------|-----------|-------------|----------------|------------|
@@ -231,7 +250,7 @@ The commands listed here are for reference only. Always refer to the actual scri
 
 ## T1027 - Obfuscated Files or Information
 
-**Source: [browser_history.sh](../../ttp/discovery/browser_history.sh)**
+**Source: [browser_history.sh](../../attackmacos/ttp/discovery/shell/browser_history.sh)**
 
 | Description | Procedure | Data Source | Data Component | Detections |
 |-------------|-----------|-------------|----------------|------------|
@@ -240,7 +259,7 @@ The commands listed here are for reference only. Always refer to the actual scri
 
 ## T1140 - Deobfuscate/Decode Files or Information
 
-**Source: [browser_history.sh](../../ttp/discovery/browser_history.sh)**
+**Source: [browser_history.sh](../../attackmacos/ttp/discovery/shell/browser_history.sh)**
 
 | Description | Procedure | Data Source | Data Component | Detections |
 |-------------|-----------|-------------|----------------|------------|
@@ -248,7 +267,7 @@ The commands listed here are for reference only. Always refer to the actual scri
 
 ## T1059.006 - Command and Scripting Interpreter: Python
 
-**Source: [browser_history.sh](../../ttp/discovery/browser_history.sh)**
+**Source: [browser_history.sh](../../attackmacos/ttp/discovery/shell/browser_history.sh)**
 
 | Description | Procedure | Data Source | Data Component | Detections |
 |-------------|-----------|-------------|----------------|------------|
@@ -264,7 +283,7 @@ The commands listed here are for reference only. Always refer to the actual scri
 
 ### T1046 - Network Service Discovery
 
-**Source: [network_service.sh](../../ttp/discovery/network_service.sh)**
+**Source: [network_sniff.sh](../../attackmacos/ttp/discovery/shell/network_sniff.sh)** *(generated script; legacy header may say network_service)*
 
 | Description | Command | Data Source | Data Component | Detections |
 |-------------|---------|-------------|----------------|------------|

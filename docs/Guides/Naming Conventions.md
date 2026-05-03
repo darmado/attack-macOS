@@ -37,7 +37,7 @@ Examples:
 ```bash
 build_flag_vars()       # Builds flag variable declarations
 build_arg_parser()      # Builds argument parser cases  
-create_test_file()      # Creates test script file
+validate_yaml()         # Validates a procedure YAML file (see cicd/build/build_shell_procedure.py)
 validate_yaml()         # Validates YAML file structure
 parse_arguments()       # Parses command line arguments
 transform_sudo()        # Transforms commands with sudo
@@ -121,6 +121,19 @@ TTP_ID="T1555.001"
 TACTIC="Credential Access"
 PROCEDURE_NAME="keychain_access"
 ```
+
+##
+
+### CLI options (procedure YAML)
+
+- **`procedure_name`** (the generated script basename, e.g. `software_version.sh`): name **what the operator is doing**, not the stock binary string alone (`sw_vers.sh` is opaque). Intent lives here so flags stay short.
+- **Flags**: short **kebab-case** tokens (`--full`, `--product-version`). Do not pack platform, redundant verbs, or intent paragraphs into option text when the procedure name and description already scope the technique (avoid patterns like `--retrieving-macos-product-version`).
+- Prefer **one capability per flag** (for example `--https-ignore-cert`, `--save-via-dir`) instead of multiplying surface verbs (`--download-file`, `--download-zip`) when the underlying artifact is still a URL plus a filesystem path.
+- Pair **mode flags** with **`INPUT_*` globals** defined in YAML (`INPUT_URL`, `INPUT_OUTPUT_PATH`, `INPUT_TARGET_DIR`); validate required combinations inside the technique function so **`--log` captures errors**, not only headers or empty `RESULT` lines.
+- Reference external binaries only via **`CMD_*`** from `attackmacos/core/base/base.sh` or procedure `global_variable` entries (`CMD_LAUNCHCTL`, `CMD_NSCURL`, `CMD_PBPASTE`), not raw paths baked only in function bodies.
+- Reuse **the same words across related procedures** when semantics match (for example Collection clipboard scripts: **`--interval`** for seconds between captures, as in `clipboard_monitoring.yml`; **`--path`** for an optional filesystem target). Prefer **`--count`** for a bounded **number of iterations**, not **`--max-interval`** (that would imply a time ceiling, which is a different axis than spacing between reads).
+- Document **defaults in YAML** (`global_variable` `default_value`) and **re-validate inside functions** after parse (`process_input_arguments` plus explicit checks for modes that need positive integers or paired flags).
+- In `attackmacos/core/base/base.sh`, **`--sacrificial-pid`** (boolean `SACRIFICIAL_CHILD`) runs technique logic in a **child PID** with stdout captured through **`fifo_*`** helpers (`fifo_create`, `fifo_read`, `fifo_cleanup`, …). Prefer report language **parent PID / child PID / sacrificial (disposable) child**—not “isolated PID” (that implies sandboxing). Do not use **`memory_*`** for FIFO IPC; it reads like `malloc`/kernel memory to security engineers.
 
 ##
 
@@ -331,12 +344,12 @@ validate_input()
 ```bash
 # Bad - inconsistent patterns
 generateHelp()           # camelCase mixed with others
-create_test_files()      # different verb pattern
+sync_caldera_plugin()    # different verb pattern (integration scripts)
 makeArgParser()          # inconsistent style
 
 # Good - consistent patterns
 build_help_text()
-create_test_file()  
+validate_yaml()
 build_arg_parser()
 ```
 

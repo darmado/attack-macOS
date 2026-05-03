@@ -5,13 +5,13 @@ The process spawning system provides functionality to execute script logic in ba
 
 ## Core Functions
 
-### `memory_spawn_isolated()`
-**Purpose:** Spawn background process using memory buffer communication  
+### `spawn_sacrificial_pid()`
+**Purpose:** Spawn background process using named-pipe capture for a sacrificial child PID  
 **Type:** Core utility function  
 **Languages:** Shell  
 
 **Description:**
-Creates background processes with named pipe communication channels. Despite the "isolated" name (legacy), this function explicitly spawns child processes and tracks their PIDs.
+Starts a disposable child (sacrificial PID pattern): background subshell, `eval` of the command, stdout redirected into a FIFO so the parent can read it. Same user and privileges as the parent shell—not a sandbox.
 
 **Inputs:**
 - `$1` - Buffer name (unique identifier)  
@@ -31,12 +31,12 @@ Creates background processes with named pipe communication channels. Despite the
 **Example Usage:**
 ```bash
 # Spawn background process
-memory_spawn_isolated "worker_001" "security find-generic-password -g"
+spawn_sacrificial_pid "worker_001" "security find-generic-password -g"
 
 # Process runs in background with tracked PID
 ```
 
-### `memory_create_buffer()`
+### `fifo_create()`
 **Purpose:** Create named pipe for inter-process communication  
 **Type:** Core utility function  
 **Languages:** Shell  
@@ -54,11 +54,11 @@ Creates named pipes (FIFOs) in `/tmp/mem_${JOB_ID}/` directory for communication
 **Example Usage:**
 ```bash
 # Create communication buffer
-memory_create_buffer "main_worker"
+fifo_create "main_worker"
 # Creates: /tmp/mem_${JOB_ID}/main_worker.pipe
 ```
 
-### `memory_read_buffer()`
+### `fifo_read()`
 **Purpose:** Read data from spawned process via named pipe  
 **Type:** Core utility function  
 **Languages:** Shell  
@@ -76,11 +76,11 @@ Reads output from background processes through named pipe communication with tim
 **Example Usage:**
 ```bash
 # Read from spawned process
-result=$(memory_read_buffer "worker_001_proc")
+result=$(fifo_read "worker_001_proc")
 echo "$result"
 ```
 
-### `memory_cleanup_buffer()`
+### `fifo_cleanup()`
 **Purpose:** Terminate spawned processes and cleanup resources  
 **Type:** Core utility function  
 **Languages:** Shell  
@@ -100,8 +100,8 @@ Kills tracked background processes and removes named pipes and PID files.
 **Example Usage:**
 ```bash
 # Cleanup spawned processes
-memory_cleanup_buffer "worker_001"
-memory_cleanup_buffer "worker_001_proc"
+fifo_cleanup "worker_001"
+fifo_cleanup "worker_001_proc"
 ```
 
 ## Command Line Interface
@@ -186,7 +186,7 @@ Allow long-running commands to execute without blocking main process.
 - Fallback to synchronous execution
 
 ### Resource Cleanup
-- Emergency cleanup function: `memory_cleanup_all()`
+- Emergency cleanup function: `fifo_cleanup_all()`
 - Automatic PID termination on exit
 - Named pipe removal
 
@@ -204,7 +204,7 @@ Allow long-running commands to execute without blocking main process.
 
 ## Legacy Notes
 
-The function names contain "isolated" for historical reasons, but the system actually:
+The **`--sacrificial-pid`** path uses `spawn_sacrificial_pid` plus FIFO helpers (`fifo_create`, `fifo_read`, `fifo_cleanup`). The system actually:
 - **DOES** spawn child processes
 - **DOES** track PIDs  
 - **DOES** create background processes

@@ -14,6 +14,10 @@ This table lists common endpoint security vendors and their associated processes
 - Not all listed software may be present on a given system
 - Installation links may change; always verify before use
 
+## Alignment with `security_software.sh`
+
+Discovery logic lives in `attackmacos/core/config/security_software.yml` (`EDR_PATTERN`, `AV_PATTERN`, etc.). This table is a **human-readable** companion: when you add a vendor row here, consider whether process/path strings should also appear in those regex patterns so `--edr-ps` and related checks stay consistent.
+
 | ✅ | Vendor | Processes | Paths | Installation Link |
 |---|--------|-----------|-------|-------------------|
 | ✅ | Avast | AvastUI, com.avast.daemon | /Applications/Avast.app, /Library/Application Support/Avast/ | |
@@ -22,6 +26,7 @@ This table lists common endpoint security vendors and their associated processes
 | ✅ | Bitdefender | bdservicehost, BitdefenderAgent | /Applications/Bitdefender.app, /Library/Bitdefender/ | |
 |  | BlockBlock | BlockBlock | /Applications/BlockBlock Helper.app | |
 | ✅ | Carbon Black | CbOsxSensorService, CbDefense | /Applications/CarbonBlack/CbOsxSensorService, /Applications/Confer.app | |
+|  | Cisco Secure Endpoint (AMP) | ampdaemon, AMPDiag | /Applications/Cisco AMP*.app, /Library/Application Support/Cisco/ (bundle varies) | |
 | ✅ | CrowdStrike Falcon | falconctl, falcon-sensor | /Library/CS/falcond, /Applications/Falcon.app | |
 | ✅ | Cylance | CylanceSvc, CylanceUI | /Library/Application Support/Cylance/Desktop, /Applications/Cylance/ | |
 | ✅ | ESET | esets_daemon, eset_service | /Applications/ESET.app, /Library/Application Support/ESET/ | |
@@ -39,6 +44,7 @@ This table lists common endpoint security vendors and their associated processes
 | ✅ | Microsoft Defender | MsMpEngCP, msmpeng | /Library/Application Support/Microsoft/Defender/, /Applications/Microsoft Defender.app | |
 |  | Netiquette | Netiquette | /Applications/Netiquette.app | |
 | ✅ | Norton | NortonDaemon, NortonSecurity | /Applications/Norton 360.app, /Library/Application Support/Norton/ | |
+|  | Palo Alto Networks Cortex XDR | traps_agent, cy_update_agent | /Applications/Traps/, /Library/Application Support/PaloAltoNetworks/ (varies by package) | |
 |  | OverSight | OverSight | /Applications/OverSight.app | |
 | ✅ | Panda | AVENGINE, PandaAgent | /Applications/Panda Dome.app, /Library/Application Support/Panda Security/ | |
 |  | ProcessMonitor | ProcessMonitor | /Applications/ProcessMonitor.app | |

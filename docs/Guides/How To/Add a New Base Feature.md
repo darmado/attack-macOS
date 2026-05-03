@@ -1,6 +1,8 @@
 # Adding a Feature to base.sh
 
-This guide explains how to add new features to the `base.sh` script while maintaining the modular and pipeline-based architecture. We'll use the implementation of steganography as a real-world example.
+**Scope:** Changes to [`attackmacos/core/base/base.sh`](../../../attackmacos/core/base/base.sh) (shared runtime merged into every generated TTP). If you only add or change a YAML procedure, follow [Create a New TTP Fast.md](Create%20a%20New%20TTP%20Fast.md) instead.
+
+This guide explains how to add new features to `base.sh` while maintaining the modular pipeline architecture. Steganography appears as a worked example where applicable.
 
 ## Understanding base.sh Pipeline Architecture
 
@@ -311,29 +313,19 @@ elif [ "$STEG_EXTRACT" = true ]; then
 
 ## Testing Your Feature
 
-Test your feature with the full pipeline to ensure it integrates properly:
+**Smoke:** From the repo root, confirm `base.sh` still parses and prints help:
 
 ```sh
-# Test basic functionality
-./base.sh --ls --your-feature
-
-# Test with encoding and encryption
-./base.sh --ls --encode base64 --encrypt aes --your-feature --format json
-
-# Test with debug output
-./base.sh --ls --your-feature --debug
+bash attackmacos/core/base/base.sh --help
 ```
 
-Example (Steganography):
+The stock `base.sh` template is driven by merged procedure output; many flags exist only after `build_shell_procedure.py` combines YAML with `base.sh`. For pipeline behavior (encode/encrypt/exfil), build a **minimal YAML procedure** that exercises your new flags, run `./attackmacos/attackmacos.sh --lint-local ...`, then test the generated script in a lab.
+
+Example (steganography-related flags, after merging into a built script):
+
 ```sh
-# Test basic steganography
-./base.sh --ls --steganography
-
-# Test with full pipeline
-./base.sh --ls --encode base64 --encrypt aes --steganography --steg-output ./hidden.png --format json
-
-# Test extraction
-./base.sh --steg-extract ./hidden.png --debug
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --help
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --steganography --debug
 ```
 
 ## Best Practices for Adding Features

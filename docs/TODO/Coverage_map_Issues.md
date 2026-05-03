@@ -8,14 +8,14 @@ The `ttp_to_script` dictionary in `build_coverage_map.py` contains incorrect pat
 **Mapped Paths (incorrect):**
 ```python
 "T1087.001": "ttp/discovery/accounts.sh",
-"T1555.001": "ttp/credential_access/keychain.sh",
+"T1555.001": "ttp/credential_access/shell/keychains.sh",
 "T1217": "ttp/discovery/browser_history.sh",
 ```
 
 **Actual File Structure:**
 ```
 attackmacos/ttp/discovery/shell/local_accounts.sh
-attackmacos/ttp/credential_access/shell/keychain.sh
+attackmacos/ttp/credential_access/shell/keychains.sh
 attackmacos/ttp/discovery/shell/ (no browser_history.sh found)
 ```
 

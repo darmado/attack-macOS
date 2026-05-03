@@ -231,13 +231,13 @@ jobs:
       - name: Build procedures
         run: |
           source cicd/venv/bin/activate
-          python3 cicd/build_shell_procedure.py --all --force
+          python3 cicd/build/build_shell_procedure.py --all --force
       - name: Test generated scripts
         run: bash cicd/test_script_options.dev.sh
       - name: Sync documentation
         run: |
           source cicd/venv/bin/activate
-          python3 cicd/sync_function_docs.py
+          python3 cicd/sync/sync_function_docs.py
 ```
 
 ### Performance Testing

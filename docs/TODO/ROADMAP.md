@@ -28,13 +28,11 @@ This document outlines the planned features and improvements for the attack-macO
 
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
-| Community Contribution Workflow | Planned | High | Streamlined community contribution worflow |
-| Additional Techniques | Planned | Medium | Implement more MITRE ATT&CK techniques |
-| Testing Framework | Planned | Medium | Basic testing for scripts |
-
-
-
-#TODO: ADD TO SCRIPTS
+| Community Contribution Workflow | Planned | High | Streamlined community contribution workflow |
+| Additional Techniques | Planned | Medium | Implement more MITRE ATT&CK techniques (see Discovery backlog below) |
+| Testing / QA | In progress | Medium | `attackmacos.sh --lint-local` for syntax; broader execution tests remain optional |
+| Caldera plugin sync | Available | Low | `python3 cicd/build/build_shell_procedure.py --sync-caldera` pushes abilities to `integrations/caldera/` |
+| Atomic Red Team parity | Manual | Medium | No automated pull from ART; port macOS-relevant atomics into YAML as native procedures |
 
 
 ### Discovery
@@ -43,6 +41,7 @@ This document outlines the planned features and improvements for the attack-macO
 |--------|-------------|---------|
 | [T1007](https://attack.mitre.org/techniques/T1007/) | List launchd services | `launchctl list` |
 | [T1016](https://attack.mitre.org/techniques/T1016/) | Show network capabilities | `system_profiler SPNetworkDataType` |
+| [T1016](https://attack.mitre.org/techniques/T1016/) | Read Apple network prefs (user defaults) | Implemented: `network_defaults.sh` (`defaults read` on selected domains) |
 | [T1016](https://attack.mitre.org/techniques/T1016/) | Display known networks | `system_profiler SPNetworkLocationDataType` |
 | [T1016](https://attack.mitre.org/techniques/T1016/) | Display Ethernet information | `system_profiler SPEthernetDataType` |
 | [T1016](https://attack.mitre.org/techniques/T1016/) | Display Airport information | `system_profiler SPAirPortDataType` |
@@ -63,6 +62,7 @@ This document outlines the planned features and improvements for the attack-macO
 | [T1082](https://attack.mitre.org/techniques/T1082/) | Show Bluetooth information | `system_profiler SPBluetoothDataType` |
 | [T1082](https://attack.mitre.org/techniques/T1082/) | Show USB device information | `system_profiler SPUSBDataType` |
 | [T1082](https://attack.mitre.org/techniques/T1082/) | List system_profiler data types | `system_profiler -listDataTypes` |
+| [T1082](https://attack.mitre.org/techniques/T1082/) | Enumerate defaults domains / search prefs | Implemented: `defaults_domains.sh`, `search_urls.sh`; see also `system_info.sh` |
 | [T1083](https://attack.mitre.org/techniques/T1083/) | Find TCC database files | `find /Users/darmado/Library/ -name "tcc.db"` |
 | [T1083](https://attack.mitre.org/techniques/T1083/) | Search for TCC.db files | `mdfind 'kMDItemFSName == "TCC.db"' -onlyin /` |
 | [T1083](https://attack.mitre.org/techniques/T1083/) | Search for files containing "password" | `mdfind password` |
@@ -103,14 +103,8 @@ This document outlines the planned features and improvements for the attack-macO
 
 
 
-# ALSO ADD
-https://github.com/kandji-inc/support
-https://github.com/kandji-inc/support/blob/main/Scripts/macOS/get_user_list.sh
+### Backlog / references (ungroomed)
 
-
-Decoy script
-
-Add Proxy function to @safarijxa.js 
-https://github.com/salarcode/SmartProxy/tree/master
-
-
+- Kandji admin scripts (inventory ideas): [kandji-inc/support](https://github.com/kandji-inc/support), [get_user_list.sh](https://github.com/kandji-inc/support/blob/main/Scripts/macOS/get_user_list.sh)
+- Decoy script (TBD)
+- Safari JXA: proxy-related behavior — see [SmartProxy](https://github.com/salarcode/SmartProxy/tree/master) for reference only

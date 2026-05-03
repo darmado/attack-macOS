@@ -63,10 +63,10 @@ jobs:
       - name: Validate procedures
         run: |
           for file in procedures/**/*.yml; do
-            python3 cicd/build_shell_procedure.py --validate "$file"
+            python3 cicd/build/build_shell_procedure.py --validate "$file"
           done
       - name: Build all procedures
-        run: python3 cicd/build_shell_procedure.py --all --force
+        run: python3 cicd/build/build_shell_procedure.py --all --force
       - name: Commit generated scripts
         run: |
           git config --local user.email "action@github.com"
@@ -83,7 +83,7 @@ validate-procedures:
   stage: validate
   script:
     - pip install pyyaml jsonschema
-    - find procedures -name "*.yml" -exec python3 cicd/build_shell_procedure.py --validate {} \;
+    - find procedures -name "*.yml" -exec python3 cicd/build/build_shell_procedure.py --validate {} \;
   only:
     changes:
       - procedures/**/*.yml
@@ -92,7 +92,7 @@ build-procedures:
   stage: build
   script:
     - pip install pyyaml jsonschema
-    - python3 cicd/build_shell_procedure.py --all --force
+    - python3 cicd/build/build_shell_procedure.py --all --force
     - git add attackmacos/
     - git diff --staged --quiet || git commit -m "Auto-build procedures"
     - git push origin $CI_COMMIT_REF_NAME
@@ -113,7 +113,7 @@ pip install pyyaml jsonschema > /dev/null 2>&1
 for file in $(git diff --cached --name-only | grep '\.yml$'); do
     if [ -f "$file" ]; then
         echo "Validating $file..."
-        if ! python3 cicd/build_shell_procedure.py --validate "$file"; then
+        if ! python3 cicd/build/build_shell_procedure.py --validate "$file"; then
             echo "Validation failed for $file"
             exit 1
         fi
@@ -125,19 +125,19 @@ done
 
 ```bash
 # Build single procedure
-python3 cicd/build_shell_procedure.py system_info.yml
+python3 cicd/build/build_shell_procedure.py system_info.yml
 
 # Build all procedures
-python3 cicd/build_shell_procedure.py --all
+python3 cicd/build/build_shell_procedure.py --all
 
 # Force overwrite existing scripts
-python3 cicd/build_shell_procedure.py --all --force
+python3 cicd/build/build_shell_procedure.py --all --force
 
 # Validate YAML only
-python3 cicd/build_shell_procedure.py --validate browser_history.yml
+python3 cicd/build/build_shell_procedure.py --validate browser_history.yml
 
 # Sync Caldera plugin
-python3 cicd/build_shell_procedure.py --sync-caldera
+python3 cicd/build/build_shell_procedure.py --sync-caldera
 ```
 
 ## Process
@@ -157,7 +157,6 @@ attackmacos/
     │   └── shell/
     │       ├── system_info.sh
     │       ├── system_info_v1.sh
-    │       ├── test_system_info.sh
     │       └── browser_history.sh
     ├── credential_access/
     │   └── shell/
@@ -173,7 +172,14 @@ attackmacos/
 **File Naming**:
 - Base script: `procedure_name.sh`
 - Versioned: `procedure_name_v1.sh`, `procedure_name_v2.sh`
-- Test files: `test_procedure_name.sh`
+
+**Syntax check:** Each successful build already runs **`sh -n`** on the generated script (and optional **shellcheck** when installed). That matches what `./attackmacos/attackmacos.sh --lint-local` does; you do **not** need a separate lint step after build.
+
+Optional re-check without rebuilding:
+
+```bash
+./attackmacos/attackmacos.sh --lint-local --tactic <tactic_slug> --ttp <procedure_name>
+```
 
 ## Caldera Integration
 
@@ -182,7 +188,7 @@ The build system includes native support for generating Caldera plugins from att
 ### Sync Process
 
 ```bash
-python3 cicd/build_shell_procedure.py --sync-caldera
+python3 cicd/build/build_shell_procedure.py --sync-caldera
 ```
 
 **Generated Components:**
@@ -203,11 +209,11 @@ integrations/caldera/plugins/attackmacos/
 │   │   │   ├── browser_history.yml  # Ability definitions
 │   │   │   └── system_info.yml
 │   │   └── credential_access/
-│   │       └── keychain.yml
+│   │       └── keychains.yml
 │   └── payloads/
 │       ├── browser_history.sh       # Built scripts
 │       ├── system_info.sh
-│       └── keychain.sh
+│       └── keychains.sh
 └── docs/
     ├── attackmacos.md               # Plugin overview
     ├── abilities.md                 # Abilities reference  
@@ -249,7 +255,7 @@ timeout: 300
 **Manual Installation:**
 ```bash
 # Build and sync plugin
-python3 cicd/build_shell_procedure.py --sync-caldera
+python3 cicd/build/build_shell_procedure.py --sync-caldera
 
 # Copy to Caldera
 cp -r integrations/caldera/plugins/attackmacos /path/to/caldera/plugins/
@@ -262,7 +268,7 @@ sudo systemctl restart caldera
 ```yaml
 - name: Deploy Caldera Plugin
   run: |
-    python3 cicd/build_shell_procedure.py --sync-caldera
+    python3 cicd/build/build_shell_procedure.py --sync-caldera
     rsync -av integrations/caldera/plugins/attackmacos/ caldera-server:/opt/caldera/plugins/attackmacos/
     ssh caldera-server 'sudo systemctl restart caldera'
 ```

