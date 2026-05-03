@@ -569,8 +569,8 @@ def update_documentation_file(doc_path: str, func_name: str, func_code: str) -> 
 def main():
     """Main function to sync all functions."""
     # Get script directory and project root
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
+    script_dir = Path(__file__).resolve().parent
+    project_root = script_dir.parent.parent
     
     # Define paths
     base_sh_path = project_root / "attackmacos" / "core" / "base" / "base.sh"

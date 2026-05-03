@@ -109,9 +109,9 @@ vendor/
 *.sublime-project
 *.sublime-workspace
 
-# Build directories
-build/
-dist/
+# Build directories (repository root only; do not ignore cicd/build/)
+/build/
+/dist/
 
 # Environment files
 .env
@@ -123,6 +123,7 @@ dist/
 *.bak.*
 *BAK.*
 *.txt
+!cicd/audit/inventory_allowlist.txt
 *.backup
 
 # Script output files

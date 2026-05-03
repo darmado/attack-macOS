@@ -1,0 +1,26 @@
+# Minimal procedure for cicd/build/build_jxa_procedure.py --self-test (not loaded by attackmacos.sh).
+procedure_name: jxa_fixture_echo
+ttp_id: T1115
+tactic: Collection
+guid: f47ac10b-58cc-4372-a567-0e02b2c3d479
+intent: CI fixture validating JXA builder smoke test and ObjC-only stdout path.
+author: "@darmado"
+version: 1.0.0
+created: "2026-04-30"
+updated: "2026-04-30"
+procedure:
+  arguments:
+    - option: "--hello"
+      description: Run fixture echo via ObjC stdout path.
+      execute_function:
+        - fixture_echo
+  global_variable: []
+  functions:
+    - name: fixture_echo
+      type: main
+      language:
+        - jxa
+      code: |
+        function fixture_echo() {
+            return "JXA_FIXTURE_OK\n";
+        }

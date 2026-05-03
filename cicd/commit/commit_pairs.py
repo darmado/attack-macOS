@@ -107,8 +107,8 @@ class IntelligentCommitter:
         # Important standalone patterns
         important_patterns = [
             'attackmacos/core/base/base.sh',  # Core framework
-            'cicd/sync_function_docs.py',    # Build tools
-            'cicd/commit_pairs.py',          # Build tools
+            'cicd/sync/sync_function_docs.py',    # Build tools
+            'cicd/commit/commit_pairs.py',          # Build tools
             'docs/Functions/Shell/',         # Documentation
             'docs/Guides/',                  # Documentation
             'attackmacos/core/config/procedure.yml'  # Template

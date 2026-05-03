@@ -19,16 +19,16 @@ Dependencies:
     - jsonschema
 
 Usage:
-    python3 build_procedure.py <yaml_file>        Build single YAML file
-    python3 build_procedure.py --all              Build all YAML files
-    python3 build_procedure.py --force <file>     Force overwrite existing file
-    python3 build_procedure.py --all --force      Force overwrite all files
-    python3 build_procedure.py --validate <file>  Validate YAML only
-    python3 build_procedure.py --sync-caldera     Sync built scripts to Caldera plugin
-    python3 build_procedure.py --help             Show this help
+    python3 cicd/build/build_shell_procedure.py <yaml_file>        Build single YAML file
+    python3 cicd/build/build_shell_procedure.py --all              Build all YAML files
+    python3 cicd/build/build_shell_procedure.py --force <file>     Force overwrite existing file
+    python3 cicd/build/build_shell_procedure.py --all --force      Force overwrite all files
+    python3 cicd/build/build_shell_procedure.py --validate <file>  Validate YAML only
+    python3 cicd/build/build_shell_procedure.py --sync-caldera     Sync built scripts to Caldera plugin
+    python3 cicd/build/build_shell_procedure.py --help             Show this help
 
 Example:
-    python3 build_procedure.py system_info.yml
+    python3 cicd/build/build_shell_procedure.py attackmacos/core/config/system_info.yml
 """
 
 import yaml
@@ -40,6 +40,10 @@ import re
 from pathlib import Path
 import jsonschema
 from datetime import datetime
+
+# This file lives at cicd/build/build_shell_procedure.py; repo root is two levels up.
+_CICD_BUILD_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _CICD_BUILD_DIR.parent.parent
 
 
 # ANSI color codes for better output
@@ -56,19 +60,19 @@ def show_usage():
     print(f"\n{BOLD}Attack-macOS Build Tool{RESET}")
     print("Build shell scripts from YAML procedure definitions")
     print(f"\n{BOLD}USAGE:{RESET}")
-    print(f"  python3 build_procedure.py <yaml_file>        Build single YAML file")
-    print(f"  python3 build_procedure.py --all              Build all YAML files")
-    print(f"  python3 build_procedure.py --force <file>     Force overwrite existing file")
-    print(f"  python3 build_procedure.py --all --force      Force overwrite all files")
-    print(f"  python3 build_procedure.py --validate <file>  Validate YAML only")
-    print(f"  python3 build_procedure.py --sync-caldera     Sync built scripts to Caldera plugin")
-    print(f"  python3 build_procedure.py --help             Show this help")
+    print(f"  python3 cicd/build/build_shell_procedure.py <yaml_file>        Build single YAML file")
+    print(f"  python3 cicd/build/build_shell_procedure.py --all              Build all YAML files")
+    print(f"  python3 cicd/build/build_shell_procedure.py --force <file>     Force overwrite existing file")
+    print(f"  python3 cicd/build/build_shell_procedure.py --all --force      Force overwrite all files")
+    print(f"  python3 cicd/build/build_shell_procedure.py --validate <file>  Validate YAML only")
+    print(f"  python3 cicd/build/build_shell_procedure.py --sync-caldera     Sync built scripts to Caldera plugin")
+    print(f"  python3 cicd/build/build_shell_procedure.py --help             Show this help")
     print(f"\n{BOLD}EXAMPLES:{RESET}")
-    print(f"  python3 build_procedure.py system_info.yml")
-    print(f"  python3 build_procedure.py --force system_info.yml")
-    print(f"  python3 build_procedure.py --all --force")
-    print(f"  python3 build_procedure.py --validate browser_history.yml")
-    print(f"  python3 build_procedure.py --sync-caldera")
+    print(f"  python3 cicd/build/build_shell_procedure.py attackmacos/core/config/system_info.yml")
+    print(f"  python3 cicd/build/build_shell_procedure.py --force attackmacos/core/config/system_info.yml")
+    print(f"  python3 cicd/build/build_shell_procedure.py --all --force")
+    print(f"  python3 cicd/build/build_shell_procedure.py --validate attackmacos/core/config/browser_history.yml")
+    print(f"  python3 cicd/build/build_shell_procedure.py --sync-caldera")
     print()
 
 
@@ -161,9 +165,7 @@ def validate_native_tool_usage(yaml_data):
 def validate_yaml(yaml_data, yaml_file):
     """Validate YAML against schema"""
     try:
-        script_dir = Path(__file__).parent
-        # Go up to project root, then into attackmacos/core/schemas
-        schema_path = script_dir.parent / "attackmacos" / "core" / "schemas" / "procedure.schema.json"
+        schema_path = _REPO_ROOT / "attackmacos" / "core" / "schemas" / "procedure.schema.json"
         
         with open(schema_path, 'r') as f:
             schema = json.load(f)
@@ -567,46 +569,6 @@ def get_tactic_directory(tactic):
     return tactic_map.get(tactic, tactic.lower().replace(' ', '_'))
 
 
-def create_test_file(script_path, proc_data):
-    """Generate simple test file with all script options in test_scripts directory"""
-    script_file = Path(script_path)
-    
-    # Create test_scripts directory relative to cicd directory
-    cicd_dir = Path(__file__).parent
-    test_scripts_dir = cicd_dir / "test_scripts"
-    test_scripts_dir.mkdir(exist_ok=True)
-    
-    test_file = test_scripts_dir / f"test_{script_file.stem}.sh"
-    
-    # Extract all options from arguments
-    options = []
-    for arg in proc_data.arguments:
-        option = arg['option']
-        if arg.get('type') == 'integer':
-            options.append(f'{option} 30')  # Use realistic integer values
-        elif arg.get('type') in ['string'] or arg.get('input_required', False):
-            options.append(f'{option} "test_value"')
-        else:
-            options.append(option)
-    
-    # Create test content with proper path to script
-    relative_script_path = Path("..") / script_file.relative_to(cicd_dir.parent)
-    
-    test_content = f"""#!/bin/bash
-# Auto-generated test for {script_file.name}
-
-# Test with all options
-{relative_script_path} {' '.join(options)}
-"""
-    
-    # Write test file
-    with open(test_file, 'w') as f:
-        f.write(test_content)
-    
-    test_file.chmod(0o755)
-    print(f"{BOLD}Test created:{RESET} {test_file.name}")
-
-
 def build_script(yaml_file, force=False):
     """Build script from YAML file"""
     yaml_data = read_yaml(yaml_file)
@@ -617,8 +579,7 @@ def build_script(yaml_file, force=False):
     proc_data = ProcedureData(yaml_data)
     
     # Read base script
-    script_dir = Path(__file__).parent
-    base_script = script_dir.parent / "attackmacos" / "core" / "base" / "base.sh"
+    base_script = _REPO_ROOT / "attackmacos" / "core" / "base" / "base.sh"
     
     with open(base_script, 'r') as f:
         content = f.read()
@@ -639,7 +600,7 @@ def build_script(yaml_file, force=False):
         content = content.replace(old, new)
     
     # Set project root path (absolute path to project root)
-    project_root = str(script_dir.parent.resolve())
+    project_root = str(_REPO_ROOT.resolve())
     content = content.replace('PROJECT_ROOT=""', f'PROJECT_ROOT="{project_root}"')
     
     # Set procedure-specific variables
@@ -705,7 +666,7 @@ NAME="{proc_data.name}"
     tactic = yaml_data.get('tactic', 'discovery')
     tactic_dir = get_tactic_directory(tactic)
     
-    output_dir = script_dir.parent / "attackmacos" / "ttp" / tactic_dir / "shell"
+    output_dir = _REPO_ROOT / "attackmacos" / "ttp" / tactic_dir / "shell"
     output_dir.mkdir(parents=True, exist_ok=True)
     
     base_filename = f"{proc_data.name}.sh"
@@ -745,19 +706,16 @@ NAME="{proc_data.name}"
     if not generate_and_update_guid(yaml_file, output_file, yaml_data, force):
         print(f"{BOLD}{YELLOW}WARNING:{RESET} GUID update failed, but script is functional")
     
-    # Generate test file after successful build
-    create_test_file(output_file, proc_data)
-    
     print(f"{BOLD}{GREEN}BUILD SUCCESS:{RESET} {Path(output_file).name}")
     print(f"{BOLD}Location:{RESET} {output_file}")
+    print(f"{BOLD}Lint:{RESET} included (sh -n); no separate --lint-local run required")
     
     return str(output_file)
 
 
 def find_yamls_needing_scripts():
     """Find YAML files that need scripts built"""
-    script_dir = Path(__file__).parent
-    config_dir = script_dir.parent / "attackmacos" / "core" / "config"
+    config_dir = _REPO_ROOT / "attackmacos" / "core" / "config"
     
     yaml_files = []
     for pattern in ['*.yml', '*.yaml']:
@@ -908,7 +866,7 @@ def validate_generated_script(script_path):
     """Run all validation checks on generated script"""
     script_name = Path(script_path).name
     
-    # Basic syntax check with bash -n
+    # Basic syntax check with sh -n (same as attackmacos.sh --lint-local)
     syntax_ok, syntax_error = validate_shell_syntax(script_path)
     if not syntax_ok:
         print(f"\n{BOLD}{RED}SYNTAX ERROR: {script_name}{RESET}")
@@ -919,9 +877,9 @@ def validate_generated_script(script_path):
     shellcheck_ok, shellcheck_output = validate_with_shellcheck(script_path)
     if shellcheck_ok is None:
         # shellcheck not available, that's ok
-        print(f"{BOLD}Syntax check:{RESET} PASSED (bash -n)")
+        print(f"{BOLD}Syntax check:{RESET} PASSED (sh -n, lint-local equivalent)")
     elif shellcheck_ok:
-        print(f"{BOLD}Syntax check:{RESET} PASSED (bash -n + shellcheck)")
+        print(f"{BOLD}Syntax check:{RESET} PASSED (sh -n + shellcheck)")
     else:
         print(f"\n{BOLD}{RED}SHELLCHECK ERRORS: {script_name}{RESET}")
         print(shellcheck_output)
@@ -947,19 +905,20 @@ def generate_and_update_guid(yaml_file, script_file, yaml_data, force=False):
         yaml_content = yaml_content.replace('updated: $UPDATED', f'updated: \'{current_date}\'')
         
         # When using --force, always update the 'updated' field and increment version
+        force_mode_version = None
         if force:
             # Update the 'updated' field regardless of current value
             import re
-            yaml_content = re.sub(r'updated:\s*[\'"]?[0-9]{4}-[0-9]{2}-[0-9]{2}[\'"]?', 
+            yaml_content = re.sub(r'updated:\s*[\'"]?[0-9]{4}-[0-9]{2}-[0-9]{2}[\'"]?',
                                 f'updated: \'{current_date}\'', yaml_content)
             
             # Increment the version field (patch version bump)
             current_version = yaml_data.get('version', '1.0.0')
-            new_version = increment_version(current_version)
-            yaml_content = re.sub(r'version:\s*[\'"]?[0-9]+\.[0-9]+\.[0-9]+[\'"]?', 
-                                f'version: {new_version}', yaml_content)
+            force_mode_version = increment_version(current_version)
+            yaml_content = re.sub(r'version:\s*[\'"]?[0-9]+\.[0-9]+\.[0-9]+[\'"]?',
+                                f'version: {force_mode_version}', yaml_content)
             
-            print(f"{BOLD}Force mode:{RESET} Updated version {current_version} → {new_version}")
+            print(f"{BOLD}Force mode:{RESET} Updated version {current_version} → {force_mode_version}")
             print(f"{BOLD}Force mode:{RESET} Updated date → {current_date}")
         
         # Write the minimally modified YAML back to file
@@ -973,10 +932,18 @@ def generate_and_update_guid(yaml_file, script_file, yaml_data, force=False):
         script_content = script_content.replace('[GUID]', new_guid)
         script_content = script_content.replace('[UPDATED]', current_date)
         
-        # When using --force, also update version in script header
-        if force:
-            new_version = increment_version(yaml_data.get('version', '1.0.0'))
-            script_content = script_content.replace('[VERSION]', new_version)
+        # When using --force, sync version in header (build_script already substituted [VERSION],
+        # so patch the concrete '# Version:' line to match YAML bump above).
+        if force and force_mode_version is not None:
+            import re
+            script_content = re.sub(
+                r'^# Version:.*$',
+                f'# Version: {force_mode_version}',
+                script_content,
+                count=1,
+                flags=re.MULTILINE,
+            )
+            script_content = script_content.replace('[VERSION]', force_mode_version)
         
         with open(script_file, 'w') as f:
             f.write(script_content)
@@ -1010,8 +977,7 @@ def increment_version(version_str):
 
 def sync_to_caldera():
     """Sync all built scripts to Caldera plugin with one ability per script"""
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
+    project_root = _REPO_ROOT
     
     # Define paths
     ttp_dir = project_root / "attackmacos" / "ttp"

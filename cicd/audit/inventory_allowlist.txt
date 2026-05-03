@@ -1,0 +1,9 @@
+# Optional: shell script basenames under attackmacos/ttp/**/shell/ that are allowed
+# to exist without a matching procedure_name in attackmacos/core/config/*.yml.
+# Used by audit_procedure_inventory.py --strict. Remove a line when you add YAML
+# and rebuild to the standard path.
+
+browser_bookmarks
+network_share
+network_sniff
+safaridbs
