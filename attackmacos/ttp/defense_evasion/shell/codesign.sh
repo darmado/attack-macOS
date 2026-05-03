@@ -5,10 +5,11 @@
 # Technique: T1553
 # GUID: a72ffc18-d86d-465c-a877-0eb9bb7aa673
 # Intent: Create, manipulate and verify code signatures. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Thijs Xhaflaire
+# Author: @darmado | https://x.com/darmad0
+# Credit: Thijs Xhaflaire
 # created: 2024-07-29
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

@@ -4,10 +4,10 @@ ttp_id: T1562.001
 guid: 5659b5ff-75f0-42d3-98b4-b50b0ace1267
 intent: Configure or view system security policies. Sourced from LOOBins; confirm
   MITRE mapping for each enabled option.
-author: Megan Carney (https://infosec.exchange/@PwnieFan)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-14'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection:
@@ -17,9 +17,9 @@ detection:
   analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_csrutil_status.yml
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1562/001/
-  description: "MITRE ATT&CK \u2014 T1562.001"
+  description: MITRE ATT&CK — T1562.001
 - link: ''
   description: ''
 - link: https://developer.apple.com/forums/thread/4002
@@ -115,3 +115,4 @@ procedure:
     code: "execute_determine_if_sip_is_enabled() {\n    local result\n    result=$(csrutil\
       \ status 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n\
       }"
+credit: Megan Carney (https://infosec.exchange/@PwnieFan)

@@ -6,9 +6,10 @@
 # GUID: 784d94ea-0329-4e1a-aecd-c0a9e43b60d5
 # Intent: Hide artifacts and evidence from user view by concealing mounted drives, removable media, and desktop icons using Finder defaults
 # Author: @darmado | https://x.com/darmad0
+# Credit: (none listed)
 # created: 2025-01-27
 # Updated: 2026-05-03
-# Version: 1.0.9
+# Version: 1.0.10
 # License: Apache 2.0
 
 # Core function Info:

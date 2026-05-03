@@ -2,6 +2,8 @@
 
 Use this area for **third-party catalogs** and **pre-schema** artifacts before promoting YAML into `attackmacos/core/config/` as full procedures.
 
+**Queue vs production:** treat `attackmacos/standby/` (especially `standby/LOOBins/`) as the **incoming queue** — nothing here is a shipped procedure until a maintainer moves YAML into `attackmacos/core/config/`, fixes MITRE metadata, and runs the builders. That promotion step is the **human gate** (review, legal/compliance context, and ATT&CK alignment are not automated).
+
 ## Status (LOOBins YAML → config)
 
 Per-binary `*.yml` files here were **bulk-promoted** to `attackmacos/core/config/` using `convert_loobin_to_procedure.py --promote-all` with MITRE mapping from `TTP_OVERLAY.yml` / built-in inference (`cicd/sync/convert_loobin_to_procedure.py`). **`screencapture`** and **`security`** were skipped (superseded by `screen_capture.yml` and `keychains.yml`). Refine individual techniques in config YAML as needed.

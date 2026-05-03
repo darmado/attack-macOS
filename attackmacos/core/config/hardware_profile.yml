@@ -4,10 +4,10 @@ ttp_id: T1082
 guid: 0f714f73-cf87-4c82-a4da-ce74104bae2b
 intent: Reports system hardware and software configuration. Sourced from LOOBins;
   confirm MITRE mapping for each enabled option.
-author: Ethan Nay
+author: '@darmado | https://x.com/darmad0'
 created: '2023-07-12'
 updated: '2026-05-03'
-version: 1.0.5
+version: 1.0.6
 platform:
 - darwin
 detection:
@@ -17,9 +17,9 @@ detection:
   analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/system_profiler_activity
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1082/
-  description: "MITRE ATT&CK \u2014 T1082"
+  description: MITRE ATT&CK — T1082
 - link: ''
   description: ''
 - link: https://macosbin.com/bin/system_profiler
@@ -115,3 +115,4 @@ procedure:
     code: "execute_print_power_battery_information() {\n    local result\n    result=$(system_profiler\
       \ SPPowerDataType 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
       \ 0\n}"
+credit: Ethan Nay

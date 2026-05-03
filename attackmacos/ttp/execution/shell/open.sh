@@ -5,10 +5,11 @@
 # Technique: T1204
 # GUID: 62622417-c1c0-47b5-a6f2-6936f9e5be7d
 # Intent: Open files, folders, apps, URLs, and header files. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Brendan Chamberlain (@infosecb)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Brendan Chamberlain (@infosecb)
 # created: 2023-05-10
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

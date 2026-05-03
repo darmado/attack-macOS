@@ -4,10 +4,10 @@ ttp_id: T1082
 guid: f91cfbe0-0d27-48f4-b9c9-08ba061d643a
 intent: Display the status of loaded kernal extensions (kexts) Sourced from LOOBins;
   confirm MITRE mapping for each enabled option.
-author: Mark Morowczynsk (@markmorow)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-07-30'
 updated: '2026-05-03'
-version: 1.0.5
+version: 1.0.6
 platform:
 - darwin
 detection:
@@ -15,9 +15,9 @@ detection:
   analysis: n/a
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1082/
-  description: "MITRE ATT&CK \u2014 T1082"
+  description: MITRE ATT&CK — T1082
 - link: ''
   description: ''
 - link: https://ss64.com/osx/kextstat.html
@@ -47,3 +47,4 @@ procedure:
         exit_on_failure: true
     code: "execute_list_kernel_extensions() {\n    local result\n    result=$(kexstat\
       \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+credit: Mark Morowczynsk (@markmorow)

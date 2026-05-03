@@ -46,6 +46,14 @@ GREEN = BSP.GREEN
 YELLOW = BSP.YELLOW
 RESET = BSP.RESET
 
+_here = Path(__file__).resolve().parent
+_pm_spec = importlib.util.spec_from_file_location(
+    "procedure_metadata", str(_here / "procedure_metadata.py")
+)
+procedure_metadata = importlib.util.module_from_spec(_pm_spec)
+assert _pm_spec.loader is not None
+_pm_spec.loader.exec_module(procedure_metadata)
+
 
 def _js_quote(s: str) -> str:
     return "'" + s.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n") + "'"
@@ -309,7 +317,14 @@ def build_jxa_script(yaml_path: str, force: bool = False):
     content = content.replace("[TACTIC]", yaml_data.get("tactic", "Discovery"))
     content = content.replace("[TTP_ID]", yaml_data.get("ttp_id", "T1082"))
     content = content.replace("[INTENT]", yaml_data.get("intent", "Security technique implementation"))
-    content = content.replace("[AUTHOR]", yaml_data.get("author", "@darmado"))
+    content = content.replace(
+        "[AUTHOR]",
+        yaml_data.get("author", procedure_metadata.DEFAULT_PROCEDURE_AUTHOR),
+    )
+    content = content.replace(
+        "[CREDIT_LINE_JS]",
+        procedure_metadata.jxa_credit_header_line(yaml_data),
+    )
     content = content.replace("[CREATED]", yaml_data.get("created", "2025-05-30"))
     content = content.replace("[UPDATED]", yaml_data.get("updated", yaml_data.get("created", "2025-05-30")))
     content = content.replace("[VERSION]", yaml_data.get("version", "1.0.0"))

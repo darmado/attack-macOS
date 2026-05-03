@@ -5,10 +5,11 @@
 # Technique: T1562.001
 # GUID: 3006cb3f-bead-4c8a-8088-de6cffff7234
 # Intent: List and remove configuration profiles. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Will Huang (@In0de_16)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Will Huang (@In0de_16)
 # created: 2023-05-16
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

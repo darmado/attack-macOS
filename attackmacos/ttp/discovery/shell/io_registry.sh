@@ -5,10 +5,11 @@
 # Technique: T1082
 # GUID: c742cd1a-fd3e-4636-bc64-7a38af683b09
 # Intent: Displays a hierarchial view of the I/O Kit registry. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Cedric Owens (@cedowens)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Cedric Owens (@cedowens)
 # created: 2023-04-20
 # Updated: 2026-05-03
-# Version: 1.0.5
+# Version: 1.0.6
 # License: Apache 2.0
 
 # Core function Info:

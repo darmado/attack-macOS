@@ -6,9 +6,10 @@
 # GUID: 9de32223-071c-4911-8dfc-f0242de37a12
 # Intent: Identifies valid local accounts and groups on macOS systems using various native commands
 # Author: @darmado | https://x.com/darmad0
+# Credit: (none listed)
 # created: 2023-10-06
 # Updated: 2026-05-03
-# Version: 1.5.9
+# Version: 1.5.10
 # License: Apache 2.0
 
 # Core function Info:

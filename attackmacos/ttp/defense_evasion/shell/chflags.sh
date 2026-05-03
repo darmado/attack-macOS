@@ -5,10 +5,11 @@
 # Technique: T1564.001
 # GUID: 50e663e1-1ed4-4f7b-81a0-40d04834c99f
 # Intent: Changes file or directory flags Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: demonduck
+# Author: @darmado | https://x.com/darmad0
+# Credit: demonduck
 # created: 2024-07-25
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

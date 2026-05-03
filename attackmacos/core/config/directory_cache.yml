@@ -2,20 +2,20 @@ procedure_name: directory_cache
 tactic: Discovery
 ttp_id: T1087.002
 guid: b8345244-2885-4d0e-a0b3-33dec4eddc54
-intent: Query the Directory Service cache (T1087.002). Procedure name states scope; flags
-  name the query shape. Sourced from LOOBins; confirm MITRE mapping per option.
-author: Ethan Nay
+intent: Query the Directory Service cache (T1087.002). Procedure name states scope;
+  flags name the query shape. Sourced from LOOBins; confirm MITRE mapping per option.
+author: '@darmado | https://x.com/darmad0'
 created: '2023-08-23'
 updated: '2026-05-03'
-version: 1.0.7
+version: 1.0.8
 platform:
 - darwin
 detection: []
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1087/002/
-  description: "MITRE ATT&CK \u2014 T1087.002"
+  description: MITRE ATT&CK — T1087.002
 - link: ''
   description: ''
 - link: https://macosbin.com/bin/dscacheutil
@@ -52,17 +52,11 @@ procedure:
       check_fda:
         enabled: false
         exit_on_failure: true
-    code: |
-      execute_lookup_user() {
-          local result
-          if [ -z "$INPUT_USER" ]; then
-              $CMD_PRINTF "RESULT|error|INPUT_USER is empty; pass username after --lookup-user\n"
-              return 1
-          fi
-          result=$("$CMD_DSCACHEUTIL" -q user -a name "$INPUT_USER" 2>&1)
-          $CMD_PRINTF "RESULT|%s\n" "$result"
-          return 0
-      }
+    code: "execute_lookup_user() {\n    local result\n    if [ -z \"$INPUT_USER\"\
+      \ ]; then\n        $CMD_PRINTF \"RESULT|error|INPUT_USER is empty; pass username\
+      \ after --lookup-user\\n\"\n        return 1\n    fi\n    result=$(\"$CMD_DSCACHEUTIL\"\
+      \ -q user -a name \"$INPUT_USER\" 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"\
+      $result\"\n    return 0\n}\n"
   - name: execute_lookup_all_users
     type: main
     language:
@@ -71,10 +65,7 @@ procedure:
       check_fda:
         enabled: false
         exit_on_failure: true
-    code: |
-      execute_lookup_all_users() {
-          local result
-          result=$("$CMD_DSCACHEUTIL" -q user 2>&1)
-          $CMD_PRINTF "RESULT|%s\n" "$result"
-          return 0
-      }
+    code: "execute_lookup_all_users() {\n    local result\n    result=$(\"$CMD_DSCACHEUTIL\"\
+      \ -q user 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n\
+      }\n"
+credit: Ethan Nay

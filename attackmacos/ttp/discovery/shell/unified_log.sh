@@ -5,10 +5,11 @@
 # Technique: T1082
 # GUID: dfbf5f7d-fb0e-4096-91bd-c5b53005a625
 # Intent: Access system log messages from Apple Unified Logging (AUL). Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Brendan Chamberlain (@infosecB)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Brendan Chamberlain (@infosecB)
 # created: 2023-06-06
 # Updated: 2026-05-03
-# Version: 1.0.5
+# Version: 1.0.6
 # License: Apache 2.0
 
 # Core function Info:

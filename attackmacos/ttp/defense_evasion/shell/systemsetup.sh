@@ -5,10 +5,11 @@
 # Technique: T1562.001
 # GUID: bced1b51-dd85-4989-ac38-f001efef71ab
 # Intent: Enable remote login, remote apple events for the machine Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Hare Sudhan (@cyb3rbuff)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Hare Sudhan (@cyb3rbuff)
 # created: 2023-08-31
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

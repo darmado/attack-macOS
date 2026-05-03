@@ -4,18 +4,18 @@ ttp_id: T1185
 guid: 914e9f5f-ad21-4ab9-a7d3-97a2839951ea
 intent: Enable the WebDriver Safari browser API for Selenium testing. Sourced from
   LOOBins; confirm MITRE mapping for each enabled option.
-author: Brendan Chamberlain (@infosecB)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-20'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection: []
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1185/
-  description: "MITRE ATT&CK \u2014 T1185"
+  description: MITRE ATT&CK — T1185
 - link: ''
   description: ''
 - link: https://developer.apple.com/documentation/webkit/about_webdriver_for_safari
@@ -48,3 +48,4 @@ procedure:
     code: "execute_enable_safaridriver() {\n    local result\n    result=$(sudo safaridriver\
       \ --enable 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n\
       }"
+credit: Brendan Chamberlain (@infosecB)

@@ -5,10 +5,11 @@
 # Technique: T1553.004
 # GUID: a14a168f-4f8c-4a18-8ffa-87eb17231c4e
 # Intent: Display and manipulate extended attributes. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Jason Trost (@jason_trost)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Jason Trost (@jason_trost)
 # created: 2023-04-20
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

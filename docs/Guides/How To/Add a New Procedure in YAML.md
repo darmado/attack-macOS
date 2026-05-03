@@ -28,7 +28,9 @@ These fields identify your technique and provide basic information.
 | **tactic** | enum | ✅ | MITRE ATT&CK tactic | `Discovery` |
 | **guid** | string | ✅ | UUID4 format | `456e7890-e12b-34c5-d678-901234567890` |
 | **intent** | string | ✅ | Brief description (10-500 chars) | `Discover security software installed on macOS` |
-| **author** | string | ✅ | Author with contact info | `@darmado \| https://x.com/darmad0` |
+| **author** | string | ✅ | **Procedure maintainer** in this repository (appears as `# Author:` in generated shell and `* Author:` in JXA). Use for the person/team responsible for the YAML and shipped script. | `@darmado \| https://x.com/darmad0` |
+| **credit** | string | ❌ | Optional **upstream** attribution (e.g. LOOBins catalog author, research credit). Shown as `# Credit:` lines in shell and `* Credit:` in JXA alongside `acknowledgement`. | `LOOBins catalog author: …` |
+| **acknowledgement** | array | ❌ | Structured credits (`person`, optional `handle`); each entry becomes a `# Credit:` line in the generated shell header. | See template |
 | **version** | string | ✅ | Semantic version | `2.0.0` |
 | **created** | string | ✅ | Date in YYYY-MM-DD format | `2025-05-27` |
 

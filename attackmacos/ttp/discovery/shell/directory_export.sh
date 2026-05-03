@@ -5,10 +5,11 @@
 # Technique: T1087.002
 # GUID: 285892ef-3d0a-4e64-9a75-352ec01c15a5
 # Intent: Export data from an Open Directory directory services server. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Brendan Chamberlain (@infosecB)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Brendan Chamberlain (@infosecB)
 # created: 2023-05-23
 # Updated: 2026-05-03
-# Version: 1.0.5
+# Version: 1.0.6
 # License: Apache 2.0
 
 # Core function Info:

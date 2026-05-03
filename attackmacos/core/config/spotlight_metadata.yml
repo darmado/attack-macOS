@@ -4,18 +4,18 @@ ttp_id: T1083
 guid: 6428d55a-3a6b-4924-a59f-8f4598141241
 intent: List metadata attributes for the specified file. Sourced from LOOBins; confirm
   MITRE mapping for each enabled option.
-author: Daniel Stinson-Diess (@shellcromancer)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-29'
 updated: '2026-05-03'
-version: 1.0.5
+version: 1.0.6
 platform:
 - darwin
 detection: []
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1083/
-  description: "MITRE ATT&CK \u2014 T1083"
+  description: MITRE ATT&CK — T1083
 - link: ''
   description: ''
 acknowledgement:
@@ -59,3 +59,4 @@ procedure:
     code: "execute_query_file_paths() {\n    local result\n    result=$(xargs -0 mdls\
       \ -n kMDItemPath -n kMDItemFSSize 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"\
       $result\"\n    return 0\n}"
+credit: Daniel Stinson-Diess (@shellcromancer)

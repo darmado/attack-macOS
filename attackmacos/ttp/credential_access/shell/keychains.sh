@@ -6,9 +6,10 @@
 # GUID: 289b5876-2049-42fc-8b8c-0b21db32503e
 # Intent: Dump credentials, keys, certificates, and sensitive information from macOS Keychain using security command
 # Author: @darmado | https://x.com/darmad0
+# Credit: (none listed)
 # created: 2025-01-02
 # Updated: 2026-05-03
-# Version: 1.0.10
+# Version: 1.0.11
 # License: Apache 2.0
 
 # Core function Info:

@@ -4,18 +4,18 @@ ttp_id: T1087.004
 guid: 20c16a8f-b936-4347-a48e-a1e19c309cae
 intent: retrieves/changes configuration for Directory Services Active Directory Plugin.
   Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-author: Ethan Nay
+author: '@darmado | https://x.com/darmad0'
 created: '2023-08-23'
 updated: '2026-05-03'
-version: 1.0.5
+version: 1.0.6
 platform:
 - darwin
 detection: []
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1087/004/
-  description: "MITRE ATT&CK \u2014 T1087.004"
+  description: MITRE ATT&CK — T1087.004
 - link: ''
   description: ''
 - link: https://macosbin.com/bin/dsconfigad
@@ -62,3 +62,4 @@ procedure:
     code: "execute_retrieves_active_directory_name() {\n    local result\n    result=$(dsconfigad\
       \ -show |awk '/Active Directory Domain/{print $NF}' 2>&1)\n    $CMD_PRINTF \"\
       RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+credit: Ethan Nay

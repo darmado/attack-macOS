@@ -5,10 +5,11 @@
 # Technique: T1185
 # GUID: 914e9f5f-ad21-4ab9-a7d3-97a2839951ea
 # Intent: Enable the WebDriver Safari browser API for Selenium testing. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Brendan Chamberlain (@infosecB)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Brendan Chamberlain (@infosecB)
 # created: 2023-05-20
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

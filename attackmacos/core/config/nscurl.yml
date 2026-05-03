@@ -3,11 +3,12 @@ tactic: Command and Control
 ttp_id: T1071.001
 guid: 29afdbdb-a134-4ab3-b7cf-c313b718b2a0
 intent: Use Apple nscurl for HTTPS fetches (application update stack). Prefer explicit
-  modes over vague payload-type flags—URLs and paths point at the same filesystem objects.
-author: Leo Pitt (@_D00mfist)
+  modes over vague payload-type flags—URLs and paths point at the same filesystem
+  objects.
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-22'
 updated: '2026-05-03'
-version: 1.1.4
+version: 1.1.5
 platform:
 - darwin
 detection:
@@ -70,18 +71,13 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: |
-      nscurl_https_ignore_cert() {
-          if [ -z "$INPUT_URL" ] || [ -z "$INPUT_OUTPUT_PATH" ]; then
-              $CMD_PRINTF "ERROR|nscurl|--https-ignore-cert requires --url and --output-path\n"
-              return 1
-          fi
-          local result
-          result=$("$CMD_NSCURL" -k "$INPUT_URL" -o "$INPUT_OUTPUT_PATH" 2>&1) || true
-          $CMD_PRINTF "NSCURL|mode|https_ignore_cert|url|%s|exit_embedded_in_result\n" "$INPUT_URL"
-          $CMD_PRINTF "NSCURL|stdout_stderr|%s\n" "$result"
-          return 0
-      }
+    code: "nscurl_https_ignore_cert() {\n    if [ -z \"$INPUT_URL\" ] || [ -z \"$INPUT_OUTPUT_PATH\"\
+      \ ]; then\n        $CMD_PRINTF \"ERROR|nscurl|--https-ignore-cert requires --url\
+      \ and --output-path\\n\"\n        return 1\n    fi\n    local result\n    result=$(\"\
+      $CMD_NSCURL\" -k \"$INPUT_URL\" -o \"$INPUT_OUTPUT_PATH\" 2>&1) || true\n  \
+      \  $CMD_PRINTF \"NSCURL|mode|https_ignore_cert|url|%s|exit_embedded_in_result\\\
+      n\" \"$INPUT_URL\"\n    $CMD_PRINTF \"NSCURL|stdout_stderr|%s\\n\" \"$result\"\
+      \n    return 0\n}\n"
   - name: nscurl_save_dl
     type: main
     language:
@@ -89,18 +85,12 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: |
-      nscurl_save_dl() {
-          if [ -z "$INPUT_URL" ]; then
-              $CMD_PRINTF "ERROR|nscurl|--save-to-downloads-alias requires --url\n"
-              return 1
-          fi
-          local result
-          result=$("$CMD_NSCURL" "$INPUT_URL" -dl 2>&1) || true
-          $CMD_PRINTF "NSCURL|mode|dl|url|%s\n" "$INPUT_URL"
-          $CMD_PRINTF "NSCURL|stdout_stderr|%s\n" "$result"
-          return 0
-      }
+    code: "nscurl_save_dl() {\n    if [ -z \"$INPUT_URL\" ]; then\n        $CMD_PRINTF\
+      \ \"ERROR|nscurl|--save-to-downloads-alias requires --url\\n\"\n        return\
+      \ 1\n    fi\n    local result\n    result=$(\"$CMD_NSCURL\" \"$INPUT_URL\" -dl\
+      \ 2>&1) || true\n    $CMD_PRINTF \"NSCURL|mode|dl|url|%s\\n\" \"$INPUT_URL\"\
+      \n    $CMD_PRINTF \"NSCURL|stdout_stderr|%s\\n\" \"$result\"\n    return 0\n\
+      }\n"
   - name: nscurl_save_dir
     type: main
     language:
@@ -108,15 +98,11 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: |
-      nscurl_save_dir() {
-          if [ -z "$INPUT_URL" ] || [ -z "$INPUT_TARGET_DIR" ]; then
-              $CMD_PRINTF "ERROR|nscurl|--save-via-dir requires --url and --target-dir\n"
-              return 1
-          fi
-          local result
-          result=$("$CMD_NSCURL" "$INPUT_URL" -dir "$INPUT_TARGET_DIR" 2>&1) || true
-          $CMD_PRINTF "NSCURL|mode|dir|url|%s|dir|%s\n" "$INPUT_URL" "$INPUT_TARGET_DIR"
-          $CMD_PRINTF "NSCURL|stdout_stderr|%s\n" "$result"
-          return 0
-      }
+    code: "nscurl_save_dir() {\n    if [ -z \"$INPUT_URL\" ] || [ -z \"$INPUT_TARGET_DIR\"\
+      \ ]; then\n        $CMD_PRINTF \"ERROR|nscurl|--save-via-dir requires --url\
+      \ and --target-dir\\n\"\n        return 1\n    fi\n    local result\n    result=$(\"\
+      $CMD_NSCURL\" \"$INPUT_URL\" -dir \"$INPUT_TARGET_DIR\" 2>&1) || true\n    $CMD_PRINTF\
+      \ \"NSCURL|mode|dir|url|%s|dir|%s\\n\" \"$INPUT_URL\" \"$INPUT_TARGET_DIR\"\n\
+      \    $CMD_PRINTF \"NSCURL|stdout_stderr|%s\\n\" \"$result\"\n    return 0\n\
+      }\n"
+credit: Leo Pitt (@_D00mfist)

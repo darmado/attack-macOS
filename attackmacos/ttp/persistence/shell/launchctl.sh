@@ -5,10 +5,11 @@
 # Technique: T1543.001
 # GUID: 09b9fa1f-45b8-4ea7-90d7-46477b6094c8
 # Intent: Load or demonstrate LaunchAgents via launchctl for persistence-style testing. Lab-only; sudo paths require explicit operator consent.
-# Author: Josh Carullo
+# Author: @darmado | https://x.com/darmad0
+# Credit: Josh Carullo
 # created: 2023-05-27
 # Updated: 2026-05-03
-# Version: 1.2.4
+# Version: 1.2.5
 # License: Apache 2.0
 
 # Core function Info:

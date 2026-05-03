@@ -4,10 +4,10 @@ ttp_id: T1059
 guid: 242410bc-17c7-4cfb-9d94-c3ed20d9d5df
 intent: Run Tcl files or shell commands from standard input. Sourced from LOOBins;
   confirm MITRE mapping for each enabled option.
-author: Brendan Chamberlain (@infosecB)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-17'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection:
@@ -16,9 +16,9 @@ detection:
   analysis: https://medium.com/specter-ops-posts/dylib-loads-that-tickle-your-fancy-d25196addd8c
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1059/
-  description: "MITRE ATT&CK \u2014 T1059"
+  description: MITRE ATT&CK — T1059
 - link: ''
   description: ''
 - link: https://medium.com/specter-ops-posts/dylib-loads-that-tickle-your-fancy-d25196addd8c
@@ -49,3 +49,4 @@ procedure:
     code: "execute_execute_malicious_dynamic_library_dylib_from_standard_input() {\n\
       \    local result\n    result=$(echo \"load bad.dylib\" | tclsh 2>&1)\n    $CMD_PRINTF\
       \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+credit: Brendan Chamberlain (@infosecB)

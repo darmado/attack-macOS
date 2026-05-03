@@ -4,10 +4,10 @@ ttp_id: T1553.004
 guid: a14a168f-4f8c-4a18-8ffa-87eb17231c4e
 intent: Display and manipulate extended attributes. Sourced from LOOBins; confirm
   MITRE mapping for each enabled option.
-author: Jason Trost (@jason_trost)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-04-20'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection:
@@ -17,9 +17,9 @@ detection:
   analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/xattr_extended_attributes_activity
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1553/004/
-  description: "MITRE ATT&CK \u2014 T1553.004"
+  description: MITRE ATT&CK — T1553.004
 - link: ''
   description: ''
 - link: https://megancarney.com/presentations/ExternalReport_ThreatHuntingMacOS.pdf
@@ -67,3 +67,4 @@ procedure:
     code: "execute_bypass_gatekeeper_via_xattr() {\n    local result\n    result=$(xattr\
       \ -d -r com.apple.quarantine * 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\
       \n    return 0\n}"
+credit: Jason Trost (@jason_trost)

@@ -5,10 +5,11 @@
 # Technique: T1499
 # GUID: f472fe64-edf4-4f56-aa5a-958eec9018a8
 # Intent: Prevent the system from sleeping on behalf of a utility. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Ethan Nay
+# Author: @darmado | https://x.com/darmad0
+# Credit: Ethan Nay
 # created: 2023-07-12
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

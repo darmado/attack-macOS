@@ -9,6 +9,7 @@ copying to attackmacos/core/config/ and building.
 See docs/CICD/LOOBins_to_Procedure_Mapping.md
 """
 
+import importlib.util
 import re
 import subprocess
 import sys
@@ -16,6 +17,14 @@ from datetime import datetime
 from pathlib import Path
 
 import yaml
+
+_BUILD_DIR = Path(__file__).resolve().parent.parent / "build"
+_pm_spec = importlib.util.spec_from_file_location(
+    "procedure_metadata", str(_BUILD_DIR / "procedure_metadata.py")
+)
+procedure_metadata = importlib.util.module_from_spec(_pm_spec)
+assert _pm_spec.loader is not None
+_pm_spec.loader.exec_module(procedure_metadata)
 
 
 # MITRE tactic → default technique when upstream does not publish a technique ID.
@@ -284,7 +293,18 @@ def map_metadata(template, loobin_data):
         template["tactic"] = "Discovery"
     template["procedure_name"] = loobin_data["name"].lower()
     template["intent"] = (loobin_data.get("short_description") or f"Execute {loobin_data['name']} commands")[:500]
-    template["author"] = loobin_data.get("author", "@darmado | https://x.com/darmad0")
+    # Procedure author = repo maintainer; LOOBins catalog author is credit, not author.
+    template["author"] = procedure_metadata.DEFAULT_PROCEDURE_AUTHOR
+    up_author = (loobin_data.get("author") or "").strip()
+    if up_author and up_author != procedure_metadata.DEFAULT_PROCEDURE_AUTHOR:
+        template["credit"] = f"LOOBins catalog author: {up_author}"
+    acks_raw = loobin_data.get("acknowledgements") or []
+    ack_proc = []
+    for a in acks_raw:
+        if isinstance(a, str) and a.strip():
+            ack_proc.append({"person": a.strip(), "handle": ""})
+    if ack_proc:
+        template["acknowledgement"] = ack_proc
     template["created"] = str(loobin_data.get("created", datetime.now().strftime("%Y-%m-%d")))
     template["updated"] = "$UPDATED"
     template["version"] = "1.0.0"

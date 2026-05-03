@@ -6,9 +6,10 @@
 # GUID: 3349e821-b561-4407-a4f7-45ff1fb2900b
 # Intent: Comprehensive security software discovery for macOS systems including EDR, AV, firewalls, and built-in protections
 # Author: @darmado | https://x.com/darmad0
+# Credit: (none listed)
 # created: 2025-01-27
 # Updated: 2026-05-03
-# Version: 2.0.9
+# Version: 2.0.10
 # License: Apache 2.0
 
 # Core function Info:

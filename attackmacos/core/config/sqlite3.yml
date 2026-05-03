@@ -4,10 +4,10 @@ ttp_id: T1213
 guid: 5f2f74c2-1251-4ad5-9976-08c1ed29d868
 intent: Query and manage sqlite databases. Sourced from LOOBins; confirm MITRE mapping
   for each enabled option.
-author: Brendan Chamberlain (@infosecB)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-23'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection:
@@ -20,16 +20,16 @@ detection:
   analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/sqlite3_downloads
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1213/
-  description: "MITRE ATT&CK \u2014 T1213"
+  description: MITRE ATT&CK — T1213
 - link: ''
   description: ''
 - link: https://github.com/bp88/JSS-Scripts/blob/master/TCC.db%20Modifier.sh
   description: TCC.db Modifier Script
 - link: https://redcanary.com/blog/clipping-silver-sparrows-wings/
-  description: "Clipping Silver Sparrow\u2019s wings: Outing macOS malware before\
-    \ it takes flight"
+  description: 'Clipping Silver Sparrow’s wings: Outing macOS malware before it takes
+    flight'
 acknowledgement:
 - person: ''
   handle: ''
@@ -91,3 +91,4 @@ procedure:
       \ ~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV* 'select\
       \ LSQuarantineDataURLString from LSQuarantineEvent' 2>&1)\n    $CMD_PRINTF \"\
       RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+credit: Brendan Chamberlain (@infosecB)

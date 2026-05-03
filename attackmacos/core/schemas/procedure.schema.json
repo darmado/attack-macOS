@@ -62,8 +62,13 @@
     },
     "author": {
       "type": "string",
-      "description": "Author information with optional contact details",
+      "description": "Procedure maintainer in this repository (emitted as # Author: in generated shell / * Author: in JXA). Use acknowledgement and credit for upstream or third-party attribution.",
       "examples": ["@darmado | https://x.com/darmad0", "John Doe <john@example.com>"]
+    },
+    "credit": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Optional free-text upstream attribution (e.g. LOOBins catalog author, research credit). Shown as # Credit: lines in shell and * Credit: in JXA headers alongside acknowledgement."
     },
     "version": {
       "type": "string",
@@ -142,7 +147,7 @@
     },
     "acknowledgement": {
       "type": "array",
-      "description": "People to acknowledge for contributions",
+      "description": "Structured credits (person + handle); emitted as # Credit: lines in generated shell headers and in the JXA * Credit line",
       "items": {
         "type": "object",
         "required": ["person"],

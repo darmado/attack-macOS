@@ -5,10 +5,11 @@
 # Technique: T1553.004
 # GUID: 0347a219-9b93-4c2f-af5f-b91f20db1060
 # Intent: Manage the security assessment policy subsystem, Gatekeeper settings, and control which apps are allowed to run on the system. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Brendan Chamberlain (@infosecB)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Brendan Chamberlain (@infosecB)
 # created: 2023-05-23
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

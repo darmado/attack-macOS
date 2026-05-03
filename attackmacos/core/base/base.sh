@@ -6,6 +6,7 @@
 # GUID: [GUID]
 # Intent: [INTENT]
 # Author: [AUTHOR]
+[CREDIT_LINES]
 # created: [CREATED]
 # Updated: [UPDATED]
 # Version: [VERSION]

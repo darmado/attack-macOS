@@ -5,10 +5,11 @@
 # Technique: T1560
 # GUID: cd29675b-6660-4f8d-aa3f-c31ff6d15743
 # Intent: File-less compression of data passed in through stdin. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Gabriel De Jesus (0xv1n)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Gabriel De Jesus (0xv1n)
 # created: 2024-07-15
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

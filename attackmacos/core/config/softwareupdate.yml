@@ -4,18 +4,18 @@ ttp_id: T1072
 guid: affaa4cf-f670-45c4-b7c3-26ce002a34df
 intent: Interact with the macOS software update service. Sourced from LOOBins; confirm
   MITRE mapping for each enabled option.
-author: Jonathan Bar Or (@yo_yo_yo_jbo)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-04-25'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection: []
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1072/
-  description: "MITRE ATT&CK \u2014 T1072"
+  description: MITRE ATT&CK — T1072
 - link: ''
   description: ''
 - link: https://ss64.com/osx/softwareupdate.html
@@ -61,3 +61,4 @@ procedure:
     code: "execute_get_os_update_policy() {\n    local result\n    result=$(softwareupdate\
       \ --schedule 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
       \ 0\n}"
+credit: Jonathan Bar Or (@yo_yo_yo_jbo)

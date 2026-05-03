@@ -6,9 +6,10 @@
 # GUID: 67929a7e-8431-4893-a4e1-5a6743c5605d
 # Intent: Extract browser history from Safari, Chrome, Firefox, and Brave on macOS.
 # Author: @darmado | https://x.com/darmad0
+# Credit: Daniel A. (@darmad0)
 # created: 2025-05-27
 # Updated: 2026-05-03
-# Version: 2.0.10
+# Version: 2.0.11
 # License: Apache 2.0
 
 # Core function Info:

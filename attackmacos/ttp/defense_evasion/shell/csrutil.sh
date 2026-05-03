@@ -5,10 +5,11 @@
 # Technique: T1562.001
 # GUID: 5659b5ff-75f0-42d3-98b4-b50b0ace1267
 # Intent: Configure or view system security policies. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Megan Carney (https://infosec.exchange/@PwnieFan)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Megan Carney (https://infosec.exchange/@PwnieFan)
 # created: 2023-05-14
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

@@ -4,10 +4,10 @@ ttp_id: T1564.004
 guid: 8c36b7ce-1050-4c3a-bea6-7121efb28a10
 intent: Manipulate disk images using the DiskImages framework. Sourced from LOOBins;
   confirm MITRE mapping for each enabled option.
-author: Mark Morowczynsk (@markmorow)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-21'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection:
@@ -17,9 +17,9 @@ detection:
   analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_hdiutil_create.yml
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1564/004/
-  description: "MITRE ATT&CK \u2014 T1564.004"
+  description: MITRE ATT&CK — T1564.004
 - link: ''
   description: ''
 - link: https://www.microsoft.com/en-us/security/blog/2021/10/28/microsoft-finds-new-macos-vulnerability-shrootless-that-could-bypass-system-integrity-protection/
@@ -126,3 +126,4 @@ procedure:
       \ create -encryption -stdinpass -volname \"Volume Name\" -srcfolder /path/to/folder\
       \ -ov encrypteddiskimage.dmg 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\
       \n    return 0\n}"
+credit: Mark Morowczynsk (@markmorow)

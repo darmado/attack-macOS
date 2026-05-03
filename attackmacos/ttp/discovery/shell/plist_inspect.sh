@@ -5,10 +5,11 @@
 # Technique: T1082
 # GUID: 6a8911ba-df91-41c9-9cac-cff71b6a4d3d
 # Intent: Read, create or edit plist files. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Brendan Chamberlain (@infosecB)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Brendan Chamberlain (@infosecB)
 # created: 2023-05-07
 # Updated: 2026-05-03
-# Version: 1.0.5
+# Version: 1.0.6
 # License: Apache 2.0
 
 # Core function Info:

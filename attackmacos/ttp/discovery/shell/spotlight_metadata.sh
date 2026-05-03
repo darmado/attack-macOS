@@ -5,10 +5,11 @@
 # Technique: T1083
 # GUID: 6428d55a-3a6b-4924-a59f-8f4598141241
 # Intent: List metadata attributes for the specified file. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Daniel Stinson-Diess (@shellcromancer)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Daniel Stinson-Diess (@shellcromancer)
 # created: 2023-05-29
 # Updated: 2026-05-03
-# Version: 1.0.5
+# Version: 1.0.6
 # License: Apache 2.0
 
 # Core function Info:

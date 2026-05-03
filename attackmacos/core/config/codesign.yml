@@ -4,10 +4,10 @@ ttp_id: T1553
 guid: a72ffc18-d86d-465c-a877-0eb9bb7aa673
 intent: Create, manipulate and verify code signatures. Sourced from LOOBins; confirm
   MITRE mapping for each enabled option.
-author: Thijs Xhaflaire
+author: '@darmado | https://x.com/darmad0'
 created: '2024-07-29'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection:
@@ -15,14 +15,13 @@ detection:
   analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/adhoc_codesigning
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1553/
-  description: "MITRE ATT&CK \u2014 T1553"
+  description: MITRE ATT&CK — T1553
 - link: ''
   description: ''
 - link: https://www.sentinelone.com/blog/when-apple-admits-macos-malware-is-a-problem-its-time-to-take-notice/
-  description: "When Apple Admits macOS Malware Is A Problem \u2013 It\u2019s Time\
-    \ To Take Notice"
+  description: When Apple Admits macOS Malware Is A Problem – It’s Time To Take Notice
 - link: https://ss64.com/mac/codesign.html
   description: codesign man page
 acknowledgement:
@@ -51,3 +50,4 @@ procedure:
     code: "execute_ad_hod_codesigning_app_bundle() {\n    local result\n    result=$(codesign\
       \ --force --deep -s - MyApp.app 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\
       \n    return 0\n}"
+credit: Thijs Xhaflaire

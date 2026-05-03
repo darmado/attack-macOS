@@ -4,10 +4,10 @@ ttp_id: T1059
 guid: 960338d7-10dc-45ca-9958-cf78a70ecb9f
 intent: Arbitrarily execute swift code from the terminal. Sourced from LOOBins; confirm
   MITRE mapping for each enabled option.
-author: 0v3rride (https://github.com/0v3rride)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-12-23'
 updated: '2026-05-03'
-version: 1.0.1
+version: 1.0.2
 platform:
 - darwin
 detection:
@@ -15,9 +15,9 @@ detection:
   analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/swift_oneline_command_execution
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1059/
-  description: "MITRE ATT&CK \u2014 T1059"
+  description: MITRE ATT&CK — T1059
 - link: ''
   description: ''
 - link: https://developer.apple.com/swift/blog/?id=18
@@ -40,12 +40,12 @@ procedure:
     execute_function:
     - execute_execute_swift_code_file
   - option: --execute-swift-one-liner-stdin
-    description: 'Swift one-liner via stdin (echo … | swift -). Older Swift/Xcode before
-      swift -e became common.'
+    description: Swift one-liner via stdin (echo … | swift -). Older Swift/Xcode before
+      swift -e became common.
     execute_function:
     - execute_execute_swift_one_liner_before_swift_5_8_xcode_14_3_beta_1
   - option: --execute-swift-one-liner-e-flag
-    description: 'Swift one-liner using swift -e (Swift 5.8+ / modern Xcode).'
+    description: Swift one-liner using swift -e (Swift 5.8+ / modern Xcode).
     execute_function:
     - execute_execute_swift_one_liner_swift_5_8_xcode_14_3_beta_1_greater
   global_variable:
@@ -91,3 +91,4 @@ procedure:
       \ stdout.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)); print(String(decoding:\
       \ stderr.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self));' 2>&1)\n\
       \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+credit: 0v3rride (https://github.com/0v3rride)

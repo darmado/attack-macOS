@@ -13,7 +13,8 @@ tactic: ""          # MITRE ATT&CK Tactic
 ttp_id: ""          # MITRE ATT&CK TTP ID (e.g., T1087)
 guid: $GUID.        # GUID VAR. is used by the build tool after tests pass.
 intent: ""          # Purpose and goal of the procedure
-author: ""         # Author name and contact
+author: ""         # Procedure maintainer in this repo (generated # Author: / * Author:)
+credit: ""         # Optional upstream line (e.g. LOOBins catalog author) → # Credit in scripts
 created: ""        # Creation date (YYYY-MM-DD)
 updated: $UPDATED  # UPDATED VAR. is used by the build tool after tests pass.
 version: ""        # Semantic versioning (e.g., 1.0.0)
@@ -37,10 +38,10 @@ resources:         # Reference materials and documentation
   - link: ""       # URL to resource
     description: "" # Resource description
 
-# Optional acknowledgement section
-acknowledgement:   # Credits and acknowledgements
-  - person: ""     # Person name
-    handle: ""     # Social media handle
+# Optional acknowledgement section (structured credits; also emitted as # Credit)
+acknowledgement:
+  - person: ""     # Person name (or full attribution string if handle empty)
+    handle: ""     # Social media handle or URL fragment
 
 # Required procedure section
 procedure:         # Core procedure definition

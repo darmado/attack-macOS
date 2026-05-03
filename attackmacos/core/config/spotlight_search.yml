@@ -4,10 +4,10 @@ ttp_id: T1083
 guid: 391be572-fbda-4ac7-9c13-e06cc0868454
 intent: Locate files using the Spotlight database. Sourced from LOOBins; confirm MITRE
   mapping for each enabled option.
-author: Chris Campbell (@texasbe2trill)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-04-22'
 updated: '2026-05-03'
-version: 1.0.5
+version: 1.0.6
 platform:
 - darwin
 detection:
@@ -16,9 +16,9 @@ detection:
   analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/mdfind_search_aws_keys
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1083/
-  description: "MITRE ATT&CK \u2014 T1083"
+  description: MITRE ATT&CK — T1083
 - link: ''
   description: ''
 - link: https://youtu.be/Snwh4mMe-Cg?t=45
@@ -86,3 +86,4 @@ procedure:
       \ appId to do shell script \"mdfind kMDItemCFBundleIdentifier = '\" & bundleId\
       \ & \"'\" 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n\
       }"
+credit: Chris Campbell (@texasbe2trill)

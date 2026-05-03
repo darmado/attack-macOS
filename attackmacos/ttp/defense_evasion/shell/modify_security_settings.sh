@@ -6,9 +6,10 @@
 # GUID: 562bfb9d-a679-4384-b5ca-61151e284a55
 # Intent: Modify macOS security settings including Gatekeeper, firewall, SIP, login items, and system logs
 # Author: @darmado | https://x.com/darmad0
+# Credit: (none listed)
 # created: 2025-01-02
 # Updated: 2026-05-03
-# Version: 1.0.11
+# Version: 1.0.12
 # License: Apache 2.0
 
 # Core function Info:

@@ -5,10 +5,11 @@
 # Technique: T1083
 # GUID: 85b7ea1f-a85e-4502-975f-d7e94b452169
 # Intent: Create a temporary file or directory and return the file/directory name to stdout Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Tim Peck (@B0bby_Tablez)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Tim Peck (@B0bby_Tablez)
 # created: 2023-06-28
 # Updated: 2026-05-03
-# Version: 1.0.5
+# Version: 1.0.6
 # License: Apache 2.0
 
 # Core function Info:

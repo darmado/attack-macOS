@@ -6,9 +6,10 @@
 # GUID: 2488a056-5b6d-4a3a-b9d2-782019190eb8
 # Intent: Find account information and user data using defaults read commands to search application preferences and system settings
 # Author: @darmado | https://x.com/darmad0
+# Credit: (none listed)
 # created: 2025-01-27
 # Updated: 2026-05-03
-# Version: 1.0.9
+# Version: 1.0.10
 # License: Apache 2.0
 
 # Core function Info:

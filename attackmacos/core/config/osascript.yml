@@ -4,10 +4,10 @@ ttp_id: T1059.002
 guid: d77e7fe0-bb48-4dec-8b95-5653951b3b43
 intent: Execute AppleScripts and other OSA language scripts and commands. Sourced
   from LOOBins; confirm MITRE mapping for each enabled option.
-author: Cedric Owens (@cedowens)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-04-19'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection:
@@ -22,9 +22,9 @@ detection:
   analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/osascript_dialog_activity
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1059/002/
-  description: "MITRE ATT&CK \u2014 T1059.002"
+  description: MITRE ATT&CK — T1059.002
 - link: ''
   description: ''
 - link: https://medium.com/red-teaming-with-a-blue-team-mentality/using-macos-internals-for-post-exploitation-b5faaa11e121
@@ -110,3 +110,4 @@ procedure:
       \ = true;\\ncurrentApp.doShellScript('open -a Calculator.app');\" > calc.js\
       \ && osascript -l JavaScript calc.js 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\"\
       \ \"$result\"\n    return 0\n}"
+credit: Cedric Owens (@cedowens)

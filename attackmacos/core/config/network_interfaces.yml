@@ -4,18 +4,18 @@ ttp_id: T1016
 guid: 7bb5cb8c-32f9-4790-8528-18f359238092
 intent: Configure network settings in System Preferences. Sourced from LOOBins; confirm
   MITRE mapping for each enabled option.
-author: Jason Trost (@jason_trost)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-04-22'
 updated: '2026-05-03'
-version: 1.0.5
+version: 1.0.6
 platform:
 - darwin
 detection: []
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1016/
-  description: "MITRE ATT&CK \u2014 T1016"
+  description: MITRE ATT&CK — T1016
 - link: ''
   description: ''
 - link: https://megancarney.com/presentations/ExternalReport_ThreatHuntingMacOS.pdf
@@ -211,3 +211,4 @@ procedure:
     code: "execute_enable_auto_proxy_state() {\n    local result\n    result=$(networksetup\
       \ -setautoproxystate \"Wi-Fi\" on 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"\
       $result\"\n    return 0\n}"
+credit: Jason Trost (@jason_trost)

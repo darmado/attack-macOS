@@ -6,9 +6,10 @@
 # GUID: f1e0ae1b-0091-46ab-b263-9960536d6f9a
 # Intent: Discover local system time, timezone, and network time configuration on macOS
 # Author: @darmado | https://x.com/darmad0
+# Credit: (none listed)
 # created: 2026-04-27
 # Updated: 2026-05-03
-# Version: 1.0.7
+# Version: 1.0.8
 # License: Apache 2.0
 
 # Core function Info:

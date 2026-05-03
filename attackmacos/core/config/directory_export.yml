@@ -4,18 +4,18 @@ ttp_id: T1087.002
 guid: 285892ef-3d0a-4e64-9a75-352ec01c15a5
 intent: Export data from an Open Directory directory services server. Sourced from
   LOOBins; confirm MITRE mapping for each enabled option.
-author: Brendan Chamberlain (@infosecB)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-23'
 updated: '2026-05-03'
-version: 1.0.5
+version: 1.0.6
 platform:
 - darwin
 detection: []
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1087/002/
-  description: "MITRE ATT&CK \u2014 T1087.002"
+  description: MITRE ATT&CK — T1087.002
 - link: ''
   description: ''
 acknowledgement:
@@ -58,3 +58,4 @@ procedure:
     code: "execute_export_local_host_groups() {\n    local result\n    result=$(dsexport\
       \ local_groups.txt /Local/Default dsRecTypeStandard:Groups 2>&1)\n    $CMD_PRINTF\
       \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+credit: Brendan Chamberlain (@infosecB)

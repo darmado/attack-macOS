@@ -6,9 +6,10 @@
 # GUID: 427311de-a065-4b2c-b190-5feb4bfdff75
 # Intent: Discover URLs and web-related configuration data using macOS defaults command to enumerate browsing history, bookmarks, and web service endpoints.
 # Author: @darmado | https://x.com/darmad0
+# Credit: LOOBins Project (@loobins)
 # created: 2025-01-27
 # Updated: 2026-05-03
-# Version: 1.0.11
+# Version: 1.0.12
 # License: Apache 2.0
 
 # Core function Info:

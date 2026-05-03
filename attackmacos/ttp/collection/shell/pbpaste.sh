@@ -5,10 +5,11 @@
 # Technique: T1115
 # GUID: a2aaedc3-ffdf-4918-b0bd-8d147fc39634
 # Intent: Read the macOS general pasteboard (pbpaste) for clipboard collection emulation. Default monitor is foreground, bounded, and second-granular for triage and detection engineering—not a silent background loop.
-# Author: Brendan Chamberlain (@infosecB)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Brendan Chamberlain (@infosecB)
 # created: 2023-04-11
 # Updated: 2026-05-03
-# Version: 1.1.5
+# Version: 1.1.6
 # License: Apache 2.0
 
 # Core function Info:

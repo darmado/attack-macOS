@@ -5,10 +5,11 @@
 # Technique: T1059
 # GUID: 242410bc-17c7-4cfb-9d94-c3ed20d9d5df
 # Intent: Run Tcl files or shell commands from standard input. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Brendan Chamberlain (@infosecB)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Brendan Chamberlain (@infosecB)
 # created: 2023-05-17
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

@@ -4,18 +4,18 @@ ttp_id: T1564.001
 guid: 209ef174-193c-47d2-ae4f-3989a5211604
 intent: Set attributes of files and directories. Sourced from LOOBins; confirm MITRE
   mapping for each enabled option.
-author: Chris Campbell (@texasbe2trill)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-04-23'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection: []
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1564/001/
-  description: "MITRE ATT&CK \u2014 T1564.001"
+  description: MITRE ATT&CK — T1564.001
 - link: https://daringfireball.net/2008/04/the_invisible_bit
   description: The Invisible Bit
 acknowledgement:
@@ -62,3 +62,4 @@ procedure:
       \    result=$(SetFile -d \"04/25/2023 11:11:00\" -m \"04/25/2023 11:12:00\"\
       \ targetfile.txt 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
       \ 0\n}"
+credit: Chris Campbell (@texasbe2trill)

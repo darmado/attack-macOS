@@ -4,10 +4,10 @@ ttp_id: T1543.001
 guid: 09b9fa1f-45b8-4ea7-90d7-46477b6094c8
 intent: Load or demonstrate LaunchAgents via launchctl for persistence-style testing.
   Lab-only; sudo paths require explicit operator consent.
-author: Josh Carullo
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-27'
 updated: '2026-05-03'
-version: 1.2.4
+version: 1.2.5
 platform:
 - darwin
 detection:
@@ -53,14 +53,12 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: |
-      launchctl_load_system_plist_example() {
-          $CMD_PRINTF "WARN|launchctl|sudo load example references /Library/LaunchAgents/com.apple.installer — replace plist in YAML for your lab\n"
-          local result
-          result=$("$CMD_SUDO" "$CMD_LAUNCHCTL" load /Library/LaunchAgents/com.apple.installer 2>&1) || true
-          $CMD_PRINTF "LAUNCHCTL|mode|sudo_system_load|stdout_stderr|%s\n" "$result"
-          return 0
-      }
+    code: "launchctl_load_system_plist_example() {\n    $CMD_PRINTF \"WARN|launchctl|sudo\
+      \ load example references /Library/LaunchAgents/com.apple.installer — replace\
+      \ plist in YAML for your lab\\n\"\n    local result\n    result=$(\"$CMD_SUDO\"\
+      \ \"$CMD_LAUNCHCTL\" load /Library/LaunchAgents/com.apple.installer 2>&1) ||\
+      \ true\n    $CMD_PRINTF \"LAUNCHCTL|mode|sudo_system_load|stdout_stderr|%s\\\
+      n\" \"$result\"\n    return 0\n}\n"
   - name: launchctl_load_user_agent
     type: main
     language:
@@ -68,19 +66,12 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: |
-      launchctl_load_user_agent() {
-          if [ -z "$INPUT_PLIST_PATH" ]; then
-              $CMD_PRINTF "ERROR|launchctl|--load-user-agent requires --plist-path\n"
-              return 1
-          fi
-          if [ ! -f "$INPUT_PLIST_PATH" ]; then
-              $CMD_PRINTF "ERROR|launchctl|plist not found|%s\n" "$INPUT_PLIST_PATH"
-              return 1
-          fi
-          local result
-          result=$("$CMD_LAUNCHCTL" load -w "$INPUT_PLIST_PATH" 2>&1) || true
-          $CMD_PRINTF "LAUNCHCTL|mode|user_load_w|plist|%s\n" "$INPUT_PLIST_PATH"
-          $CMD_PRINTF "LAUNCHCTL|stdout_stderr|%s\n" "$result"
-          return 0
-      }
+    code: "launchctl_load_user_agent() {\n    if [ -z \"$INPUT_PLIST_PATH\" ]; then\n\
+      \        $CMD_PRINTF \"ERROR|launchctl|--load-user-agent requires --plist-path\\\
+      n\"\n        return 1\n    fi\n    if [ ! -f \"$INPUT_PLIST_PATH\" ]; then\n\
+      \        $CMD_PRINTF \"ERROR|launchctl|plist not found|%s\\n\" \"$INPUT_PLIST_PATH\"\
+      \n        return 1\n    fi\n    local result\n    result=$(\"$CMD_LAUNCHCTL\"\
+      \ load -w \"$INPUT_PLIST_PATH\" 2>&1) || true\n    $CMD_PRINTF \"LAUNCHCTL|mode|user_load_w|plist|%s\\\
+      n\" \"$INPUT_PLIST_PATH\"\n    $CMD_PRINTF \"LAUNCHCTL|stdout_stderr|%s\\n\"\
+      \ \"$result\"\n    return 0\n}\n"
+credit: Josh Carullo

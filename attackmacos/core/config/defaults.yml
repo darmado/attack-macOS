@@ -4,18 +4,18 @@ ttp_id: T1562.001
 guid: a42eebaa-4a53-4714-81c2-50796f6a3f14
 intent: Read, write, and delete user preference values. Sourced from LOOBins; confirm
   MITRE mapping for each enabled option.
-author: Brendan Chamberlain (@infosecB)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-24'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection: []
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1562/001/
-  description: "MITRE ATT&CK \u2014 T1562.001"
+  description: MITRE ATT&CK — T1562.001
 - link: ''
   description: ''
 - link: https://macos-defaults.com/
@@ -126,3 +126,4 @@ procedure:
     code: "execute_disable_firewall() {\n    local result\n    result=$(sudo defaults\
       \ write /Library/Preferences/com.apple.alf globalstate -int 0 2>&1)\n    $CMD_PRINTF\
       \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+credit: Brendan Chamberlain (@infosecB)

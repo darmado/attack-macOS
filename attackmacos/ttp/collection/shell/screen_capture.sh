@@ -6,9 +6,10 @@
 # GUID: 629c194e-c952-4cbc-bfa6-9c224b31d118
 # Intent: Capture screenshots of the desktop for reconnaissance and data collection
 # Author: @darmado | https://x.com/darmad0
+# Credit: (none listed)
 # created: 2025-05-28
 # Updated: 2026-05-03
-# Version: 1.0.9
+# Version: 1.0.10
 # License: Apache 2.0
 
 # Core function Info:

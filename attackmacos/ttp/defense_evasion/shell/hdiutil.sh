@@ -5,10 +5,11 @@
 # Technique: T1564.004
 # GUID: 8c36b7ce-1050-4c3a-bea6-7121efb28a10
 # Intent: Manipulate disk images using the DiskImages framework. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Mark Morowczynsk (@markmorow)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Mark Morowczynsk (@markmorow)
 # created: 2023-05-21
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

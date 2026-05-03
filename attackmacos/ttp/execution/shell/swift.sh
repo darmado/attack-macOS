@@ -5,10 +5,11 @@
 # Technique: T1059
 # GUID: 960338d7-10dc-45ca-9958-cf78a70ecb9f
 # Intent: Arbitrarily execute swift code from the terminal. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: 0v3rride (https://github.com/0v3rride)
+# Author: @darmado | https://x.com/darmad0
+# Credit: 0v3rride (https://github.com/0v3rride)
 # created: 2023-12-23
-# Updated: 2026-04-30
-# Version: 1.0.1
+# Updated: 2026-05-03
+# Version: 1.0.2
 # License: Apache 2.0
 
 # Core function Info:

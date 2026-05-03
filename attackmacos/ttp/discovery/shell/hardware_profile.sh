@@ -5,10 +5,11 @@
 # Technique: T1082
 # GUID: 0f714f73-cf87-4c82-a4da-ce74104bae2b
 # Intent: Reports system hardware and software configuration. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Ethan Nay
+# Author: @darmado | https://x.com/darmad0
+# Credit: Ethan Nay
 # created: 2023-07-12
 # Updated: 2026-05-03
-# Version: 1.0.5
+# Version: 1.0.6
 # License: Apache 2.0
 
 # Core function Info:

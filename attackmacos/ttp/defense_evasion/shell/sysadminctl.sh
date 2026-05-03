@@ -5,10 +5,11 @@
 # Technique: T1562.001
 # GUID: eef288be-a08c-475e-a204-69060b5b6e34
 # Intent: Create/delete local accounts, guest account, enable SMB/AFP Guest access. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Hare Sudhan (@cyb3rbuff)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Hare Sudhan (@cyb3rbuff)
 # created: 2024-11-19
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

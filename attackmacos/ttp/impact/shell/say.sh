@@ -5,10 +5,11 @@
 # Technique: T1491
 # GUID: 0e09388e-129d-4151-980d-eae3f7451e14
 # Intent: Convert text to audible speech. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Pinar Sadioglu (@p_sadioglu)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Pinar Sadioglu (@p_sadioglu)
 # created: 2023-11-17
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

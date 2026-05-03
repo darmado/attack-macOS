@@ -6,9 +6,10 @@
 # GUID: 22a27175-bc55-4ff0-86a2-48d9e806c711
 # Intent: Monitor and collect sensitive clipboard data using osascript over defined time periods
 # Author: @darmado | https://x.com/darmad0
+# Credit: (none listed)
 # created: 2025-01-02
 # Updated: 2026-05-03
-# Version: 1.0.11
+# Version: 1.0.12
 # License: Apache 2.0
 
 # Core function Info:

@@ -4,10 +4,10 @@ ttp_id: T1087.002
 guid: 9ed1a2a7-52cf-4a14-82cf-15c466b69a55
 intent: Interact with Directory Services. Sourced from LOOBins; confirm MITRE mapping
   for each enabled option.
-author: Jonathan Bar Or (@yo_yo_yo_jbo)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-04-25'
 updated: '2026-05-03'
-version: 1.0.5
+version: 1.0.6
 platform:
 - darwin
 detection:
@@ -15,9 +15,9 @@ detection:
   analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/user_created_by_dscl
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1087/002/
-  description: "MITRE ATT&CK \u2014 T1087.002"
+  description: MITRE ATT&CK — T1087.002
 - link: ''
   description: ''
 - link: https://book.hacktricks.xyz/macos-hardening/macos-security-and-privilege-escalation/macos-red-teaming
@@ -241,3 +241,4 @@ procedure:
     code: "execute_local_account_creation() {\n    local result\n    result=$(dscl\
       \ -create 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n\
       }"
+credit: Jonathan Bar Or (@yo_yo_yo_jbo)

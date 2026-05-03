@@ -6,9 +6,10 @@
 # GUID: 60b3dfdd-96e7-46ea-914d-1d594a987c8f
 # Intent: Steal web session cookies and browser credential data from macOS browsers, emulating XCSSET malware credential theft techniques
 # Author: @darmado | https://x.com/darmad0
+# Credit: (none listed)
 # created: 2025-05-28
 # Updated: 2026-05-03
-# Version: 1.0.9
+# Version: 1.0.10
 # License: Apache 2.0
 
 # Core function Info:

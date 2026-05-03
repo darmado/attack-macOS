@@ -5,10 +5,11 @@
 # Technique: T1071.001
 # GUID: 29afdbdb-a134-4ab3-b7cf-c313b718b2a0
 # Intent: Use Apple nscurl for HTTPS fetches (application update stack). Prefer explicit modes over vague payload-type flags—URLs and paths point at the same filesystem objects.
-# Author: Leo Pitt (@_D00mfist)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Leo Pitt (@_D00mfist)
 # created: 2023-05-22
 # Updated: 2026-05-03
-# Version: 1.1.4
+# Version: 1.1.5
 # License: Apache 2.0
 
 # Core function Info:

@@ -6,6 +6,7 @@
  * GUID: [GUID]
  * Intent: [INTENT]
  * Author: [AUTHOR]
+[CREDIT_LINE_JS]
  * Created: [CREATED]
  * Updated: [UPDATED]
  * Version: [VERSION]

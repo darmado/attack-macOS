@@ -5,10 +5,11 @@
 # Technique: T1087.003
 # GUID: 04a65e77-5f4a-4a0d-90d0-bf45e96aa070
 # Intent: Discover email addresses from verified macOS databases containing confirmed email data
-# Author: @darmado
+# Author: @darmado | https://x.com/darmad0
+# Credit: @darmado
 # created: 2025-01-27
 # Updated: 2026-05-03
-# Version: 1.0.9
+# Version: 1.0.10
 # License: Apache 2.0
 
 # Core function Info:

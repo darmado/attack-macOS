@@ -5,10 +5,11 @@
 # Technique: T1562.001
 # GUID: a42eebaa-4a53-4714-81c2-50796f6a3f14
 # Intent: Read, write, and delete user preference values. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Brendan Chamberlain (@infosecB)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Brendan Chamberlain (@infosecB)
 # created: 2023-05-24
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

@@ -4,10 +4,10 @@ ttp_id: T1562.001
 guid: eef288be-a08c-475e-a204-69060b5b6e34
 intent: Create/delete local accounts, guest account, enable SMB/AFP Guest access.
   Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-author: Hare Sudhan (@cyb3rbuff)
+author: '@darmado | https://x.com/darmad0'
 created: '2024-11-19'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection:
@@ -19,9 +19,9 @@ detection:
   analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_sysadminctl_enable_guest_account.yml
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1562/001/
-  description: "MITRE ATT&CK \u2014 T1562.001"
+  description: MITRE ATT&CK — T1562.001
 - link: ''
   description: ''
 - link: https://ss64.com/mac/sysadminctl.html
@@ -141,3 +141,4 @@ procedure:
     code: "execute_enable_afp_guest_access() {\n    local result\n    result=$(sudo\
       \ sysadminctl -afpGuestAccess on\n 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"\
       $result\"\n    return 0\n}"
+credit: Hare Sudhan (@cyb3rbuff)

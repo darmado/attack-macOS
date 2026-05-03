@@ -6,9 +6,10 @@
 # GUID: 3b366584-63de-4b56-87fa-46eb2dd0f1e5
 # Intent: Establish persistence by modifying system login preferences and extending application trial periods using defaults write commands
 # Author: @darmado | https://x.com/darmad0
+# Credit: (none listed)
 # created: 2025-01-27
 # Updated: 2026-05-03
-# Version: 1.0.9
+# Version: 1.0.10
 # License: Apache 2.0
 
 # Core function Info:

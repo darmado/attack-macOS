@@ -12,7 +12,7 @@ Automation scripts for attack-macOS maintenance: **build** (shell/JXA from YAML)
 | **`cicd/commit/`** | `commit_pairs.py` |
 | **`cicd/qa/`** | `run_local_qa.sh` — run before a PR (inventory, YAML validate, JXA audit, optional macOS JXA self-test) |
 
-Documentation for individual tools lives under **`docs/CICD/`** (not under `cicd/docs/`).
+Documentation for individual tools lives under **`docs/CICD/`** (not under `cicd/docs/`). **Pre-PR QA checklist:** [local_qa.md](../docs/CICD/local_qa.md).
 
 **Coverage (ATT&CK ↔ scripts):** the maintained badge matrix and script links live in **[macOS Procedure Matrix](../docs/MITRE%20ATT&CK/macOS%20Procedure%20Matrix.md)** under `docs/MITRE ATT&CK/` — link there instead of duplicating coverage tables in this file.
 

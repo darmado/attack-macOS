@@ -5,10 +5,11 @@
 # Technique: T1552.004
 # GUID: 2e4d0215-75de-4893-9bcc-5aacc0ee9978
 # Intent: Load unsigned dynamic libraries into the ssh-keygen binary. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Leo Pitt (@_D00mfist)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Leo Pitt (@_D00mfist)
 # created: 2023-05-22
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

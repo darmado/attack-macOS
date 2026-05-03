@@ -5,10 +5,11 @@
 # Technique: T1082
 # GUID: 2db012d4-935e-4a20-be3f-2321e1516378
 # Intent: Discovers detailed system information on macOS systems using native commands for enumeration.
-# Author: @darmado
+# Author: @darmado | https://x.com/darmad0
+# Credit: @darmado
 # created: 2025-01-27
 # Updated: 2026-05-03
-# Version: 1.0.9
+# Version: 1.0.10
 # License: Apache 2.0
 
 # Core function Info:

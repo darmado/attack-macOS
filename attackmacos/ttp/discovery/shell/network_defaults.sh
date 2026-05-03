@@ -6,9 +6,10 @@
 # GUID: fec17d45-48e8-444d-a1d2-234d16e9419a
 # Intent: Read Apple network-related user preference domains via defaults read to discover VPN, Wi-Fi, and network extension configuration metadata on macOS.
 # Author: @darmado | https://x.com/darmad0
+# Credit: (none listed)
 # created: 2026-04-30
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

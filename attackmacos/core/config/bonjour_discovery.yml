@@ -4,10 +4,10 @@ ttp_id: T1046
 guid: 4901b638-6b3f-427c-bac8-f82e674ab90c
 intent: Discover local network services using the DNS-Based Service Discovery (SD)
   protocol. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-author: Brendan Chamberlain (@infosecB)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-19'
 updated: '2026-05-03'
-version: 1.0.5
+version: 1.0.6
 platform:
 - darwin
 detection:
@@ -15,9 +15,9 @@ detection:
   analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/dns_service_discovery
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1046/
-  description: "MITRE ATT&CK \u2014 T1046"
+  description: MITRE ATT&CK — T1046
 - link: ''
   description: ''
 - link: https://themittenmac.com/what-does-apt-activity-look-like-on-macos
@@ -96,3 +96,4 @@ procedure:
     code: "execute_discover_hosts_serving_smb() {\n    local result\n    result=$(dns-sd\
       \ -B _smb._tcp 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
       \ 0\n}"
+credit: Brendan Chamberlain (@infosecB)

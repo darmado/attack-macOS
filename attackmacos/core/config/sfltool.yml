@@ -4,10 +4,10 @@ ttp_id: T1005
 guid: 4e929e3d-4078-4cdd-bc5e-f49048a45824
 intent: Binary to manage the Shared File List framework. Sourced from LOOBins; confirm
   MITRE mapping for each enabled option.
-author: Eliott (@Koyiott)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-09-12'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection:
@@ -16,9 +16,9 @@ detection:
   analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/sfltool_activity
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1005/
-  description: "MITRE ATT&CK \u2014 T1005"
+  description: MITRE ATT&CK — T1005
 - link: ''
   description: ''
 - link: https://www.unix.com/man-page/mojave/1/sfltool/
@@ -66,3 +66,4 @@ procedure:
     code: "execute_reset_login_items_defaults() {\n    local result\n    result=$(sfltool\
       \ resetbtm 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n\
       }"
+credit: Eliott (@Koyiott)

@@ -5,10 +5,11 @@
 # Technique: T1059
 # GUID: 874960b2-5ff0-48ed-9f4b-e71c153663e8
 # Intent: Manipulate text files in various formats. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: ezaspy
+# Author: @darmado | https://x.com/darmad0
+# Credit: ezaspy
 # created: 2023-05-05
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

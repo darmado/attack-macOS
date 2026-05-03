@@ -6,9 +6,10 @@
 # GUID: 6b25d703-e7ec-4b4d-b1d3-92dbea62aa65
 # Intent: Enumerate macOS user defaults domains and search defaults key values using the native defaults command for host configuration surface discovery.
 # Author: @darmado | https://x.com/darmad0
+# Credit: (none listed)
 # created: 2026-04-30
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

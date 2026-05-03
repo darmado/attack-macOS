@@ -5,10 +5,11 @@
 # Technique: T1005
 # GUID: 4e929e3d-4078-4cdd-bc5e-f49048a45824
 # Intent: Binary to manage the Shared File List framework. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Eliott (@Koyiott)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Eliott (@Koyiott)
 # created: 2023-09-12
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

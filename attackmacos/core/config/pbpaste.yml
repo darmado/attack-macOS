@@ -5,10 +5,10 @@ guid: a2aaedc3-ffdf-4918-b0bd-8d147fc39634
 intent: Read the macOS general pasteboard (pbpaste) for clipboard collection emulation.
   Default monitor is foreground, bounded, and second-granular for triage and detection
   engineering—not a silent background loop.
-author: Brendan Chamberlain (@infosecB)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-04-11'
 updated: '2026-05-03'
-version: 1.1.5
+version: 1.1.6
 platform:
 - darwin
 detection:
@@ -20,7 +20,7 @@ resources:
 - link: https://attack.mitre.org/techniques/T1115/
   description: MITRE ATT&CK — T1115
 - link: https://danielcortez.substack.com/p/living-off-the-land-exploring-macos-b65
-  description: 'LOOBins and detection — pbpaste'
+  description: LOOBins and detection — pbpaste
 procedure:
   arguments:
   - option: --once
@@ -67,17 +67,14 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: |
-      collect_clipboard_once() {
-          _p_ts=$("$CMD_DATE" '+%Y-%m-%dT%H:%M:%S%z' 2>/dev/null) || _p_ts=$("$CMD_DATE" '+%Y-%m-%d %H:%M:%S')
-          _p_line=$("$CMD_PBPASTE" 2>&1) || true
-          _p_bytes=$(printf '%s' "$_p_line" | "$CMD_WC" -c | "$CMD_TR" -d ' ')
-          $CMD_PRINTF "PBPASTE|mode|once|ts|%s|bytes|%s|text|%s\n" "$_p_ts" "$_p_bytes" "$_p_line"
-          if [ -n "$INPUT_PATH" ]; then
-              $CMD_PRINTF "%s\t%s\n" "$_p_ts" "$_p_line" >> "$INPUT_PATH" || $CMD_PRINTF "ERROR|pbpaste|cannot_append|%s\n" "$INPUT_PATH"
-          fi
-          return 0
-      }
+    code: "collect_clipboard_once() {\n    _p_ts=$(\"$CMD_DATE\" '+%Y-%m-%dT%H:%M:%S%z'\
+      \ 2>/dev/null) || _p_ts=$(\"$CMD_DATE\" '+%Y-%m-%d %H:%M:%S')\n    _p_line=$(\"\
+      $CMD_PBPASTE\" 2>&1) || true\n    _p_bytes=$(printf '%s' \"$_p_line\" | \"$CMD_WC\"\
+      \ -c | \"$CMD_TR\" -d ' ')\n    $CMD_PRINTF \"PBPASTE|mode|once|ts|%s|bytes|%s|text|%s\\\
+      n\" \"$_p_ts\" \"$_p_bytes\" \"$_p_line\"\n    if [ -n \"$INPUT_PATH\" ]; then\n\
+      \        $CMD_PRINTF \"%s\\t%s\\n\" \"$_p_ts\" \"$_p_line\" >> \"$INPUT_PATH\"\
+      \ || $CMD_PRINTF \"ERROR|pbpaste|cannot_append|%s\\n\" \"$INPUT_PATH\"\n   \
+      \ fi\n    return 0\n}\n"
   - name: collect_clipboard_monitor
     type: main
     language:
@@ -85,33 +82,22 @@ procedure:
     opsec:
       check_fda:
         enabled: false
-    code: |
-      collect_clipboard_monitor() {
-          _p_bad=false
-          case "$INPUT_INTERVAL" in ''|*[!0-9]*) _p_bad=true ;; esac
-          case "$INPUT_COUNT" in ''|*[!0-9]*) _p_bad=true ;; esac
-          if [ "$_p_bad" = false ]; then
-              [ "$INPUT_INTERVAL" -lt 1 ] && _p_bad=true
-              [ "$INPUT_COUNT" -lt 1 ] && _p_bad=true
-          fi
-          if [ "$_p_bad" = true ]; then
-              $CMD_PRINTF "ERROR|pbpaste|monitor needs positive integers (--interval and --count; default 10 each)\n"
-              return 1
-          fi
-          $CMD_PRINTF "PBPASTE|mode|monitor|pid|%s|interval_s|%s|count|%s|foreground|true\n" "$$" "$INPUT_INTERVAL" "$INPUT_COUNT"
-          _p_i=0
-          while [ "$_p_i" -lt "$INPUT_COUNT" ]; do
-              _p_i=$((_p_i + 1))
-              _p_ts=$("$CMD_DATE" '+%Y-%m-%dT%H:%M:%S%z' 2>/dev/null) || _p_ts=$("$CMD_DATE" '+%Y-%m-%d %H:%M:%S')
-              _p_line=$("$CMD_PBPASTE" 2>&1) || true
-              _p_bytes=$(printf '%s' "$_p_line" | "$CMD_WC" -c | "$CMD_TR" -d ' ')
-              $CMD_PRINTF "PBPASTE|sample|%s|%s|bytes|%s|text|%s\n" "$_p_i" "$_p_ts" "$_p_bytes" "$_p_line"
-              if [ -n "$INPUT_PATH" ]; then
-                  $CMD_PRINTF "%s\t%s\n" "$_p_ts" "$_p_line" >> "$INPUT_PATH" || $CMD_PRINTF "ERROR|pbpaste|cannot_append|%s\n" "$INPUT_PATH"
-              fi
-              if [ "$_p_i" -lt "$INPUT_COUNT" ]; then
-                  "$CMD_SLEEP" "$INPUT_INTERVAL"
-              fi
-          done
-          return 0
-      }
+    code: "collect_clipboard_monitor() {\n    _p_bad=false\n    case \"$INPUT_INTERVAL\"\
+      \ in ''|*[!0-9]*) _p_bad=true ;; esac\n    case \"$INPUT_COUNT\" in ''|*[!0-9]*)\
+      \ _p_bad=true ;; esac\n    if [ \"$_p_bad\" = false ]; then\n        [ \"$INPUT_INTERVAL\"\
+      \ -lt 1 ] && _p_bad=true\n        [ \"$INPUT_COUNT\" -lt 1 ] && _p_bad=true\n\
+      \    fi\n    if [ \"$_p_bad\" = true ]; then\n        $CMD_PRINTF \"ERROR|pbpaste|monitor\
+      \ needs positive integers (--interval and --count; default 10 each)\\n\"\n \
+      \       return 1\n    fi\n    $CMD_PRINTF \"PBPASTE|mode|monitor|pid|%s|interval_s|%s|count|%s|foreground|true\\\
+      n\" \"$$\" \"$INPUT_INTERVAL\" \"$INPUT_COUNT\"\n    _p_i=0\n    while [ \"\
+      $_p_i\" -lt \"$INPUT_COUNT\" ]; do\n        _p_i=$((_p_i + 1))\n        _p_ts=$(\"\
+      $CMD_DATE\" '+%Y-%m-%dT%H:%M:%S%z' 2>/dev/null) || _p_ts=$(\"$CMD_DATE\" '+%Y-%m-%d\
+      \ %H:%M:%S')\n        _p_line=$(\"$CMD_PBPASTE\" 2>&1) || true\n        _p_bytes=$(printf\
+      \ '%s' \"$_p_line\" | \"$CMD_WC\" -c | \"$CMD_TR\" -d ' ')\n        $CMD_PRINTF\
+      \ \"PBPASTE|sample|%s|%s|bytes|%s|text|%s\\n\" \"$_p_i\" \"$_p_ts\" \"$_p_bytes\"\
+      \ \"$_p_line\"\n        if [ -n \"$INPUT_PATH\" ]; then\n            $CMD_PRINTF\
+      \ \"%s\\t%s\\n\" \"$_p_ts\" \"$_p_line\" >> \"$INPUT_PATH\" || $CMD_PRINTF \"\
+      ERROR|pbpaste|cannot_append|%s\\n\" \"$INPUT_PATH\"\n        fi\n        if\
+      \ [ \"$_p_i\" -lt \"$INPUT_COUNT\" ]; then\n            \"$CMD_SLEEP\" \"$INPUT_INTERVAL\"\
+      \n        fi\n    done\n    return 0\n}\n"
+credit: Brendan Chamberlain (@infosecB)

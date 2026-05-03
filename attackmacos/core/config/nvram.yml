@@ -4,18 +4,18 @@ ttp_id: T1547.006
 guid: 31e9f95d-17c5-44a7-93c4-009f5c6c2955
 intent: Access and manage the host's non-volatile random-access memory (NVRAM). Sourced
   from LOOBins; confirm MITRE mapping for each enabled option.
-author: Brendan Chamberlain (@infosecB)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-23'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection: []
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1547/006/
-  description: "MITRE ATT&CK \u2014 T1547.006"
+  description: MITRE ATT&CK — T1547.006
 - link: ''
   description: ''
 - link: https://ss64.com/osx/nvram.html
@@ -45,3 +45,4 @@ procedure:
         exit_on_failure: true
     code: "execute_get_nvram_variables() {\n    local result\n    result=$(nvram -p\
       \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+credit: Brendan Chamberlain (@infosecB)

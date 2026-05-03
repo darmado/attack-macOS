@@ -13,6 +13,15 @@ Converts YAML procedure files into production-ready shell scripts with logging, 
 - **Input Format Detection**: Shows `ENABLE|DISABLE`, `APP_PATH`, `FILE_PATH`, etc. instead of generic `VALUE`
 - **Consistent Formatting**: Maintains professional appearance across all generated scripts
 
+## Generated script header (author vs credit)
+
+The merged script header includes:
+
+- **`# Author:`** — from YAML **`author`** (procedure maintainer in this repo).
+- **`# Credit:`** — one or more lines from optional **`credit`** (free text) plus each **`acknowledgement`** entry (`person` / `handle`). If neither is set, the builder emits `# Credit: (none listed)`.
+
+LOOBins conversion sets **`author`** to the repo default and moves the LOOBins catalog **`author`** field into **`credit`** so upstream names are **credit**, not authorship. See `cicd/build/procedure_metadata.py` and [LOOBins_to_Procedure_Mapping.md](LOOBins_to_Procedure_Mapping.md).
+
 ## Help Text Generation Logic
 
 The build script intelligently determines input format descriptions:

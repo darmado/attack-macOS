@@ -5,10 +5,11 @@
 # Technique: T1087.002
 # GUID: b8345244-2885-4d0e-a0b3-33dec4eddc54
 # Intent: Query the Directory Service cache (T1087.002). Procedure name states scope; flags name the query shape. Sourced from LOOBins; confirm MITRE mapping per option.
-# Author: Ethan Nay
+# Author: @darmado | https://x.com/darmad0
+# Credit: Ethan Nay
 # created: 2023-08-23
 # Updated: 2026-05-03
-# Version: 1.0.7
+# Version: 1.0.8
 # License: Apache 2.0
 
 # Core function Info:

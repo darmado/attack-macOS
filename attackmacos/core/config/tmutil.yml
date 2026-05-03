@@ -4,10 +4,10 @@ ttp_id: T1562.001
 guid: 610490ad-fa56-4849-a111-b59246fdb452
 intent: Manage Time Machine backups. Sourced from LOOBins; confirm MITRE mapping for
   each enabled option.
-author: Brendan Chamberlain (@infosecb)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-01'
 updated: '2026-05-03'
-version: 1.0.4
+version: 1.0.5
 platform:
 - darwin
 detection:
@@ -21,9 +21,9 @@ detection:
   analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_tmutil_exclude_file_from_backup.yml
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1562/001/
-  description: "MITRE ATT&CK \u2014 T1562.001"
+  description: MITRE ATT&CK — T1562.001
 - link: ''
   description: ''
 - link: https://theevilbit.github.io/posts/cve_2020_9771/
@@ -125,3 +125,4 @@ procedure:
     code: "execute_exclude_path_from_backup() {\n    local result\n    result=$(tmutil\
       \ addexclusion /path/to/exclude 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\
       \n    return 0\n}"
+credit: Brendan Chamberlain (@infosecb)

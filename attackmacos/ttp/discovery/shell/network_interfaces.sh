@@ -5,10 +5,11 @@
 # Technique: T1016
 # GUID: 7bb5cb8c-32f9-4790-8528-18f359238092
 # Intent: Configure network settings in System Preferences. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Jason Trost (@jason_trost)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Jason Trost (@jason_trost)
 # created: 2023-04-22
 # Updated: 2026-05-03
-# Version: 1.0.5
+# Version: 1.0.6
 # License: Apache 2.0
 
 # Core function Info:

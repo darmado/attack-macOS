@@ -5,10 +5,11 @@
 # Technique: T1059.002
 # GUID: 5bcb80a3-0f38-44d5-bb3b-7b6ab474dda5
 # Intent: Compile AppleScripts or OSA language scripts. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Brendan Chamberlain (@infosecB)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Brendan Chamberlain (@infosecB)
 # created: 2023-05-14
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

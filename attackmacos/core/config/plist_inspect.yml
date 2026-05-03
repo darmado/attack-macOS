@@ -4,10 +4,10 @@ ttp_id: T1082
 guid: 6a8911ba-df91-41c9-9cac-cff71b6a4d3d
 intent: Read, create or edit plist files. Sourced from LOOBins; confirm MITRE mapping
   for each enabled option.
-author: Brendan Chamberlain (@infosecB)
+author: '@darmado | https://x.com/darmad0'
 created: '2023-05-07'
 updated: '2026-05-03'
-version: 1.0.5
+version: 1.0.6
 platform:
 - darwin
 detection:
@@ -15,9 +15,9 @@ detection:
   analysis: https://research.splunk.com/endpoint/c11f2b57-92c1-4cd2-b46c-064eafb833ac/
 resources:
 - link: https://www.loobins.io/
-  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+  description: LOOBins — Living Off The Orchard macOS binaries
 - link: https://attack.mitre.org/techniques/T1082/
-  description: "MITRE ATT&CK \u2014 T1082"
+  description: MITRE ATT&CK — T1082
 - link: ''
   description: ''
 - link: https://scriptingosx.com/2016/11/editing-property-lists/
@@ -50,3 +50,4 @@ procedure:
     code: "execute_set_app_run_dock_icon_hidden() {\n    local result\n    result=$(plutil\
       \ -insert LSUIElement -string \"1\" /Applications/TargetApp.app/Contents/Info.plist\
       \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+credit: Brendan Chamberlain (@infosecB)

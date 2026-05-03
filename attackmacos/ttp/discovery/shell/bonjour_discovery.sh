@@ -5,10 +5,11 @@
 # Technique: T1046
 # GUID: 4901b638-6b3f-427c-bac8-f82e674ab90c
 # Intent: Discover local network services using the DNS-Based Service Discovery (SD) protocol. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Brendan Chamberlain (@infosecB)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Brendan Chamberlain (@infosecB)
 # created: 2023-05-19
 # Updated: 2026-05-03
-# Version: 1.0.5
+# Version: 1.0.6
 # License: Apache 2.0
 
 # Core function Info:

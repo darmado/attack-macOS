@@ -5,7 +5,8 @@
 | LOOBins Field | Procedure Field | Conversion Logic |
 |---------------|-----------------|------------------|
 | `name` | `procedure_name` | Direct copy, convert to lowercase |
-| `author` | `author` | Direct copy, fallback to default if missing |
+| `author` | `credit` | LOOBins catalog author is **upstream credit**, not procedure authorship. Stored as `credit: "LOOBins catalog author: …"`. `author` in procedure YAML is set to the repo default maintainer (`@darmado \| …`). |
+| _(n/a)_ | `author` | Always set to the attack-macOS procedure maintainer default when converting from LOOBins (see `cicd/build/procedure_metadata.py`). |
 | `short_description` | `intent` | Direct copy, truncate to 500 chars max |
 | `full_description` | ❌ Not mapped | Skip - too verbose for intent field |
 | `created` | ❌ Not mapped | Skip - different concept than procedure creation |
@@ -18,6 +19,7 @@
 | `paths[0]` | `procedure.global_variable[].default_value` | Use first path as CMD value |
 | `detections[]` | `detection[]` | Map name→ioc, url→analysis (skip if url="N/A") |
 | `resources[]` | `resources[]` | Map name→description, url→link |
+| `acknowledgements[]` (strings) | `acknowledgement[]` | Each string becomes `{ person: "<string>", handle: "" }` for structured **Credit** lines in generated scripts |
 
 ## Required Fields (Always Set)
 

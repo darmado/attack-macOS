@@ -37,6 +37,7 @@ import json
 import uuid
 import subprocess
 import re
+import importlib.util
 from pathlib import Path
 import jsonschema
 from datetime import datetime
@@ -44,6 +45,13 @@ from datetime import datetime
 # This file lives at cicd/build/build_shell_procedure.py; repo root is two levels up.
 _CICD_BUILD_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _CICD_BUILD_DIR.parent.parent
+
+_pm_spec = importlib.util.spec_from_file_location(
+    "procedure_metadata", str(_CICD_BUILD_DIR / "procedure_metadata.py")
+)
+procedure_metadata = importlib.util.module_from_spec(_pm_spec)
+assert _pm_spec.loader is not None
+_pm_spec.loader.exec_module(procedure_metadata)
 
 
 # ANSI color codes for better output
@@ -642,7 +650,14 @@ NAME="{proc_data.name}"
         content = content.replace('[GUID]', guid_value)
     
     content = content.replace('[INTENT]', yaml_data.get('intent', 'Security technique implementation'))
-    content = content.replace('[AUTHOR]', yaml_data.get('author', '@darmado'))
+    content = content.replace(
+        '[AUTHOR]',
+        yaml_data.get('author', procedure_metadata.DEFAULT_PROCEDURE_AUTHOR),
+    )
+    content = content.replace(
+        '[CREDIT_LINES]',
+        procedure_metadata.shell_credit_header_lines(yaml_data),
+    )
     content = content.replace('[CREATED]', yaml_data.get('created', '2025-05-30'))
     
     # Handle UPDATED - if it's $UPDATED placeholder, leave as [UPDATED] for later replacement

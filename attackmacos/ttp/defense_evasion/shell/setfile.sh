@@ -5,10 +5,11 @@
 # Technique: T1564.001
 # GUID: 209ef174-193c-47d2-ae4f-3989a5211604
 # Intent: Set attributes of files and directories. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Chris Campbell (@texasbe2trill)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Chris Campbell (@texasbe2trill)
 # created: 2023-04-23
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:

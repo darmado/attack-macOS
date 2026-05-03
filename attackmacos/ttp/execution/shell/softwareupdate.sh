@@ -5,10 +5,11 @@
 # Technique: T1072
 # GUID: affaa4cf-f670-45c4-b7c3-26ce002a34df
 # Intent: Interact with the macOS software update service. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
-# Author: Jonathan Bar Or (@yo_yo_yo_jbo)
+# Author: @darmado | https://x.com/darmad0
+# Credit: Jonathan Bar Or (@yo_yo_yo_jbo)
 # created: 2023-04-25
 # Updated: 2026-05-03
-# Version: 1.0.4
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:
