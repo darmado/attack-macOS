@@ -1,143 +1,103 @@
-ObjC.import('Foundation');
-var currentApp = Application.currentApplication();
-currentApp.includeStandardAdditions = true;
-var outstring = "";
+/*
+ * attack-macOS JXA procedure template (ObjC bridge; no StandardAdditions)
+ * Procedure Name: [PROCEDURE_NAME]
+ * Tactic: [TACTIC]
+ * Technique: [TTP_ID]
+ * GUID: [GUID]
+ * Intent: [INTENT]
+ * Author: [AUTHOR]
+ * Created: [CREATED]
+ * Updated: [UPDATED]
+ * Version: [VERSION]
+ * License: Apache 2.0
+ *
+ * Principles: Prefer Foundation/AppKit (and other Apple frameworks) via ObjC.import
+ * and native APIs—not doShellScript, NSTask, or subprocess shell-outs.
+ * Run: osascript -l JavaScript this_script.js [options]
+ */
+(function () {
+    ObjC.import('Foundation');
+    // PLACEHOLDER_EXTRA_IMPORTS
 
-function printHelp() {
-    var helpMessage = "Template Usage:\n" +
-        "  -function1   Run function1\n" +
-        "  -function2   Run function2\n" +
-        "  -function3   Run function3\n" +
-        "  -function4   Run function4\n" +
-        "  -function5   Run function5\n" +
-        "  -function6   Run function6\n" +
-        "  -function7   Run function7\n" +
-        "  -function8   Run function8\n" +
-        "  -function9   Run function9\n" +
-        "  -function10  Run function10\n" +
-        "  -function11  Run function11\n" +
-        "  -function12  Run function12\n" +
-        "  -help        Print this help message";
-    console.log(helpMessage);
-}
+    // MITRE / procedure metadata (filled by cicd/build/build_jxa_procedure.py)
+    var PROCEDURE_NAME = "";
+    var TACTIC = "";
+    var TTP_ID = "";
+    var PROJECT_ROOT = "";
 
-function Function1() {
-    // Implement function1 logic here
-    return "Function1 Results\n";
-}
+    // PLACEHOLDER_FLAG_VARIABLES
 
-function Function2() {
-    // Implement function2 logic here
-    return "Function2 Results\n";
-}
+    // PLACEHOLDER_GLOBAL_VARIABLES
 
-function Function3() {
-    // Implement function3 logic here
-    return "Function3 Results\n";
-}
-
-function Function4() {
-    // Implement function4 logic here
-    return "Function4 Results\n";
-}
-
-function Function5() {
-    // Implement function5 logic here
-    return "Function5 Results\n";
-}
-
-function Function6() {
-    // Implement function6 logic here
-    return "Function6 Results\n";
-}
-
-function Function7() {
-    // Implement function7 logic here
-    return "Function7 Results\n";
-}
-
-function Function8() {
-    // Implement function8 logic here
-    return "Function8 Results\n";
-}
-
-function Function9() {
-    // Implement function9 logic here
-    return "Function9 Results\n";
-}
-
-function Function10() {
-    // Implement function10 logic here
-    return "Function10 Results\n";
-}
-
-function Function11() {
-    // Implement function11 logic here
-    return "Function11 Results\n";
-}
-
-function Function12() {
-    // Implement function12 logic here
-    return "Function12 Results\n";
-}
-
-function ExecuteFunctions(options) {
-    var outstring = "";
-    var functionMap = {
-        "function1": Function1,
-        "function2": Function2,
-        "function3": Function3,
-        "function4": Function4,
-        "function5": Function5,
-        "function6": Function6,
-        "function7": Function7,
-        "function8": Function8,
-        "function9": Function9,
-        "function10": Function10,
-        "function11": Function11,
-        "function12": Function12
-    };
-
-    var funcs = options.split(",");
-    for (var i = 0; i < funcs.length; i++) {
-        var funcName = funcs[i].trim().toLowerCase();
-        if (functionMap.hasOwnProperty(funcName)) {
-            outstring += functionMap[funcName]();
-        } else {
-            outstring += "Unknown function: " + funcs[i] + "\n";
+    function writeStdout(msg) {
+        var h = $.NSFileHandle.fileHandleWithStandardOutput;
+        var m = msg === null || msg === undefined ? "" : String(msg);
+        var ns = $.NSString.stringWithString(m);
+        var d = ns.dataUsingEncoding($.NSUTF8StringEncoding);
+        if (d) {
+            h.writeData(d);
         }
     }
 
-    return outstring;
-}
-
-function parseArguments() {
-    const args = $.NSProcessInfo.processInfo.arguments;
-    const parsedArgs = {};
-    for (let i = 4; i < args.count; i++) {
-        const arg = ObjC.unwrap(args.objectAtIndex(i));
-        if (arg.startsWith("-")) {
-            const key = arg.substring(1);
-            parsedArgs[key] = true;
+    function argvStrings() {
+        var pi = $.NSProcessInfo.processInfo;
+        var n = pi.arguments.count;
+        var out = [];
+        var j;
+        for (j = 0; j < n; j++) {
+            var o = pi.arguments.objectAtIndex(j);
+            if (!o) {
+                out.push("");
+                continue;
+            }
+            var d = o.description;
+            out.push(d && d.js ? d.js : "");
         }
-    }
-    return parsedArgs;
-}
-
-function main() {
-    const args = parseArguments();
-    
-    if (Object.keys(args).length === 0 || args.help) {
-        printHelp();
-        return;
+        return out;
     }
 
-    let options = Object.keys(args).join(",");
-    let result = ExecuteFunctions(options);
-    console.log(result);
-}
+    function argvAfterScriptPath() {
+        var raw = argvStrings();
+        var i = 0;
+        for (; i < raw.length; i++) {
+            if (raw[i].indexOf(".js") !== -1) {
+                i++;
+                break;
+            }
+        }
+        var rest = [];
+        for (; i < raw.length; i++) {
+            rest.push(raw[i]);
+        }
+        return rest;
+    }
 
-// This will only run if the script is executed directly (not imported)
-if (typeof $jscomp === 'undefined') {
+    // PLACEHOLDER_FUNCTIONS
+
+    function printHelp() {
+        var lines = [];
+        lines.push("Usage: osascript -l JavaScript " + PROCEDURE_NAME + ".js [options]");
+        lines.push("");
+        lines.push("Options:");
+        // PLACEHOLDER_HELP_TEXT
+        writeStdout(lines.join("\n") + "\n");
+    }
+
+    function parseArgv() {
+        var raw = argvAfterScriptPath();
+        var opts = { help: false, _raw: raw };
+        // PLACEHOLDER_PARSE_ARGV_BODY
+        return opts;
+    }
+
+    function dispatchProcedure(fnName) {
+        // PLACEHOLDER_DISPATCH_BODY
+    }
+
+    function main() {
+        var opts = parseArgv();
+        // PLACEHOLDER_MAIN_BODY
+    }
+
     main();
-}
+})();
