@@ -28,6 +28,28 @@ Uses `curl` to fetch `https://www.loobins.io/loobins.json` into `attackmacos/sta
 LOOBINS_JSON_URL='https://www.loobins.io/loobins.json' bash cicd/sync/sync_loobins_json.sh
 ```
 
+The catalog is the same “Living off the Orchard” content indexed on [loobins.io/binaries](https://www.loobins.io/binaries/) and maintained in [infosecB/LOOBins](https://github.com/infosecB/LOOBins).
+
+### Get one binary as YAML (pick one path)
+
+**A — From synced JSON (good when you already ran `sync_loobins_json.sh`):**
+
+```bash
+python3 cicd/sync/extract_loobin_from_json.py <name>
+# writes attackmacos/standby/LOOBins/<name>.yml
+```
+
+`<name>` must match the JSON `name` field (e.g. `log`, `dns-sd`, `sw_vers`).
+
+**B — From GitHub raw (canonical per-file YAML):**
+
+```bash
+sh cicd/sync/fetch_loobin_yaml_upstream.sh <name>
+# downloads https://raw.githubusercontent.com/infosecB/LOOBins/main/LOOBins/<name>.yml
+```
+
+Use the exact upstream filename (case-sensitive), e.g. `GetFileInfo`, not `getfileinfo`.
+
 ### Convert one LOOBin YAML → procedure-shaped YAML
 
 Per-binary files (for example `attackmacos/standby/LOOBins/defaults.yml`) can be converted toward `attackmacos/core/schemas/procedure.schema.json`:
@@ -58,12 +80,14 @@ Field mapping reference: [docs/CICD/LOOBins_to_Procedure_Mapping.md](../../docs/
 
 ### Relation to “add a TTP”
 
-1. Sync JSON (optional) → refresh local catalog.  
-2. Convert per-binary YAML → staging procedure YAML.  
-3. Finish metadata + MITRE IDs → move to `attackmacos/core/config/`.  
-4. Build (`python3 cicd/build/build_shell_procedure.py`) — **lint is already included** (`sh -n`, same as `--lint-local`).  
+1. Sync JSON (optional) → refresh local catalog (`sync_loobins_json.sh`).  
+2. Obtain per-binary LOOBin YAML in `standby/LOOBins/` — copy from your notes, **`extract_loobin_from_json.py`**, or **`fetch_loobin_yaml_upstream.sh`**.  
+3. Convert → staging procedure YAML (`convert_loobin_to_procedure.py`).  
+4. Finish metadata + MITRE IDs → move to `attackmacos/core/config/`.  
+5. Build (`python3 cicd/build/build_shell_procedure.py …`) — **lint is already included** (`sh -n`, same as `--lint-local`).  
+6. Before a PR, run **`sh cicd/qa/run_local_qa.sh`** (see `cicd/README.md`). GitHub Actions can wrap the same steps later.
 
-Future UI (“sync LOOBins to my project”) can wrap steps 1–4.
+Future UI (“sync LOOBins to my project”) can wrap steps 1–5.
 
 ## Other folders
 

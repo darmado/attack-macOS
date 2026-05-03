@@ -8,8 +8,9 @@ Automation scripts for attack-macOS maintenance: **build** (shell/JXA from YAML)
 |-----------|---------|
 | **`cicd/build/`** | `build_shell_procedure.py`, `build_jxa_procedure.py`, `decrypt.py`, `fixtures/` (JXA self-test YAML) |
 | **`cicd/audit/`** | `audit_jxa.py`, `audit_procedure_inventory.py`, `inventory_allowlist.txt` |
-| **`cicd/sync/`** | `sync_function_docs.py`, `sync_loobins_json.sh`, `convert_loobin_to_procedure.py` |
+| **`cicd/sync/`** | `sync_function_docs.py`, `sync_loobins_json.sh`, `convert_loobin_to_procedure.py`, `extract_loobin_from_json.py`, `fetch_loobin_yaml_upstream.sh` |
 | **`cicd/commit/`** | `commit_pairs.py` |
+| **`cicd/qa/`** | `run_local_qa.sh` — run before a PR (inventory, YAML validate, JXA audit, optional macOS JXA self-test) |
 
 Documentation for individual tools lives under **`docs/CICD/`** (not under `cicd/docs/`).
 
@@ -31,7 +32,9 @@ Documentation for individual tools lives under **`docs/CICD/`** (not under `cicd
 ### Sync (`cicd/sync/`)
 
 - **sync_function_docs.py** — Syncs `base.sh` function bodies into `docs/` (see [sync_function_docs.md](../docs/CICD/sync_function_docs.md)).
-- **sync_loobins_json.sh** — Downloads LOOBins JSON into `attackmacos/standby/LOOBins/loobins.json`.
+- **sync_loobins_json.sh** — Downloads the published LOOBins catalog JSON into `attackmacos/standby/LOOBins/loobins.json` (default `https://www.loobins.io/loobins.json`, same project as [infosecB/LOOBins](https://github.com/infosecB/LOOBins)).
+- **fetch_loobin_yaml_upstream.sh** — Downloads one upstream YAML from `LOOBins/<name>.yml` on GitHub (raw) into `attackmacos/standby/LOOBins/<name>.yml` when you want the canonical file instead of extracting from JSON.
+- **extract_loobin_from_json.py** — Writes one `standby/LOOBins/<name>.yml` from a catalog entry in `loobins.json` (after sync). Names must match the `name` field in JSON (e.g. `dns-sd`, `log`).
 - **convert_loobin_to_procedure.py** — LOOBin YAML → draft procedure YAML; see `docs/CICD/LOOBins_to_Procedure_Mapping.md` and `attackmacos/standby/README.md`.
 
 ### Commit (`cicd/commit/`)
@@ -40,6 +43,7 @@ Documentation for individual tools lives under **`docs/CICD/`** (not under `cicd
 
 ### Testing / lint
 
+- **`sh cicd/qa/run_local_qa.sh`** — Pre-PR checklist: strict procedure inventory, `build_shell_procedure.py --validate` on every `attackmacos/core/config/*.yml`, full JXA audit, and (on macOS only) `build_jxa_procedure.py --self-test`. Set `SKIP_JXA_SELFTEST=1` to skip the osascript step. Uses `PYTHON` if set (default `python3`).
 - **`./attackmacos/attackmacos.sh --lint-local`** — Resolve one built TTP and run `sh -n` (syntax only).
 - **test_script_options.dev.sh** — Optional deeper option checks (see [test_script_options.md](../docs/CICD/test_script_options.md)) if present in your checkout.
 
@@ -57,6 +61,7 @@ python3 cicd/build/build_shell_procedure.py --all
 python3 cicd/build/build_jxa_procedure.py --self-test
 python3 cicd/audit/audit_jxa.py
 python3 cicd/audit/audit_procedure_inventory.py --strict
+sh cicd/qa/run_local_qa.sh
 python3 cicd/sync/sync_function_docs.py
 ```
 
@@ -77,6 +82,8 @@ cicd/
 │   ├── decrypt.py
 │   └── fixtures/
 │       └── jxa_procedure_minimal.yml
+├── qa/
+│   └── run_local_qa.sh
 ├── audit/
 │   ├── audit_jxa.py
 │   ├── audit_procedure_inventory.py
@@ -84,7 +91,9 @@ cicd/
 ├── sync/
 │   ├── sync_function_docs.py
 │   ├── sync_loobins_json.sh
-│   └── convert_loobin_to_procedure.py
+│   ├── convert_loobin_to_procedure.py
+│   ├── extract_loobin_from_json.py
+│   └── fetch_loobin_yaml_upstream.sh
 ├── commit/
 │   └── commit_pairs.py
 └── venv/                    # optional local venv
