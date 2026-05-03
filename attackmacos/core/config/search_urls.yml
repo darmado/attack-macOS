@@ -5,7 +5,7 @@ guid: 427311de-a065-4b2c-b190-5feb4bfdff75
 intent: Discover URLs and web-related configuration data using macOS defaults command
   to enumerate browsing history, bookmarks, and web service endpoints.
 author: '@darmado | https://x.com/darmad0'
-version: 1.0.4
+version: 1.0.11
 created: '2025-01-27'
 detection:
 - ioc: defaults command execution
@@ -14,6 +14,8 @@ detection:
 - analysis: https://objective-see.org/blog/blog_0x25.html
 - rule_sigma: https://github.com/SigmaHQ/sigma/tree/master/rules/macos
 resources:
+- link: https://attack.mitre.org/techniques/T1082/
+  description: MITRE ATT&CK - System Information Discovery
 - link: https://www.loobins.io/binaries/defaults/
   description: LOOBins defaults binary reference
 - link: https://macos-defaults.com/
@@ -24,7 +26,7 @@ acknowledgement:
 - person: LOOBins Project
   handle: '@loobins'
 platform:
-- macOS
+- darwin
 procedure:
   arguments:
   - option: --urls
@@ -100,4 +102,4 @@ procedure:
           
           return 0
       }
-updated: '2025-06-03'
+updated: '2026-05-03'

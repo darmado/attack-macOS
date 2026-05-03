@@ -1,0 +1,75 @@
+procedure_name: defaults_domains
+tactic: Discovery
+ttp_id: T1082
+guid: 6b25d703-e7ec-4b4d-b1d3-92dbea62aa65
+intent: Enumerate macOS user defaults domains and search defaults key values using
+  the native defaults command for host configuration surface discovery.
+author: '@darmado | https://x.com/darmad0'
+version: 1.0.4
+created: '2026-04-30'
+updated: '2026-05-03'
+platform:
+- darwin
+resources:
+- link: https://attack.mitre.org/techniques/T1082/
+  description: MITRE ATT&CK - System Information Discovery
+- link: https://www.loobins.io/binaries/defaults/
+  description: LOOBins reference for defaults
+- link: https://macos-defaults.com/
+  description: Curated macOS defaults domains and keys (community reference)
+procedure:
+  arguments:
+  - option: --list-domains
+    description: List all preference domains for the current user (defaults domains)
+    execute_function:
+    - discover_defaults_domains_list
+  - option: --find
+    description: Search defaults keys and values for a string (defaults find)
+    type: string
+    input_required: true
+    execute_function:
+    - discover_defaults_find
+  - option: --all
+    description: List preference domains (same as --list-domains)
+    execute_function:
+    - discover_defaults_domains_list
+  global_variable:
+  - name: INPUT_FIND
+    type: string
+    default_value: ''
+  functions:
+  - name: discover_defaults_domains_list
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      discover_defaults_domains_list() {
+          core_debug_print "Listing defaults domains"
+          local list_out
+          list_out=$("$CMD_DEFAULTS" domains 2>/dev/null)
+          $CMD_PRINTF "DEFAULTS|domains|%s\n" "$list_out"
+          return 0
+      }
+  - name: discover_defaults_find
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      discover_defaults_find() {
+          if [ -z "$INPUT_FIND" ]; then
+              $CMD_PRINTF "ERROR|defaults find requires a search term: --find VALUE\n"
+              return 1
+          fi
+          core_debug_print "Searching defaults for term"
+          local find_out
+          find_out=$("$CMD_DEFAULTS" find "$INPUT_FIND" 2>/dev/null)
+          $CMD_PRINTF "DEFAULTS|find_term|%s\n" "$INPUT_FIND"
+          echo "$find_out"
+          return 0
+      }

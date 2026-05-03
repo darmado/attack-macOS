@@ -1,0 +1,94 @@
+procedure_name: opendirectory_util
+tactic: Discovery
+ttp_id: T1082
+guid: 03c99b74-dbfd-48c2-888d-c3f97c81e6d8
+intent: odutil allows caller to examine or change state of opendirectoryd Sourced
+  from LOOBins; confirm MITRE mapping for each enabled option.
+author: Ethan Nay
+created: '2023-07-12'
+updated: '2026-05-03'
+version: 1.0.5
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1082/
+  description: "MITRE ATT&CK \u2014 T1082"
+- link: ''
+  description: ''
+- link: https://macosbin.com/bin/odutil
+  description: macOS/binaries/odutil
+- link: https://www.unix.com/man-page/osx/1/odutil/
+  description: odutil man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --listing-the-available-node-names
+    description: List all available node names
+    execute_function:
+    - execute_listing_available_node_names
+  - option: --retrieves-active-session
+    description: Retrieves the all active sessions
+    execute_function:
+    - execute_retrieves_active_session
+  - option: --retrieves-default-search-policy
+    description: Retrieves the configuration of "Default search policy"
+    execute_function:
+    - execute_retrieves_default_search_policy
+  - option: --retrieves-contact-search-policy
+    description: Retrieves the configuration of "Contact search policy"
+    execute_function:
+    - execute_retrieves_contact_search_policy
+  global_variable:
+  - name: CMD_ODUTIL
+    type: string
+    default_value: /usr/bin/odutil
+  functions:
+  - name: execute_listing_available_node_names
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_listing_available_node_names() {\n    local result\n    result=$(odutil\
+      \ show nodenames 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"
+  - name: execute_retrieves_active_session
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_retrieves_active_session() {\n    local result\n    result=$(odutil\
+      \ show sessions 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"
+  - name: execute_retrieves_default_search_policy
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_retrieves_default_search_policy() {\n    local result\n    result=$(odutil\
+      \ show configuration /Search 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\
+      \n    return 0\n}"
+  - name: execute_retrieves_contact_search_policy
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_retrieves_contact_search_policy() {\n    local result\n    result=$(odutil\
+      \ show configuration /Contacts 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\
+      \n    return 0\n}"

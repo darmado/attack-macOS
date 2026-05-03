@@ -1,0 +1,243 @@
+procedure_name: directory_service
+tactic: Discovery
+ttp_id: T1087.002
+guid: 9ed1a2a7-52cf-4a14-82cf-15c466b69a55
+intent: Interact with Directory Services. Sourced from LOOBins; confirm MITRE mapping
+  for each enabled option.
+author: Jonathan Bar Or (@yo_yo_yo_jbo)
+created: '2023-04-25'
+updated: '2026-05-03'
+version: 1.0.5
+platform:
+- darwin
+detection:
+- ioc: 'Jamf Protect: Detect user account creation with dscl'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/user_created_by_dscl
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1087/002/
+  description: "MITRE ATT&CK \u2014 T1087.002"
+- link: ''
+  description: ''
+- link: https://book.hacktricks.xyz/macos-hardening/macos-security-and-privilege-escalation/macos-red-teaming
+  description: MacOS Red Teaming - HackTricks
+- link: https://attack.mitre.org/techniques/T1136/001/
+  description: 'MITRE ATT&CK T1136.001 Create Account: Local Account'
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --local-user-enumeration
+    description: Enumerate all local users.
+    execute_function:
+    - execute_local_user_enumeration
+  - option: --active-directory-user-enumeration
+    description: Enumerate all Active Directory users.
+    execute_function:
+    - execute_active_directory_user_enumeration
+  - option: --local-user-information-gathering
+    description: 'Gain useful local user information such as when their password was
+      last set, their keyboard layout, '
+    execute_function:
+    - execute_local_user_information_gathering
+  - option: --active-directory-user-information-gathering
+    description: Gain useful Active Directory user information such as when their
+      password was last set, their keyboa
+    execute_function:
+    - execute_active_directory_user_information_gathering
+  - option: --local-group-enumeration
+    description: Enumerate all local groups.
+    execute_function:
+    - execute_local_group_enumeration
+  - option: --active-directory-group-enumeration
+    description: Enumerate all Active Directory groups.
+    execute_function:
+    - execute_active_directory_group_enumeration
+  - option: --local-group-information-gathering
+    description: Gain useful local group information such as which users belong to
+      that group, SMB SIDs and group ID.
+    execute_function:
+    - execute_local_group_information_gathering
+  - option: --active-directory-group-information-gathering
+    description: Gain useful Active Directory group information such as which users
+      belong to that group, SMB SIDs an
+    execute_function:
+    - execute_active_directory_group_information_gathering
+  - option: --computer-enumration
+    description: Enumerate all computers in an Active Directory.
+    execute_function:
+    - execute_computer_enumration
+  - option: --share-enumration
+    description: Enumerate all shares.
+    execute_function:
+    - execute_share_enumration
+  - option: --password-policy-discovery
+    description: Gain password policy information
+    execute_function:
+    - execute_password_policy_discovery
+  - option: --change-a-user-password
+    description: Change an existing user's password.
+    execute_function:
+    - execute_change_user_password
+  - option: --local-account-creation
+    description: Create a local account
+    execute_function:
+    - execute_local_account_creation
+  global_variable:
+  - name: CMD_DSCL
+    type: string
+    default_value: /usr/bin/dscl
+  functions:
+  - name: execute_local_user_enumeration
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_local_user_enumeration() {\n    local result\n    result=$(dscl\
+      \ . -list /Users\ndscl . list /Users\ndscl . ls /Users\n 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_active_directory_user_enumeration
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_active_directory_user_enumeration() {\n    local result\n    result=$(dscl\
+      \ \"/Active Directory/TEST/All Domains\" -list /Users\ndscl \"/Active Directory/TEST/All\
+      \ Domains\" list /Users\ndscl \"/Active Directory/TEST/All Domains\" ls /Users\n\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_local_user_information_gathering
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_local_user_information_gathering() {\n    local result\n    result=$(dscl\
+      \ . -read /Users/$USERNAME\ndscl . read /Users/$USERNAME\ndscl . cat /Users/$USERNAME\n\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_active_directory_user_information_gathering
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_active_directory_user_information_gathering() {\n    local result\n\
+      \    result=$(dscl \"/Active Directory/TEST/All Domains\" -read /Users/$USERNAME\n\
+      dscl \"/Active Directory/TEST/All Domains\" read /Users/$USERNAME\ndscl \"/Active\
+      \ Directory/TEST/All Domains\" cat /Users/$USERNAME\n 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_local_group_enumeration
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_local_group_enumeration() {\n    local result\n    result=$(dscl\
+      \ . -list /Groups\ndscl . list /Groups\ndscl . ls /Groups\n 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_active_directory_group_enumeration
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_active_directory_group_enumeration() {\n    local result\n    result=$(dscl\
+      \ \"/Active Directory/TEST/All Domains\" -list /Groups\ndscl \"/Active Directory/TEST/All\
+      \ Domains\" list /Groups\ndscl \"/Active Directory/TEST/All Domains\" ls /Groups\n\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_local_group_information_gathering
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_local_group_information_gathering() {\n    local result\n    result=$(dscl\
+      \ . -read /Groups/$GROUPNAME\ndscl . read /Groups/$GROUPNAME\ndscl . cat /Groups/$GROUPNAME\n\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_active_directory_group_information_gathering
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_active_directory_group_information_gathering() {\n    local result\n\
+      \    result=$(dscl \"/Active Directory/TEST/All Domains\" -read /Groups/$GROUPNAME\n\
+      dscl \"/Active Directory/TEST/All Domains\" read /Groups/$GROUPNAME\ndscl \"\
+      /Active Directory/TEST/All Domains\" cat /Groups/$GROUPNAME\n 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_computer_enumration
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_computer_enumration() {\n    local result\n    result=$(dscl  \"\
+      /Active Directory/TEST/All Domains\" -list /Computers\ndscl  \"/Active Directory/TEST/All\
+      \ Domains\" list /Computers\ndscl  \"/Active Directory/TEST/All Domains\" ls\
+      \ /Computers\n 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"
+  - name: execute_share_enumration
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_share_enumration() {\n    local result\n    result=$(dscl . -list\
+      \ /SharePoints\ndscl . list /SharePoints\ndscl . ls /SharePoints\n 2>&1)\n \
+      \   $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_password_policy_discovery
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_password_policy_discovery() {\n    local result\n    result=$(dscl\
+      \ . -read /Config/shadowhash\ndscl . read /Config/shadowhash\ndscl . cat /Config/shadowhash\n\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_change_user_password
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_change_user_password() {\n    local result\n    result=$(dscl .\
+      \ passwd /Users/$USERNAME oldPassword newPassword 2>&1)\n    $CMD_PRINTF \"\
+      RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_local_account_creation
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_local_account_creation() {\n    local result\n    result=$(dscl\
+      \ -create 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n\
+      }"

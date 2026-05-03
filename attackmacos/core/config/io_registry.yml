@@ -1,0 +1,102 @@
+procedure_name: io_registry
+tactic: Discovery
+ttp_id: T1082
+guid: c742cd1a-fd3e-4636-bc64-7a38af683b09
+intent: Displays a hierarchial view of the I/O Kit registry. Sourced from LOOBins;
+  confirm MITRE mapping for each enabled option.
+author: Cedric Owens (@cedowens)
+created: '2023-04-20'
+updated: '2026-05-03'
+version: 1.0.5
+platform:
+- darwin
+detection:
+- ioc: System Information Discovery Using Ioreg
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_ioreg_discovery.yml
+- ioc: 'Jamf Protect: Ioreg used to detect if the screen is locked'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/lockscreen_check
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1082/
+  description: "MITRE ATT&CK \u2014 T1082"
+- link: ''
+  description: ''
+- link: https://evasions.checkpoint.com/src/MacOS/macos.html
+  description: 'Evasions: macOS'
+- link: https://github.com/cedowens/SwiftBelt-JXA/blob/main/SwiftBelt-JXA.js#520
+  description: SwiftBelt-JXA Situational Awareness Tool
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --use-ioreg-to-check-whether-the-remote-macos-screen-is-locked
+    description: The following command will display a list of keys that contain "CGSSession".
+      If the key "CGSSessionS
+    execute_function:
+    - execute_use_ioreg_check_whether_remote_macos_screen_is_locked
+  - option: --use-ioreg-to-check-whether-the-host-is-on-a-physical-machine-or-a-vm
+    description: 'Check the output of this command (the IOPlatformSerialNumber, board-id,
+      and manufacturer fields) to '
+    execute_function:
+    - execute_use_ioreg_check_whether_host_is_physical_machine_vm
+  - option: --use-ioreg-to-check-usb-device-vendor-names
+    description: Grep for "USB Vendor Name" values to view USB vendor names. On virtualized
+      hardware these values may
+    execute_function:
+    - execute_use_ioreg_check_usb_device_vendor_names
+  - option: --check-all-ioreg-properties-for-hypervisor-names
+    description: Grep for "virtual box", "oracle", and "vmware" from the output of
+      the ioreg -l command. This is an a
+    execute_function:
+    - execute_check_all_ioreg_properties_hypervisor_names
+  global_variable:
+  - name: CMD_IOREG
+    type: string
+    default_value: /usr/sbin/ioreg
+  functions:
+  - name: execute_use_ioreg_check_whether_remote_macos_screen_is_locked
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_use_ioreg_check_whether_remote_macos_screen_is_locked() {\n   \
+      \ local result\n    result=$(ioreg -n Root -d1 -a | grep CGSSession 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_use_ioreg_check_whether_host_is_physical_machine_vm
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_use_ioreg_check_whether_host_is_physical_machine_vm() {\n    local\
+      \ result\n    result=$(ioreg -rd1 -c IOPlatformExpertDevice 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_use_ioreg_check_usb_device_vendor_names
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_use_ioreg_check_usb_device_vendor_names() {\n    local result\n\
+      \    result=$(ioreg -rd1 -c IOUSBHostDevice 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_check_all_ioreg_properties_hypervisor_names
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_check_all_ioreg_properties_hypervisor_names() {\n    local result\n\
+      \    result=$(ioreg -l 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n\
+      \    return 0\n}"

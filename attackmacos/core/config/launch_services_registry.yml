@@ -1,0 +1,81 @@
+procedure_name: launch_services_registry
+tactic: Discovery
+ttp_id: T1082
+guid: e1238fc4-0693-4702-baa9-6cb5a04bb397
+intent: Interact with the macOS Launch Services database. Sourced from LOOBins; confirm
+  MITRE mapping for each enabled option.
+author: Brendan Chamberlain (@infosecB)
+created: '2023-05-15'
+updated: '2026-05-03'
+version: 1.0.5
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1082/
+  description: "MITRE ATT&CK \u2014 T1082"
+- link: ''
+  description: ''
+- link: https://www.jamf.com/blog/remote-mac-exploitation-via-custom-url-schemes/
+  description: Remote Mac Exploitation Via Custom URL Schemes
+- link: https://book.hacktricks.xyz/macos-hardening/macos-security-and-privilege-escalation
+  description: macOS Security & Privilege Escalation
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --force-an-update-of-the-launch-services-database
+    description: The -f flag can be used to force an update of the Launch Services
+      database. This can be used to quic
+    execute_function:
+    - execute_force_update_launch_services_database
+  - option: --get-a-list-of-apps-and-their-bindings
+    description: The -dump flag can be used to get a list of apps and their bindings
+    execute_function:
+    - execute_get_list_apps_their_bindings
+  - option: --delete-the-launch-services-database
+    description: The -delete flag can be used to delete the Launch Services database
+      to impact normal operation of th
+    execute_function:
+    - execute_delete_launch_services_database
+  global_variable:
+  - name: CMD_LSREGISTER
+    type: string
+    default_value: /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister
+  functions:
+  - name: execute_force_update_launch_services_database
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_force_update_launch_services_database() {\n    local result\n \
+      \   result=$(/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister\
+      \ -f 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_get_list_apps_their_bindings
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_get_list_apps_their_bindings() {\n    local result\n    result=$(/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister\
+      \ -dump | grep -E \"path:|bindings:|name: | more\" 2>&1)\n    $CMD_PRINTF \"\
+      RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_delete_launch_services_database
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_delete_launch_services_database() {\n    local result\n    result=$(lsregister\
+      \ -delete 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n\
+      }"

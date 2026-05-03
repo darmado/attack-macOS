@@ -1,0 +1,328 @@
+version: 1
+description: Inferred mapping from standby LOOBins YAML (first tactic + overrides).
+  Edit before relying on legal/compliance contexts.
+entries:
+  GetFileInfo:
+    ttp_id: T1082
+    tactic: Discovery
+    skip_promote: false
+    source: first_example_tactic
+    note: ''
+  SetFile:
+    ttp_id: T1547.011
+    tactic: Persistence
+    skip_promote: false
+    source: first_example_tactic
+    note: ''
+  caffeinate:
+    ttp_id: T1499
+    tactic: Impact
+    skip_promote: false
+    source: binary_override
+    note: ''
+  chflags:
+    ttp_id: T1564.001
+    tactic: Defense Evasion
+    skip_promote: false
+    source: binary_override
+    note: ''
+  codesign:
+    ttp_id: T1553
+    tactic: Defense Evasion
+    skip_promote: false
+    source: binary_override
+    note: ''
+  csrutil:
+    ttp_id: T1562.001
+    tactic: Defense Evasion
+    skip_promote: false
+    source: binary_override
+    note: ''
+  defaults:
+    ttp_id: T1562.001
+    tactic: Defense Evasion
+    skip_promote: false
+    source: binary_override
+    note: ''
+  ditto:
+    ttp_id: T1036.005
+    tactic: Defense Evasion
+    skip_promote: false
+    source: binary_override
+    note: ''
+  dns-sd:
+    ttp_id: T1046
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  dscacheutil:
+    ttp_id: T1087.002
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  dscl:
+    ttp_id: T1087.002
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  dsconfigad:
+    ttp_id: T1087.004
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  dsexport:
+    ttp_id: T1087.002
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  hdiutil:
+    ttp_id: T1564.004
+    tactic: Defense Evasion
+    skip_promote: false
+    source: binary_override
+    note: ''
+  ioreg:
+    ttp_id: T1082
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  kextstat:
+    ttp_id: T1082
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  last:
+    ttp_id: T1087
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  launchctl:
+    ttp_id: T1543.001
+    tactic: Persistence
+    skip_promote: false
+    source: binary_override
+    note: ''
+  log:
+    ttp_id: T1082
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  lsregister:
+    ttp_id: T1082
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  mdfind:
+    ttp_id: T1083
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  mdls:
+    ttp_id: T1083
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  mktemp:
+    ttp_id: T1083
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  networksetup:
+    ttp_id: T1016
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  nscurl:
+    ttp_id: T1071.001
+    tactic: Command and Control
+    skip_promote: false
+    source: binary_override
+    note: ''
+  nvram:
+    ttp_id: T1547.006
+    tactic: Persistence
+    skip_promote: false
+    source: binary_override
+    note: ''
+  odutil:
+    ttp_id: T1082
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  open:
+    ttp_id: T1204
+    tactic: Execution
+    skip_promote: false
+    source: binary_override
+    note: ''
+  osacompile:
+    ttp_id: T1059.002
+    tactic: Execution
+    skip_promote: false
+    source: binary_override
+    note: ''
+  osascript:
+    ttp_id: T1059.002
+    tactic: Execution
+    skip_promote: false
+    source: binary_override
+    note: ''
+  pbpaste:
+    ttp_id: T1115
+    tactic: Collection
+    skip_promote: false
+    source: binary_override
+    note: ''
+  plutil:
+    ttp_id: T1082
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  profiles:
+    ttp_id: T1562.001
+    tactic: Defense Evasion
+    skip_promote: false
+    source: binary_override
+    note: ''
+  safaridriver:
+    ttp_id: T1185
+    tactic: Execution
+    skip_promote: false
+    source: binary_override
+    note: ''
+  say:
+    ttp_id: T1491
+    tactic: Impact
+    skip_promote: false
+    source: binary_override
+    note: ''
+  screencapture:
+    ttp_id: ''
+    tactic: ''
+    skip_promote: true
+    source: ''
+    note: Use attackmacos/core/config/screen_capture.yml (T1113).
+  scutil:
+    ttp_id: T1016
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  security:
+    ttp_id: ''
+    tactic: ''
+    skip_promote: true
+    source: ''
+    note: Use attackmacos/core/config/keychains.yml (security / keychain).
+  sfltool:
+    ttp_id: T1005
+    tactic: Collection
+    skip_promote: false
+    source: binary_override
+    note: ''
+  softwareupdate:
+    ttp_id: T1072
+    tactic: Execution
+    skip_promote: false
+    source: binary_override
+    note: ''
+  spctl:
+    ttp_id: T1553.004
+    tactic: Defense Evasion
+    skip_promote: false
+    source: binary_override
+    note: ''
+  sqlite3:
+    ttp_id: T1213
+    tactic: Collection
+    skip_promote: false
+    source: binary_override
+    note: ''
+  ssh-keygen:
+    ttp_id: T1552.004
+    tactic: Credential Access
+    skip_promote: false
+    source: binary_override
+    note: ''
+  streamzip:
+    ttp_id: T1560
+    tactic: Collection
+    skip_promote: false
+    source: binary_override
+    note: ''
+  sw_vers:
+    ttp_id: T1082
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  swift:
+    ttp_id: T1059
+    tactic: Execution
+    skip_promote: false
+    source: binary_override
+    note: ''
+  sysadminctl:
+    ttp_id: T1562.001
+    tactic: Defense Evasion
+    skip_promote: false
+    source: binary_override
+    note: ''
+  sysctl:
+    ttp_id: T1082
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  system_profiler:
+    ttp_id: T1082
+    tactic: Discovery
+    skip_promote: false
+    source: binary_override
+    note: ''
+  systemsetup:
+    ttp_id: T1562.001
+    tactic: Defense Evasion
+    skip_promote: false
+    source: binary_override
+    note: ''
+  tclsh:
+    ttp_id: T1059
+    tactic: Execution
+    skip_promote: false
+    source: binary_override
+    note: ''
+  textutil:
+    ttp_id: T1059
+    tactic: Execution
+    skip_promote: false
+    source: binary_override
+    note: ''
+  tmutil:
+    ttp_id: T1562.001
+    tactic: Defense Evasion
+    skip_promote: false
+    source: binary_override
+    note: ''
+  xattr:
+    ttp_id: T1553.004
+    tactic: Defense Evasion
+    skip_promote: false
+    source: binary_override
+    note: ''

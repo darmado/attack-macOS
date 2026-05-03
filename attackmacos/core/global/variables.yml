@@ -1,12 +1,16 @@
 ---
-# Global Variables Registry for attackmacos Framework
-# 
-# This file contains all global variables used in base.sh that can be 
-# updated framework-wide. This allows for centralized command and configuration
-# management across all generated scripts.
+# Global Variables Registry for attack-macOS (human + doc source of truth)
 #
-# IMPORTANT: These variables are reserved by the framework. Do not modify
-# unless you understand the impact on all generated scripts.
+# **Runtime merge order for generated scripts:** `attackmacos/core/base/base.sh`
+# supplies the default `CMD_*` block; each procedure YAML may add or override
+# `global_variable` entries (for example `CMD_DSCL`, `CMD_DSCACHEUTIL`). Nothing
+# in this repo currently *loads* this YAML into the shell builder—keep
+# `core_commands` here **in sync** when you add or change a command in `base.sh`,
+# and add procedure-only binaries **only** in that procedure YAML until you
+# promote a shared wrapper to `base.sh`.
+#
+# Do not hardcode `/usr/bin/...` in function bodies when a `CMD_*` exists for
+# the same binary; use `$("$CMD_FOO" …)` per Naming Conventions.
 
 # Core System Commands
 # These variables define the native macOS commands used throughout the framework

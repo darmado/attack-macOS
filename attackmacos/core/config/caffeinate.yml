@@ -1,0 +1,65 @@
+procedure_name: caffeinate
+tactic: Impact
+ttp_id: T1499
+guid: f472fe64-edf4-4f56-aa5a-958eec9018a8
+intent: Prevent the system from sleeping on behalf of a utility. Sourced from LOOBins;
+  confirm MITRE mapping for each enabled option.
+author: Ethan Nay
+created: '2023-07-12'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1499/
+  description: "MITRE ATT&CK \u2014 T1499"
+- link: ''
+  description: ''
+- link: https://macosbin.com/bin/caffeinate
+  description: macOS/binaries/caffeinate
+- link: https://ss64.com/osx/caffeinate.html
+  description: caffeinate man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --fork-a-process
+    description: Make caffeinate fork a process and hold an assertion that prevents
+      idle sleep as long as that proces
+    execute_function:
+    - execute_fork_process
+  - option: --prevent-a-sleep
+    description: Prevent a macOS from going to sleep for 4 hours (14400 seconds)
+    execute_function:
+    - execute_prevent_sleep
+  global_variable:
+  - name: CMD_CAFFEINATE
+    type: string
+    default_value: /usr/bin/caffeinate
+  functions:
+  - name: execute_fork_process
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_fork_process() {\n    local result\n    result=$(caffeinate -i\
+      \ /tmp/evil 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"
+  - name: execute_prevent_sleep
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_prevent_sleep() {\n    local result\n    result=$(caffeinate -u\
+      \ -t 14400 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n\
+      }"

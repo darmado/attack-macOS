@@ -1,0 +1,128 @@
+procedure_name: hdiutil
+tactic: Defense Evasion
+ttp_id: T1564.004
+guid: 8c36b7ce-1050-4c3a-bea6-7121efb28a10
+intent: Manipulate disk images using the DiskImages framework. Sourced from LOOBins;
+  confirm MITRE mapping for each enabled option.
+author: Mark Morowczynsk (@markmorow)
+created: '2023-05-21'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection:
+- ioc: 'Sigma: Disk Image Mounting Via Hdiutil'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_hdiutil_mount.yml
+- ioc: 'Sigma: Disk Image Creation Via Hdiutil'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_hdiutil_create.yml
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1564/004/
+  description: "MITRE ATT&CK \u2014 T1564.004"
+- link: ''
+  description: ''
+- link: https://www.microsoft.com/en-us/security/blog/2021/10/28/microsoft-finds-new-macos-vulnerability-shrootless-that-could-bypass-system-integrity-protection/
+  description: Microsoft finds new macOS vulnerability, Shrootless, that could bypass
+    System Integrity Protection
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --mount-a-malicious-dmg-file
+    description: Uses hdiutil to mount a malicious dmg file to
+    execute_function:
+    - execute_mount_malicious_dmg_file
+  - option: --mount-a-malicious-dmg-file
+    description: Uses hdiutil to mount a malicious dmg file to
+    execute_function:
+    - execute_mount_malicious_dmg_file
+  - option: --mount-a-malicious-iso-file
+    description: Uses hdiutil to mount a malicious iso file to
+    execute_function:
+    - execute_mount_malicious_iso_file
+  - option: --mount-a-malicious-iso-file
+    description: Uses hdiutil to mount a malicious iso file to
+    execute_function:
+    - execute_mount_malicious_iso_file
+  - option: --exfiltrate-data-in-dmg-file
+    description: Uses hdiutil to create a dmg file to store exfiltrate data
+    execute_function:
+    - execute_exfiltrate_data_dmg_file
+  - option: --exfiltrate-data-in-encrypted-dmg-file
+    description: Uses hdiutil to create a dmg file to store exfiltrate data
+    execute_function:
+    - execute_exfiltrate_data_encrypted_dmg_file
+  global_variable:
+  - name: CMD_HDIUTIL
+    type: string
+    default_value: /usr/bin/hdiutil
+  functions:
+  - name: execute_mount_malicious_dmg_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_mount_malicious_dmg_file() {\n    local result\n    result=$(hdiutil\
+      \ mount malicious.dmg 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n\
+      \    return 0\n}"
+  - name: execute_mount_malicious_dmg_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_mount_malicious_dmg_file() {\n    local result\n    result=$(hdiutil\
+      \ attach malicious.dmg 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n\
+      \    return 0\n}"
+  - name: execute_mount_malicious_iso_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_mount_malicious_iso_file() {\n    local result\n    result=$(hdiutil\
+      \ mount malicious.iso 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n\
+      \    return 0\n}"
+  - name: execute_mount_malicious_iso_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_mount_malicious_iso_file() {\n    local result\n    result=$(hdiutil\
+      \ attach malicious.iso 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n\
+      \    return 0\n}"
+  - name: execute_exfiltrate_data_dmg_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_exfiltrate_data_dmg_file() {\n    local result\n    result=$(hdiutil\
+      \ create -volname \"Volume Name\" -srcfolder /path/to/folder -ov diskimage.dmg\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_exfiltrate_data_encrypted_dmg_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_exfiltrate_data_encrypted_dmg_file() {\n    local result\n    result=$(hdiutil\
+      \ create -encryption -stdinpass -volname \"Volume Name\" -srcfolder /path/to/folder\
+      \ -ov encrypteddiskimage.dmg 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\
+      \n    return 0\n}"

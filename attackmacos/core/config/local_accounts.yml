@@ -6,8 +6,8 @@ intent: Identifies valid local accounts and groups on macOS systems using variou
   native commands
 author: '@darmado | https://x.com/darmad0'
 created: '2023-10-06'
-updated: '2025-06-03'
-version: 1.5.4
+updated: '2026-05-03'
+version: 1.5.9
 procedure:
   arguments:
   - option: --all

@@ -1,0 +1,57 @@
+procedure_name: network_defaults
+tactic: Discovery
+ttp_id: T1016
+guid: fec17d45-48e8-444d-a1d2-234d16e9419a
+intent: Read Apple network-related user preference domains via defaults read to
+  discover VPN, Wi-Fi, and network extension configuration metadata on macOS.
+author: '@darmado | https://x.com/darmad0'
+version: 1.0.4
+created: '2026-04-30'
+updated: '2026-05-03'
+platform:
+- darwin
+resources:
+- link: https://attack.mitre.org/techniques/T1016/
+  description: MITRE ATT&CK - System Network Configuration Discovery
+- link: https://www.loobins.io/binaries/defaults/
+  description: LOOBins reference for defaults
+- link: https://macos-defaults.com/
+  description: Curated macOS defaults domains and keys (community reference)
+procedure:
+  arguments:
+  - option: --network-prefs
+    description: Read common Apple network preference domains for the current user
+    execute_function:
+    - discover_network_defaults_read
+  - option: --all
+    description: Read common Apple network preference domains for the current user
+    execute_function:
+    - discover_network_defaults_read
+  global_variable:
+  - name: NETWORK_DEFAULTS_DOMAINS
+    type: string
+    default_value: com.apple.networkextension com.apple.airport.preferences
+  functions:
+  - name: discover_network_defaults_read
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      discover_network_defaults_read() {
+          core_debug_print "Reading network-related defaults domains"
+          local domain
+          for domain in $NETWORK_DEFAULTS_DOMAINS; do
+              local domain_out
+              domain_out=$("$CMD_DEFAULTS" read "$domain" 2>/dev/null) || {
+                  $CMD_PRINTF "DEFAULTS|read|%s|not_available_or_empty\n" "$domain"
+                  continue
+              }
+              $CMD_PRINTF "DEFAULTS|read|%s|begin\n" "$domain"
+              echo "$domain_out"
+              $CMD_PRINTF "DEFAULTS|read|%s|end\n" "$domain"
+          done
+          return 0
+      }

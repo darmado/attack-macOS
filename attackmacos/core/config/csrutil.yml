@@ -1,0 +1,117 @@
+procedure_name: csrutil
+tactic: Defense Evasion
+ttp_id: T1562.001
+guid: 5659b5ff-75f0-42d3-98b4-b50b0ace1267
+intent: Configure or view system security policies. Sourced from LOOBins; confirm
+  MITRE mapping for each enabled option.
+author: Megan Carney (https://infosec.exchange/@PwnieFan)
+created: '2023-05-14'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection:
+- ioc: 'Sigma: System Integrity Protection (SIP) Disabled'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_csrutil_disable.yml
+- ioc: 'Sigma: System Integrity Protection (SIP) Enumeration'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_csrutil_status.yml
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1562/001/
+  description: "MITRE ATT&CK \u2014 T1562.001"
+- link: ''
+  description: ''
+- link: https://developer.apple.com/forums/thread/4002
+  description: Discussion on how SIP interacts with bless and netboot
+- link: https://attack.mitre.org/techniques/T1518/001/
+  description: 'MITRE ATT&CK T1518.001 Software Discovery: Security Software Discovery'
+- link: https://documents.trendmicro.com/assets/pdf/XCSSET_Technical_Brief.pdf
+  description: 'The XCSSET Malware: Inserts Malicious Code Into Xcode Projects, Performs
+    UXSSBackdoor Planting in Safari, and LeveragesTwo Zero-day Exploits'
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --disable-sip
+    description: disable SIP (System Integrity Protection) - requires booting into
+      recovery mode
+    execute_function:
+    - execute_disable_sip
+  - option: --disable-authenticated-root
+    description: 'When authenticated-root is disabled, booting is allowed from non-sealed
+      system snapshots - requires '
+    execute_function:
+    - execute_disable_authenticated_root
+  - option: --add-a-netboot-server
+    description: Insert a new IPv4 address in the list of allowed NetBoot sources
+    execute_function:
+    - execute_add_netboot_server
+  - option: --map-infrastructure
+    description: List allowed NetBoot sources
+    execute_function:
+    - execute_map_infrastructure
+  - option: --determine-if-sip-is-enabled
+    description: Determine if System Integrity Protection is enabled
+    execute_function:
+    - execute_determine_if_sip_is_enabled
+  global_variable:
+  - name: CMD_CSRUTIL
+    type: string
+    default_value: /usr/bin/csrutil
+  functions:
+  - name: execute_disable_sip
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_disable_sip() {\n    local result\n    result=$(csrutil disable\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_disable_authenticated_root
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_disable_authenticated_root() {\n    local result\n    result=$(csrutil\
+      \ authenticated-root disable 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\
+      \n    return 0\n}"
+  - name: execute_add_netboot_server
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_add_netboot_server() {\n    local result\n    result=$(csrutil\
+      \ netboot add <address> 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n\
+      \    return 0\n}"
+  - name: execute_map_infrastructure
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_map_infrastructure() {\n    local result\n    result=$(csrutil\
+      \ netboot list 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"
+  - name: execute_determine_if_sip_is_enabled
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_determine_if_sip_is_enabled() {\n    local result\n    result=$(csrutil\
+      \ status 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n\
+      }"

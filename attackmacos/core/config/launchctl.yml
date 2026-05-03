@@ -1,0 +1,86 @@
+procedure_name: launchctl
+tactic: Persistence
+ttp_id: T1543.001
+guid: 09b9fa1f-45b8-4ea7-90d7-46477b6094c8
+intent: Load or demonstrate LaunchAgents via launchctl for persistence-style testing.
+  Lab-only; sudo paths require explicit operator consent.
+author: Josh Carullo
+created: '2023-05-27'
+updated: '2026-05-03'
+version: 1.2.4
+platform:
+- darwin
+detection:
+- ioc: Jamf Protect launchctl unload/bootout analytics
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/launchctl_unload_and_bootout_events
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — macOS binaries
+- link: https://attack.mitre.org/techniques/T1543/001/
+  description: MITRE ATT&CK — T1543.001 Launch Agent
+- link: https://www.sentinelone.com/labs/20-common-tools-techniques-used-by-macos-threat-actors-malware/
+  description: Common macOS adversary tools
+procedure:
+  arguments:
+  - option: --load-system-plist
+    description: sudo launchctl load system LaunchAgent plist (LAB ONLY — destructive)
+    execute_function:
+    - launchctl_load_system_plist_example
+  - option: --load-user-agent
+    description: launchctl load -w user LaunchAgents plist (path via --plist-path)
+    execute_function:
+    - launchctl_load_user_agent
+  - option: --plist-path
+    description: Path to plist for --load-user-agent
+    type: string
+    input_required: true
+    execute_function: []
+  global_variable:
+  - name: CMD_LAUNCHCTL
+    type: string
+    default_value: /bin/launchctl
+  - name: CMD_SUDO
+    type: string
+    default_value: sudo
+  - name: INPUT_PLIST_PATH
+    type: string
+    default_value: ''
+  functions:
+  - name: launchctl_load_system_plist_example
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      launchctl_load_system_plist_example() {
+          $CMD_PRINTF "WARN|launchctl|sudo load example references /Library/LaunchAgents/com.apple.installer — replace plist in YAML for your lab\n"
+          local result
+          result=$("$CMD_SUDO" "$CMD_LAUNCHCTL" load /Library/LaunchAgents/com.apple.installer 2>&1) || true
+          $CMD_PRINTF "LAUNCHCTL|mode|sudo_system_load|stdout_stderr|%s\n" "$result"
+          return 0
+      }
+  - name: launchctl_load_user_agent
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      launchctl_load_user_agent() {
+          if [ -z "$INPUT_PLIST_PATH" ]; then
+              $CMD_PRINTF "ERROR|launchctl|--load-user-agent requires --plist-path\n"
+              return 1
+          fi
+          if [ ! -f "$INPUT_PLIST_PATH" ]; then
+              $CMD_PRINTF "ERROR|launchctl|plist not found|%s\n" "$INPUT_PLIST_PATH"
+              return 1
+          fi
+          local result
+          result=$("$CMD_LAUNCHCTL" load -w "$INPUT_PLIST_PATH" 2>&1) || true
+          $CMD_PRINTF "LAUNCHCTL|mode|user_load_w|plist|%s\n" "$INPUT_PLIST_PATH"
+          $CMD_PRINTF "LAUNCHCTL|stdout_stderr|%s\n" "$result"
+          return 0
+      }

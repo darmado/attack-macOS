@@ -1,0 +1,93 @@
+procedure_name: swift
+tactic: Execution
+ttp_id: T1059
+guid: 960338d7-10dc-45ca-9958-cf78a70ecb9f
+intent: Arbitrarily execute swift code from the terminal. Sourced from LOOBins; confirm
+  MITRE mapping for each enabled option.
+author: 0v3rride (https://github.com/0v3rride)
+created: '2023-12-23'
+updated: '2026-05-03'
+version: 1.0.1
+platform:
+- darwin
+detection:
+- ioc: 'Jamf Protect: Detect arbitrary code execution using a swift one-liner'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/swift_oneline_command_execution
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1059/
+  description: "MITRE ATT&CK \u2014 T1059"
+- link: ''
+  description: ''
+- link: https://developer.apple.com/swift/blog/?id=18
+  description: Introduction to the Swift REPL
+- link: https://jblevins.org/log/swift
+  description: Scripting and Compiling Swift on the Command Line
+- link: https://krakendev.io/blog/scripting-in-swift
+  description: Scripting in Swift is Pretty Awesome
+- link: https://blog.eidinger.info/swift-e-runs-code-directly-from-the-command-line
+  description: Swift -e runs code directly from the command line
+- link: https://ed.com/command-line-swift/
+  description: Swift Programming From The Command Line
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --execute-swift-code-file
+    description: Executes the Swift code that is in a .swift file
+    execute_function:
+    - execute_execute_swift_code_file
+  - option: --execute-swift-one-liner-stdin
+    description: 'Swift one-liner via stdin (echo … | swift -). Older Swift/Xcode before
+      swift -e became common.'
+    execute_function:
+    - execute_execute_swift_one_liner_before_swift_5_8_xcode_14_3_beta_1
+  - option: --execute-swift-one-liner-e-flag
+    description: 'Swift one-liner using swift -e (Swift 5.8+ / modern Xcode).'
+    execute_function:
+    - execute_execute_swift_one_liner_swift_5_8_xcode_14_3_beta_1_greater
+  global_variable:
+  - name: CMD_SWIFT
+    type: string
+    default_value: /usr/bin/swift
+  functions:
+  - name: execute_execute_swift_code_file
+    type: main
+    language:
+    - swift
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_execute_swift_code_file() {\n    local result\n    result=$(swift\
+      \ mycode.swift 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"
+  - name: execute_execute_swift_one_liner_before_swift_5_8_xcode_14_3_beta_1
+    type: main
+    language:
+    - swift
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_execute_swift_one_liner_before_swift_5_8_xcode_14_3_beta_1() {\n\
+      \    local result\n    result=$(echo 'print(\"loobins\")' | swift - 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_execute_swift_one_liner_swift_5_8_xcode_14_3_beta_1_greater
+    type: main
+    language:
+    - swift
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_execute_swift_one_liner_swift_5_8_xcode_14_3_beta_1_greater() {\n\
+      \    local result\n    result=$(swift -e 'import Foundation; let process = Process();\
+      \ process.executableURL = URL(fileURLWithPath:\"/bin/bash\"); process.arguments\
+      \ = [\"-c\", \"ls -alh\"]; let stdout = Pipe(); let stderr = Pipe(); process.standardOutput\
+      \ = stdout; process.standardError = stderr; try process.run(); print(String(decoding:\
+      \ stdout.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)); print(String(decoding:\
+      \ stderr.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self));' 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

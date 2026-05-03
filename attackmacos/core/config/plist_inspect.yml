@@ -1,0 +1,52 @@
+procedure_name: plist_inspect
+tactic: Discovery
+ttp_id: T1082
+guid: 6a8911ba-df91-41c9-9cac-cff71b6a4d3d
+intent: Read, create or edit plist files. Sourced from LOOBins; confirm MITRE mapping
+  for each enabled option.
+author: Brendan Chamberlain (@infosecB)
+created: '2023-05-07'
+updated: '2026-05-03'
+version: 1.0.5
+platform:
+- darwin
+detection:
+- ioc: 'Splunk Security Content: MacOS plutil'
+  analysis: https://research.splunk.com/endpoint/c11f2b57-92c1-4cd2-b46c-064eafb833ac/
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1082/
+  description: "MITRE ATT&CK \u2014 T1082"
+- link: ''
+  description: ''
+- link: https://scriptingosx.com/2016/11/editing-property-lists/
+  description: Editing Property Lists with plutil
+- link: https://attack.mitre.org/techniques/T1647/
+  description: Plist File Modification (MITRE ATT&CK)
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --set-app-to-run-with-dock-icon-hidden
+    description: plutil can be used to set the "LSUIElement" attribute to tue which
+      will force the targeted app to ru
+    execute_function:
+    - execute_set_app_run_dock_icon_hidden
+  global_variable:
+  - name: CMD_PLUTIL
+    type: string
+    default_value: /usr/bin/plutil
+  functions:
+  - name: execute_set_app_run_dock_icon_hidden
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_set_app_run_dock_icon_hidden() {\n    local result\n    result=$(plutil\
+      \ -insert LSUIElement -string \"1\" /Applications/TargetApp.app/Contents/Info.plist\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

@@ -1,0 +1,66 @@
+procedure_name: temp_path
+tactic: Discovery
+ttp_id: T1083
+guid: 85b7ea1f-a85e-4502-975f-d7e94b452169
+intent: Create a temporary file or directory and return the file/directory name to
+  stdout Sourced from LOOBins; confirm MITRE mapping for each enabled option.
+author: Tim Peck (@B0bby_Tablez)
+created: '2023-06-28'
+updated: '2026-05-03'
+version: 1.0.5
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1083/
+  description: "MITRE ATT&CK \u2014 T1083"
+- link: ''
+  description: ''
+- link: https://www.jamf.com/blog/shlayer-malware-abusing-gatekeeper-bypass-on-macos/
+  description: Shlayer malware abusing Gatekeeper bypass on macOS
+- link: https://www.sentinelone.com/labs/20-common-tools-techniques-used-by-macos-threat-actors-malware/
+  description: 20 Common Tools & Techniques Used by macOS Threat Actors & Malware
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --generate-payload-directory-shlayer
+    description: The following command can be used to generate a random directory
+      name for staging payloads
+    execute_function:
+    - execute_generate_payload_directory_shlayer
+  - option: --generate-directory-based-on-template-file-bundlore
+    description: The following command can be used to generate a unique directory
+      based on a template
+    execute_function:
+    - execute_generate_directory_based_template_file_bundlore
+  global_variable:
+  - name: CMD_MKTEMP
+    type: string
+    default_value: /usr/bin/mktemp
+  functions:
+  - name: execute_generate_payload_directory_shlayer
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_generate_payload_directory_shlayer() {\n    local result\n    result=$(export\
+      \ tmpDir=\"$(mktemp -d /tmp/XXXXXXXXXXXX)\" 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_generate_directory_based_template_file_bundlore
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_generate_directory_based_template_file_bundlore() {\n    local\
+      \ result\n    result=$(TMP_DIR=\"mktemp -d -t x\" 2>&1)\n    $CMD_PRINTF \"\
+      RESULT|%s\\n\" \"$result\"\n    return 0\n}"

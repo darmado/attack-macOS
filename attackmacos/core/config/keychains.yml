@@ -5,9 +5,9 @@ guid: 289b5876-2049-42fc-8b8c-0b21db32503e
 intent: Dump credentials, keys, certificates, and sensitive information from macOS
   Keychain using security command
 author: '@darmado | https://x.com/darmad0'
-version: 1.0.5
+version: 1.0.10
 created: '2025-01-02'
-updated: '2025-06-03'
+updated: '2026-05-03'
 procedure:
   arguments:
   - option: --login-keychain

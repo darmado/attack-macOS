@@ -1,0 +1,117 @@
+procedure_name: pbpaste
+tactic: Collection
+ttp_id: T1115
+guid: a2aaedc3-ffdf-4918-b0bd-8d147fc39634
+intent: Read the macOS general pasteboard (pbpaste) for clipboard collection emulation.
+  Default monitor is foreground, bounded, and second-granular for triage and detection
+  engineering—not a silent background loop.
+author: Brendan Chamberlain (@infosecB)
+created: '2023-04-11'
+updated: '2026-05-03'
+version: 1.1.5
+platform:
+- darwin
+detection:
+- ioc: 'Sigma: Clipboard Data Collection Via Pbpaste'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules-threat-hunting/macos/process_creation/proc_creation_macos_pbpaste_execution.yml
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — macOS binaries
+- link: https://attack.mitre.org/techniques/T1115/
+  description: MITRE ATT&CK — T1115
+- link: https://danielcortez.substack.com/p/living-off-the-land-exploring-macos-b65
+  description: 'LOOBins and detection — pbpaste'
+procedure:
+  arguments:
+  - option: --once
+    description: Read pasteboard once; one timestamped stdout line
+    execute_function:
+    - collect_clipboard_once
+  - option: --monitor
+    description: Foreground loop (defaults --interval 10 --count 10; PID is this shell)
+    execute_function:
+    - collect_clipboard_monitor
+  - option: --interval
+    description: Seconds between pasteboard reads (same meaning as clipboard_monitoring)
+    type: integer
+    input_required: true
+    execute_function: []
+  - option: --count
+    description: Pasteboard reads before exit (iterations, not duration)
+    type: integer
+    input_required: true
+    execute_function: []
+  - option: --path
+    description: Optional append-only file (timestamp, tab, paste text)
+    type: string
+    input_required: true
+    execute_function: []
+  global_variable:
+  - name: CMD_PBPASTE
+    type: string
+    default_value: /usr/bin/pbpaste
+  - name: INPUT_PATH
+    type: string
+    default_value: ''
+  - name: INPUT_INTERVAL
+    type: integer
+    default_value: 10
+  - name: INPUT_COUNT
+    type: integer
+    default_value: 10
+  functions:
+  - name: collect_clipboard_once
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      collect_clipboard_once() {
+          _p_ts=$("$CMD_DATE" '+%Y-%m-%dT%H:%M:%S%z' 2>/dev/null) || _p_ts=$("$CMD_DATE" '+%Y-%m-%d %H:%M:%S')
+          _p_line=$("$CMD_PBPASTE" 2>&1) || true
+          _p_bytes=$(printf '%s' "$_p_line" | "$CMD_WC" -c | "$CMD_TR" -d ' ')
+          $CMD_PRINTF "PBPASTE|mode|once|ts|%s|bytes|%s|text|%s\n" "$_p_ts" "$_p_bytes" "$_p_line"
+          if [ -n "$INPUT_PATH" ]; then
+              $CMD_PRINTF "%s\t%s\n" "$_p_ts" "$_p_line" >> "$INPUT_PATH" || $CMD_PRINTF "ERROR|pbpaste|cannot_append|%s\n" "$INPUT_PATH"
+          fi
+          return 0
+      }
+  - name: collect_clipboard_monitor
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      collect_clipboard_monitor() {
+          _p_bad=false
+          case "$INPUT_INTERVAL" in ''|*[!0-9]*) _p_bad=true ;; esac
+          case "$INPUT_COUNT" in ''|*[!0-9]*) _p_bad=true ;; esac
+          if [ "$_p_bad" = false ]; then
+              [ "$INPUT_INTERVAL" -lt 1 ] && _p_bad=true
+              [ "$INPUT_COUNT" -lt 1 ] && _p_bad=true
+          fi
+          if [ "$_p_bad" = true ]; then
+              $CMD_PRINTF "ERROR|pbpaste|monitor needs positive integers (--interval and --count; default 10 each)\n"
+              return 1
+          fi
+          $CMD_PRINTF "PBPASTE|mode|monitor|pid|%s|interval_s|%s|count|%s|foreground|true\n" "$$" "$INPUT_INTERVAL" "$INPUT_COUNT"
+          _p_i=0
+          while [ "$_p_i" -lt "$INPUT_COUNT" ]; do
+              _p_i=$((_p_i + 1))
+              _p_ts=$("$CMD_DATE" '+%Y-%m-%dT%H:%M:%S%z' 2>/dev/null) || _p_ts=$("$CMD_DATE" '+%Y-%m-%d %H:%M:%S')
+              _p_line=$("$CMD_PBPASTE" 2>&1) || true
+              _p_bytes=$(printf '%s' "$_p_line" | "$CMD_WC" -c | "$CMD_TR" -d ' ')
+              $CMD_PRINTF "PBPASTE|sample|%s|%s|bytes|%s|text|%s\n" "$_p_i" "$_p_ts" "$_p_bytes" "$_p_line"
+              if [ -n "$INPUT_PATH" ]; then
+                  $CMD_PRINTF "%s\t%s\n" "$_p_ts" "$_p_line" >> "$INPUT_PATH" || $CMD_PRINTF "ERROR|pbpaste|cannot_append|%s\n" "$INPUT_PATH"
+              fi
+              if [ "$_p_i" -lt "$INPUT_COUNT" ]; then
+                  "$CMD_SLEEP" "$INPUT_INTERVAL"
+              fi
+          done
+          return 0
+      }

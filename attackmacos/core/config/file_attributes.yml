@@ -1,0 +1,49 @@
+procedure_name: file_attributes
+tactic: Discovery
+ttp_id: T1082
+guid: 19d4d21a-cb3f-4e57-bafd-cc6d019070be
+intent: Get attributes of files and directories. Sourced from LOOBins; confirm MITRE
+  mapping for each enabled option.
+author: Chris Campbell (@texasbe2trill)
+created: '2023-04-23'
+updated: '2026-05-03'
+version: 1.0.5
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1082/
+  description: "MITRE ATT&CK \u2014 T1082"
+- link: ''
+  description: ''
+- link: https://macosbin.com/bin/getfileinfo
+  description: macOS/binaries/GetFileInfo
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --iterate-through-a-directory-to-getfileinfo
+    description: A bash or zsh oneliner can provide an attacker with information about
+      specific files of interest.
+    execute_function:
+    - execute_iterate_through_directory_getfileinfo
+  global_variable:
+  - name: CMD_GETFILEINFO
+    type: string
+    default_value: /usr/bin/GetFileInfo
+  functions:
+  - name: execute_iterate_through_directory_getfileinfo
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_iterate_through_directory_getfileinfo() {\n    local result\n \
+      \   result=$(for FILE in ~/Downloads/*; do echo $(GetFileInfo $FILE) >> fileinfo.txt;\
+      \ sleep 2; done 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"

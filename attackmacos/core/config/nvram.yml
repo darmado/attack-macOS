@@ -1,0 +1,47 @@
+procedure_name: nvram
+tactic: Persistence
+ttp_id: T1547.006
+guid: 31e9f95d-17c5-44a7-93c4-009f5c6c2955
+intent: Access and manage the host's non-volatile random-access memory (NVRAM). Sourced
+  from LOOBins; confirm MITRE mapping for each enabled option.
+author: Brendan Chamberlain (@infosecB)
+created: '2023-05-23'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1547/006/
+  description: "MITRE ATT&CK \u2014 T1547.006"
+- link: ''
+  description: ''
+- link: https://ss64.com/osx/nvram.html
+  description: SS64 man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --get-nvram-variables
+    description: The -p option prints all the nvram variables that contain some potentially
+      sensitive information lik
+    execute_function:
+    - execute_get_nvram_variables
+  global_variable:
+  - name: CMD_NVRAM
+    type: string
+    default_value: /usr/sbin/nvram
+  functions:
+  - name: execute_get_nvram_variables
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_get_nvram_variables() {\n    local result\n    result=$(nvram -p\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

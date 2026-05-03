@@ -1,0 +1,63 @@
+procedure_name: softwareupdate
+tactic: Execution
+ttp_id: T1072
+guid: affaa4cf-f670-45c4-b7c3-26ce002a34df
+intent: Interact with the macOS software update service. Sourced from LOOBins; confirm
+  MITRE mapping for each enabled option.
+author: Jonathan Bar Or (@yo_yo_yo_jbo)
+created: '2023-04-25'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1072/
+  description: "MITRE ATT&CK \u2014 T1072"
+- link: ''
+  description: ''
+- link: https://ss64.com/osx/softwareupdate.html
+  description: softwareupdate Man Page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --get-os-and-browser-version-information
+    description: Determine OS and Safari version by enumerating the available software
+      updates.
+    execute_function:
+    - execute_get_os_browser_version_information
+  - option: --get-os-update-policy
+    description: Use the --schedule flag to return the OS update policy.
+    execute_function:
+    - execute_get_os_update_policy
+  global_variable:
+  - name: CMD_SOFTWAREUPDATE
+    type: string
+    default_value: /usr/sbin/softwareupdate
+  functions:
+  - name: execute_get_os_browser_version_information
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_get_os_browser_version_information() {\n    local result\n    result=$(softwareupdate\
+      \ --list 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n\
+      }"
+  - name: execute_get_os_update_policy
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_get_os_update_policy() {\n    local result\n    result=$(softwareupdate\
+      \ --schedule 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"

@@ -1,0 +1,67 @@
+procedure_name: textutil
+tactic: Execution
+ttp_id: T1059
+guid: 874960b2-5ff0-48ed-9f4b-e71c153663e8
+intent: Manipulate text files in various formats. Sourced from LOOBins; confirm MITRE
+  mapping for each enabled option.
+author: ezaspy
+created: '2023-05-05'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection:
+- ioc: Command Line Argument Detection (args contain textutil AND (-convert OR -stdin
+    OR pbpaste))
+  analysis: n/a
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1059/
+  description: "MITRE ATT&CK \u2014 T1059"
+- link: ''
+  description: ''
+- link: https://osxdaily.com/tag/textutil/
+  description: textutil
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --use-the-textutil-to-read-several-files-and-build-a-new-file
+    description: A one-liner can load the content of multiple RTF files in a directory,
+      concatenate their contents, a
+    execute_function:
+    - execute_use_textutil_read_several_files_build_new_file
+  - option: --capture-clipboard-content
+    description: By leveraging another command line tool, pbpaste, it is possible
+      to write a one-liner which captures
+    execute_function:
+    - execute_capture_clipboard_content
+  global_variable:
+  - name: CMD_TEXTUTIL
+    type: string
+    default_value: /usr/bin/textutil
+  functions:
+  - name: execute_use_textutil_read_several_files_build_new_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_use_textutil_read_several_files_build_new_file() {\n    local result\n\
+      \    result=$(textutil -convert html Quote.doc secondQuote.doc 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_capture_clipboard_content
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_capture_clipboard_content() {\n    local result\n    result=$(pbpaste\
+      \ | textutil -stdin -info > Clipboard.txt 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"

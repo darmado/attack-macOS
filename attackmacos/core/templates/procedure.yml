@@ -21,7 +21,7 @@ version: ""        # Semantic versioning (e.g., 1.0.0)
 
 # Optional fields
 
-platform: []       # Supported platforms (e.g., ["macOS", "iOS"])
+platform: []       # Supported platforms — use ["darwin"] for macOS (schema enum)
 
 # Optional detection section
 detection:         # Detection and monitoring capabilities

@@ -1,0 +1,213 @@
+procedure_name: network_interfaces
+tactic: Discovery
+ttp_id: T1016
+guid: 7bb5cb8c-32f9-4790-8528-18f359238092
+intent: Configure network settings in System Preferences. Sourced from LOOBins; confirm
+  MITRE mapping for each enabled option.
+author: Jason Trost (@jason_trost)
+created: '2023-04-22'
+updated: '2026-05-03'
+version: 1.0.5
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1016/
+  description: "MITRE ATT&CK \u2014 T1016"
+- link: ''
+  description: ''
+- link: https://megancarney.com/presentations/ExternalReport_ThreatHuntingMacOS.pdf
+  description: Threat Hunting the macOS edition Megan Carney (Report)
+- link: https://www.youtube.com/watch?v=_K4gnSuDkRM&feature=youtu.be
+  description: 'GrrCon 2018: Threat Hunting the macOS edition Megan Carney'
+- link: https://objective-see.org/blog/blog_0x25.html
+  description: Mac Malware of 2017 - a analysis of the new mac malware of 17
+- link: https://objective-see.org/blog/blog_0x26.html
+  description: 'Ay MaMi - Analyzing a New macOS DNS Hijacker: OSX/MaMi'
+- link: https://objective-see.org/blog/blog_0x6D.html
+  description: Analyzing OSX.DazzleSpy - A fully-featured cyber-espionage macOS implant
+- link: https://objective-see.org/blog/blog_0x3C.html
+  description: The Mac Malware of 2018 - a analysis of the new mac malware of - 18
+- link: https://objective-see.org/blog/blog_0x6E.html
+  description: From The DPRK With Love - analyzing a recent north korean macOS backdoor
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --network-device-enumeration
+    description: 'Use networksetup to display services with corresponding port and
+      device in order they are tried for '
+    execute_function:
+    - execute_network_device_enumeration
+  - option: --detect-connected-network-hardware
+    description: Use networksetup to detect new network hardware and create a default
+      network service on the hardware
+    execute_function:
+    - execute_detect_connected_network_hardware
+  - option: --network-device-enumeration
+    description: Use networksetup to list all network interfaces, providing name,
+      device name, MAC address.
+    execute_function:
+    - execute_network_device_enumeration
+  - option: --network-device-enumeration
+    description: Use networksetup to list all network interface names.
+    execute_function:
+    - execute_network_device_enumeration
+  - option: --dns-server-enumeration
+    description: Use networksetup to get configured DNS servers for a specific interface.
+    execute_function:
+    - execute_dns_server_enumeration
+  - option: --enumerate-configured-web-proxy-url-for-an-interface
+    description: Displays web proxy auto-configuration information for the specified
+      interface.
+    execute_function:
+    - execute_enumerate_configured_web_proxy_url_interface
+  - option: --enumerate-configured-web-proxy-for-an-interface
+    description: Displays standard web proxy information for the specified interface.
+    execute_function:
+    - execute_enumerate_configured_web_proxy_interface
+  - option: --set-the-https-web-proxy-for-an-interface
+    description: Use networksetup to set the https web proxy for an interface.
+    execute_function:
+    - execute_set_https_web_proxy_interface
+  - option: --set-the-http-web-proxy-for-an-interface
+    description: Use networksetup to set the http web proxy for an interface.
+    execute_function:
+    - execute_set_http_web_proxy_interface
+  - option: --set-auto-proxy-url-for-an-interface
+    description: Use networksetup to set the proxy URL for an interface.
+    execute_function:
+    - execute_set_auto_proxy_url_interface
+  - option: --enable-auto-proxy-state
+    description: Use networksetup to enable the proxy auto-config
+    execute_function:
+    - execute_enable_auto_proxy_state
+  global_variable:
+  - name: CMD_NETWORKSETUP
+    type: string
+    default_value: /usr/sbin/networksetup
+  functions:
+  - name: execute_network_device_enumeration
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_network_device_enumeration() {\n    local result\n    result=$(networksetup\
+      \ -listnetworkserviceorder 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\
+      \n    return 0\n}"
+  - name: execute_detect_connected_network_hardware
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_detect_connected_network_hardware() {\n    local result\n    result=$(networksetup\
+      \ -detectnewhardware 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n \
+      \   return 0\n}"
+  - name: execute_network_device_enumeration
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_network_device_enumeration() {\n    local result\n    result=$(networksetup\
+      \ -listallhardwareports 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n\
+      \    return 0\n}"
+  - name: execute_network_device_enumeration
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_network_device_enumeration() {\n    local result\n    result=$(networksetup\
+      \ -listallnetworkservices 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\
+      \n    return 0\n}"
+  - name: execute_dns_server_enumeration
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_dns_server_enumeration() {\n    local result\n    result=$(networksetup\
+      \ -getdnsservers Wi-Fi 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n\
+      \    return 0\n}"
+  - name: execute_enumerate_configured_web_proxy_url_interface
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_enumerate_configured_web_proxy_url_interface() {\n    local result\n\
+      \    result=$(networksetup -getautoproxyurl \"Thunderbolt Ethernet\" 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_enumerate_configured_web_proxy_interface
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_enumerate_configured_web_proxy_interface() {\n    local result\n\
+      \    result=$(networksetup -getwebproxy \"Wi-Fi\" 2>&1)\n    $CMD_PRINTF \"\
+      RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_set_https_web_proxy_interface
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_set_https_web_proxy_interface() {\n    local result\n    result=$(networksetup\
+      \ -setsecurewebproxy \"Wi-Fi\" 46.226.108.171 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_set_http_web_proxy_interface
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_set_http_web_proxy_interface() {\n    local result\n    result=$(networksetup\
+      \ -setwebproxy \"Wi-Fi\" 46.226.108.171 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_set_auto_proxy_url_interface
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_set_auto_proxy_url_interface() {\n    local result\n    result=$(networksetup\
+      \ -setautoproxyurl \"Wi-Fi\" $autoProxyURL 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_enable_auto_proxy_state
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_enable_auto_proxy_state() {\n    local result\n    result=$(networksetup\
+      \ -setautoproxystate \"Wi-Fi\" on 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"\
+      $result\"\n    return 0\n}"

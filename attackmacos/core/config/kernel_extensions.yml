@@ -1,0 +1,49 @@
+procedure_name: kernel_extensions
+tactic: Discovery
+ttp_id: T1082
+guid: f91cfbe0-0d27-48f4-b9c9-08ba061d643a
+intent: Display the status of loaded kernal extensions (kexts) Sourced from LOOBins;
+  confirm MITRE mapping for each enabled option.
+author: Mark Morowczynsk (@markmorow)
+created: '2023-07-30'
+updated: '2026-05-03'
+version: 1.0.5
+platform:
+- darwin
+detection:
+- ioc: No detections at time of publishing
+  analysis: n/a
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1082/
+  description: "MITRE ATT&CK \u2014 T1082"
+- link: ''
+  description: ''
+- link: https://ss64.com/osx/kextstat.html
+  description: kextstat man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --list-kernel-extensions
+    description: Uses kexstat showloaded to display kernel extensions and address
+      in kernel memory it has been loaded
+    execute_function:
+    - execute_list_kernel_extensions
+  global_variable:
+  - name: CMD_KEXTSTAT
+    type: string
+    default_value: /usr/sbin/kextstat
+  functions:
+  - name: execute_list_kernel_extensions
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_list_kernel_extensions() {\n    local result\n    result=$(kexstat\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

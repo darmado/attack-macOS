@@ -1,0 +1,128 @@
+procedure_name: defaults
+tactic: Defense Evasion
+ttp_id: T1562.001
+guid: a42eebaa-4a53-4714-81c2-50796f6a3f14
+intent: Read, write, and delete user preference values. Sourced from LOOBins; confirm
+  MITRE mapping for each enabled option.
+author: Brendan Chamberlain (@infosecB)
+created: '2023-05-24'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1562/001/
+  description: "MITRE ATT&CK \u2014 T1562.001"
+- link: ''
+  description: ''
+- link: https://macos-defaults.com/
+  description: 'macOS defaults list: Uncomplete list of macOS defaults commands with
+    demos'
+- link: https://www.huntress.com/blog/insistence-on-persistence
+  description: Insistence on Persistence
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --disable-gatekeeper-s-auto-rearm-functionality
+    description: 'The following command can be used to disable Gatekeepers rearm functionality.
+      This command requires '
+    execute_function:
+    - execute_disable_gatekeeper_s_auto_rearm_functionality
+  - option: --show-mounted-servers
+    description: Show all mounted servers on the desktop.
+    execute_function:
+    - execute_show_mounted_servers
+  - option: --add-a-login-item-to-the-current-user
+    description: An attacker can use defaults to add a login hook in attempt to gain
+      persistence. This command requir
+    execute_function:
+    - execute_add_login_item_current_user
+  - option: --get-active-directory-user-info-from-jamf-connect
+    description: Retrieve Active Directory user info from Jamf Connect defaults configuration.
+    execute_function:
+    - execute_get_active_directory_user_info_from_jamf_connect
+  - option: --enable-firewall
+    description: Enables macOS' default firewall. This command requires root privileges.
+    execute_function:
+    - execute_enable_firewall
+  - option: --disable-firewall
+    description: Disables macOS' default firewall. This command requires root privileges.
+    execute_function:
+    - execute_disable_firewall
+  global_variable:
+  - name: CMD_DEFAULTS
+    type: string
+    default_value: /usr/bin/defaults
+  functions:
+  - name: execute_disable_gatekeeper_s_auto_rearm_functionality
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_disable_gatekeeper_s_auto_rearm_functionality() {\n    local result\n\
+      \    result=$(sudo defaults write /Library/Preferences/com.apple.security GKAutoRearm\
+      \ -bool NO 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n\
+      }"
+  - name: execute_show_mounted_servers
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_show_mounted_servers() {\n    local result\n    result=$(defaults\
+      \ read com.apple.finder \"ShowMountedServersOnDesktop\" 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_add_login_item_current_user
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_add_login_item_current_user() {\n    local result\n    result=$(sudo\
+      \ defaults write /Library/Preferences/com.apple.loginwindow LoginHook gain_persistence.sh\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_get_active_directory_user_info_from_jamf_connect
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_get_active_directory_user_info_from_jamf_connect() {\n    local\
+      \ result\n    result=$(defaults read com.jamf.connect.state 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_enable_firewall
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_enable_firewall() {\n    local result\n    result=$(sudo defaults\
+      \ write /Library/Preferences/com.apple.alf globalstate -int 1 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_disable_firewall
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_disable_firewall() {\n    local result\n    result=$(sudo defaults\
+      \ write /Library/Preferences/com.apple.alf globalstate -int 0 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

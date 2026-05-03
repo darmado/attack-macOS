@@ -1,0 +1,122 @@
+procedure_name: nscurl
+tactic: Command and Control
+ttp_id: T1071.001
+guid: 29afdbdb-a134-4ab3-b7cf-c313b718b2a0
+intent: Use Apple nscurl for HTTPS fetches (application update stack). Prefer explicit
+  modes over vague payload-type flags—URLs and paths point at the same filesystem objects.
+author: Leo Pitt (@_D00mfist)
+created: '2023-05-22'
+updated: '2026-05-03'
+version: 1.1.4
+platform:
+- darwin
+detection:
+- ioc: 'Jamf Protect: Detect all curl and nscurl activity'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/all_curl_activity
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — macOS binaries
+- link: https://attack.mitre.org/techniques/T1071/001/
+  description: MITRE ATT&CK — T1071.001
+- link: https://danielcortez.substack.com/p/living-off-the-land-exploring-macos
+  description: LOOBins and detection — nscurl
+procedure:
+  arguments:
+  - option: --url
+    description: Target HTTPS URL for fetch modes (required with fetch flags)
+    type: string
+    input_required: true
+    execute_function: []
+  - option: --output-path
+    description: Local file path for --https-ignore-cert (-o target)
+    type: string
+    input_required: true
+    execute_function: []
+  - option: --target-dir
+    description: Directory for --save-via-dir (-dir)
+    type: string
+    input_required: true
+    execute_function: []
+  - option: --https-ignore-cert
+    description: Fetch URL ignoring TLS validation (-k) and write to --output-path
+    execute_function:
+    - nscurl_https_ignore_cert
+  - option: --save-to-downloads-alias
+    description: Fetch using nscurl -dl (downloads folder alias on this host)
+    execute_function:
+    - nscurl_save_dl
+  - option: --save-via-dir
+    description: Fetch using nscurl -dir to --target-dir (see --url)
+    execute_function:
+    - nscurl_save_dir
+  global_variable:
+  - name: CMD_NSCURL
+    type: string
+    default_value: /usr/bin/nscurl
+  - name: INPUT_URL
+    type: string
+    default_value: ''
+  - name: INPUT_OUTPUT_PATH
+    type: string
+    default_value: ''
+  - name: INPUT_TARGET_DIR
+    type: string
+    default_value: ''
+  functions:
+  - name: nscurl_https_ignore_cert
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      nscurl_https_ignore_cert() {
+          if [ -z "$INPUT_URL" ] || [ -z "$INPUT_OUTPUT_PATH" ]; then
+              $CMD_PRINTF "ERROR|nscurl|--https-ignore-cert requires --url and --output-path\n"
+              return 1
+          fi
+          local result
+          result=$("$CMD_NSCURL" -k "$INPUT_URL" -o "$INPUT_OUTPUT_PATH" 2>&1) || true
+          $CMD_PRINTF "NSCURL|mode|https_ignore_cert|url|%s|exit_embedded_in_result\n" "$INPUT_URL"
+          $CMD_PRINTF "NSCURL|stdout_stderr|%s\n" "$result"
+          return 0
+      }
+  - name: nscurl_save_dl
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      nscurl_save_dl() {
+          if [ -z "$INPUT_URL" ]; then
+              $CMD_PRINTF "ERROR|nscurl|--save-to-downloads-alias requires --url\n"
+              return 1
+          fi
+          local result
+          result=$("$CMD_NSCURL" "$INPUT_URL" -dl 2>&1) || true
+          $CMD_PRINTF "NSCURL|mode|dl|url|%s\n" "$INPUT_URL"
+          $CMD_PRINTF "NSCURL|stdout_stderr|%s\n" "$result"
+          return 0
+      }
+  - name: nscurl_save_dir
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+    code: |
+      nscurl_save_dir() {
+          if [ -z "$INPUT_URL" ] || [ -z "$INPUT_TARGET_DIR" ]; then
+              $CMD_PRINTF "ERROR|nscurl|--save-via-dir requires --url and --target-dir\n"
+              return 1
+          fi
+          local result
+          result=$("$CMD_NSCURL" "$INPUT_URL" -dir "$INPUT_TARGET_DIR" 2>&1) || true
+          $CMD_PRINTF "NSCURL|mode|dir|url|%s|dir|%s\n" "$INPUT_URL" "$INPUT_TARGET_DIR"
+          $CMD_PRINTF "NSCURL|stdout_stderr|%s\n" "$result"
+          return 0
+      }

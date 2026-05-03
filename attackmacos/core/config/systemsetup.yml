@@ -1,0 +1,68 @@
+procedure_name: systemsetup
+tactic: Defense Evasion
+ttp_id: T1562.001
+guid: bced1b51-dd85-4989-ac38-f001efef71ab
+intent: Enable remote login, remote apple events for the machine Sourced from LOOBins;
+  confirm MITRE mapping for each enabled option.
+author: Hare Sudhan (@cyb3rbuff)
+created: '2023-08-31'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection:
+- ioc: Command line argument detection containing (args contain systemsetup AND (-setremoteappleevents
+    OR -setremotelogin) AND on)
+  analysis: https://www.elastic.co/guide/en/security/current/remote-ssh-login-enabled-via-systemsetup-command.html
+- ioc: 'Jamf Protect: Detect systemsetup activity that enables remotelogin or appleremoteevents'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/systemsetup_activity
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1562/001/
+  description: "MITRE ATT&CK \u2014 T1562.001"
+- link: ''
+  description: ''
+- link: https://ss64.com/osx/systemsetup.html
+  description: systemsetup man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --enable-remote-login
+    description: systemsetup can be used to enable SSH for remote login
+    execute_function:
+    - execute_enable_remote_login
+  - option: --enable-remote-apple-events
+    description: "systemsetup can be used to enable Remote Apple Events. \nSet whether\
+      \ the system responds to events se"
+    execute_function:
+    - execute_enable_remote_apple_events
+  global_variable:
+  - name: CMD_SYSTEMSETUP
+    type: string
+    default_value: /usr/sbin/systemsetup
+  functions:
+  - name: execute_enable_remote_login
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_enable_remote_login() {\n    local result\n    result=$(sudo systemsetup\
+      \ -setremotelogin on\n 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n\
+      \    return 0\n}"
+  - name: execute_enable_remote_apple_events
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_enable_remote_apple_events() {\n    local result\n    result=$(sudo\
+      \ systemsetup -setremoteappleevents on\n 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"

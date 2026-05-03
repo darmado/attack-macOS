@@ -1,0 +1,71 @@
+procedure_name: chflags
+tactic: Defense Evasion
+ttp_id: T1564.001
+guid: 50e663e1-1ed4-4f7b-81a0-40d04834c99f
+intent: Changes file or directory flags Sourced from LOOBins; confirm MITRE mapping
+  for each enabled option.
+author: demonduck
+created: '2024-07-25'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection:
+- ioc: 'Sigma: Hidden Flag Set On File/Directory Via Chflags'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_chflags_hidden_flag.yml
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1564/001/
+  description: "MITRE ATT&CK \u2014 T1564.001"
+- link: ''
+  description: ''
+- link: https://ss64.com/mac/chflags.html
+  description: chflags man page
+- link: https://macosbin.com/bin/chflags
+  description: macOS/binaries/chflags
+- link: https://eclecticlight.co/2024/07/03/how-to-hide-files-and-folders/
+  description: How to hide files and folders
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --hide-a-file
+    description: "Add the hidden flag to a file or directory to prevent it from being\
+      \ \nvisible in Finder and Terminal."
+    execute_function:
+    - execute_hide_file
+  - option: --remove-hidden-flag
+    description: 'Remove the hidden flag to a file or directory to make it visible
+      in Finder
+
+      and Terminal.'
+    execute_function:
+    - execute_remove_hidden_flag
+  global_variable:
+  - name: CMD_CHFLAGS
+    type: string
+    default_value: /usr/bin/chflags
+  functions:
+  - name: execute_hide_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_hide_file() {\n    local result\n    result=$(chflags hidden ~/evil\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_remove_hidden_flag
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_remove_hidden_flag() {\n    local result\n    result=$(chflags\
+      \ nohidden ~/evil 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"

@@ -4,9 +4,9 @@ tactic: Defense Evasion
 guid: 562bfb9d-a679-4384-b5ca-61151e284a55
 intent: Modify macOS security settings including Gatekeeper, firewall, SIP, login items, and system logs
 author: '@darmado | https://x.com/darmad0'
-version: 1.0.6
+version: 1.0.11
 created: '2025-01-02'
-updated: '2025-06-03'
+updated: '2026-05-03'
 resources:
 - link: https://www.loobins.io/binaries/defaults/
   description: LOOBins defaults commands for Gatekeeper and firewall modification

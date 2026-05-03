@@ -1,0 +1,60 @@
+procedure_name: directory_export
+tactic: Discovery
+ttp_id: T1087.002
+guid: 285892ef-3d0a-4e64-9a75-352ec01c15a5
+intent: Export data from an Open Directory directory services server. Sourced from
+  LOOBins; confirm MITRE mapping for each enabled option.
+author: Brendan Chamberlain (@infosecB)
+created: '2023-05-23'
+updated: '2026-05-03'
+version: 1.0.5
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1087/002/
+  description: "MITRE ATT&CK \u2014 T1087.002"
+- link: ''
+  description: ''
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --export-local-host-users
+    description: Export the local host user information to a file
+    execute_function:
+    - execute_export_local_host_users
+  - option: --export-local-host-groups
+    description: Export the local host group information to a file
+    execute_function:
+    - execute_export_local_host_groups
+  global_variable:
+  - name: CMD_DSEXPORT
+    type: string
+    default_value: /usr/bin/dsexport
+  functions:
+  - name: execute_export_local_host_users
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_export_local_host_users() {\n    local result\n    result=$(dsexport\
+      \ local_users.txt /Local/Default dsRecTypeStandard:Users 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_export_local_host_groups
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_export_local_host_groups() {\n    local result\n    result=$(dsexport\
+      \ local_groups.txt /Local/Default dsRecTypeStandard:Groups 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

@@ -1,0 +1,53 @@
+procedure_name: spctl
+tactic: Defense Evasion
+ttp_id: T1553.004
+guid: 0347a219-9b93-4c2f-af5f-b91f20db1060
+intent: Manage the security assessment policy subsystem, Gatekeeper settings, and
+  control which apps are allowed to run on the system. Sourced from LOOBins; confirm
+  MITRE mapping for each enabled option.
+author: Brendan Chamberlain (@infosecB)
+created: '2023-05-23'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection:
+- ioc: 'Elastic Detection Rules: Attempt to Disable Gatekeeper'
+  analysis: https://github.com/elastic/detection-rules/blob/e9baebc2bc18f90ae16501613cd9521a16a38ad7/rules/macos/defense_evasion_attempt_to_disable_gatekeeper.toml
+- ioc: 'Sigma Rules: Disable Security Tools'
+  analysis: https://github.com/SigmaHQ/sigma/blob/cd71edc09ca915f389e50df5b1bbb5ecd4b7f89d/rules/macos/process_creation/proc_creation_macos_disable_security_tools.yml
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1553/004/
+  description: "MITRE ATT&CK \u2014 T1553.004"
+- link: ''
+  description: ''
+- link: https://disable-gatekeeper.github.io/
+  description: Disable Gatekeeper on macOS Big Sur (11.x)
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --disable-gatekeeper
+    description: The --master-disable switch disables Gatekeeper. The command must
+      be run with root/sudo permission.
+    execute_function:
+    - execute_disable_gatekeeper
+  global_variable:
+  - name: CMD_SPCTL
+    type: string
+    default_value: /usr/sbin/spctl
+  functions:
+  - name: execute_disable_gatekeeper
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_disable_gatekeeper() {\n    local result\n    result=$(sudo spctl\
+      \ --master-disable 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n   \
+      \ return 0\n}"

