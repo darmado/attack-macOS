@@ -13,6 +13,8 @@ Automation scripts for attack-macOS maintenance: **build** (shell/JXA from YAML)
 
 Documentation for individual tools lives under **`docs/CICD/`** (not under `cicd/docs/`).
 
+**Coverage (ATT&CK ↔ scripts):** the maintained badge matrix and script links live in **[macOS Procedure Matrix](../docs/MITRE%20ATT&CK/macOS%20Procedure%20Matrix.md)** under `docs/MITRE ATT&CK/` — link there instead of duplicating coverage tables in this file.
+
 ## Tools
 
 ### Build (`cicd/build/`)
@@ -54,6 +56,7 @@ Documentation for individual tools lives under **`docs/CICD/`** (not under `cicd
 python3 cicd/build/build_shell_procedure.py --all
 python3 cicd/build/build_jxa_procedure.py --self-test
 python3 cicd/audit/audit_jxa.py
+python3 cicd/audit/audit_procedure_inventory.py --strict
 python3 cicd/sync/sync_function_docs.py
 ```
 
