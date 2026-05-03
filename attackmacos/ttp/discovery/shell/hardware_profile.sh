@@ -1,14 +1,14 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: system_time
+# Procedure Name: hardware_profile
 # Tactic: Discovery
-# Technique: T1124
-# GUID: f1e0ae1b-0091-46ab-b263-9960536d6f9a
-# Intent: Discover local system time, timezone, and network time configuration on macOS
-# Author: @darmado | https://x.com/darmad0
-# created: 2026-04-27
+# Technique: T1082
+# GUID: 0f714f73-cf87-4c82-a4da-ce74104bae2b
+# Intent: Reports system hardware and software configuration. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
+# Author: Ethan Nay
+# created: 2023-07-12
 # Updated: 2026-05-03
-# Version: 1.0.7
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:
@@ -20,7 +20,7 @@
 NAME="" 
 # MITRE ATT&CK Mappings
 TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1124" #replace with you coresponding ttp_id
+TTP_ID="T1082" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,19 +92,19 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-LOCAL_TIME=false
-TIMEZONE=false
-NETWORK_TIME=false
-ALL=false
+LISTING_THE_AVAILABLE_DATATYPES=false
+PRINT_HARDWARE_INFORMATION=false
+PRINT_SOFTWARE_INFORMATION=false
+PRINT_THE_INFORMATION_OF_DEVELOPER_TOOLS=false
+PRINT_POWER_AND_BATTERY_INFORMATION=false
 
-TZ_FILE="/etc/localtime"
-DATETIME_PROFILE_TYPE="SPDateTimeDataType"
+CMD_SYSTEM_PROFILER="/usr/sbin/system_profiler"
 
 # Project root path (set by build system)
 PROJECT_ROOT="/Users/darmado/Desktop/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="system_time"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="hardware_profile"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -646,17 +646,20 @@ core_parse_args() {
                 SACRIFICIAL_CHILD=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --local-time)
-            LOCAL_TIME=true
+        --listing-the-available-datatypes)
+            LISTING_THE_AVAILABLE_DATATYPES=true
             ;;
-        --timezone)
-            TIMEZONE=true
+        --print-hardware-information)
+            PRINT_HARDWARE_INFORMATION=true
             ;;
-        --network-time)
-            NETWORK_TIME=true
+        --print-software-information)
+            PRINT_SOFTWARE_INFORMATION=true
             ;;
-        --all)
-            ALL=true
+        --print-the-information-of-developer-tools)
+            PRINT_THE_INFORMATION_OF_DEVELOPER_TOOLS=true
+            ;;
+        --print-power-and-battery-information)
+            PRINT_POWER_AND_BATTERY_INFORMATION=true
             ;;
             *)
                 # Collect unknown arguments for error reporting
@@ -696,10 +699,11 @@ HELP:
   -d, --debug                   Enable debug output (includes verbose output)
 
 SCRIPT:
-  --local-time                     Discover current local date and time using date command
-  --timezone                       Discover timezone details and configured timezone files
-  --network-time                   Discover network time service and synchronization settings
-  --all                            Run all system time discovery checks
+  --listing-the-available-datatypes List all available sub-systems to get information from.
+  --print-hardware-information     Prints an overview of the hardware of the current machine, including its model name and serial numbe
+  --print-software-information     Prints an overview of the software of the current machine, including the exact macOS version number.
+  --print-the-information-of-developer-tools Prints the currently active version of the Xcode developer tools and SDK.
+  --print-power-and-battery-information Prints power and battery information, including the current AC wattage and battery cycle count.
 
 EXECUTION:
   --sacrificial-pid             Run main logic in a child shell; parent reads child stdout from a FIFO under
@@ -2091,40 +2095,43 @@ execute_function() {
     $func_name
 }
 
-# Execute functions for --local-time
-if [ "$LOCAL_TIME" = true ]; then
-    core_debug_print "Executing functions for --local-time"
-    result=$(execute_function discover_local_time)
+# Execute functions for --listing-the-available-datatypes
+if [ "$LISTING_THE_AVAILABLE_DATATYPES" = true ]; then
+    core_debug_print "Executing functions for --listing-the-available-datatypes"
+    result=$(execute_function execute_listing_available_datatypes)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --timezone
-if [ "$TIMEZONE" = true ]; then
-    core_debug_print "Executing functions for --timezone"
-    result=$(execute_function discover_timezone)
+# Execute functions for --print-hardware-information
+if [ "$PRINT_HARDWARE_INFORMATION" = true ]; then
+    core_debug_print "Executing functions for --print-hardware-information"
+    result=$(execute_function execute_print_hardware_information)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --network-time
-if [ "$NETWORK_TIME" = true ]; then
-    core_debug_print "Executing functions for --network-time"
-    result=$(execute_function discover_network_time)
+# Execute functions for --print-software-information
+if [ "$PRINT_SOFTWARE_INFORMATION" = true ]; then
+    core_debug_print "Executing functions for --print-software-information"
+    result=$(execute_function execute_print_software_information)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --all
-if [ "$ALL" = true ]; then
-    core_debug_print "Executing functions for --all"
-    result=$(execute_function discover_local_time)
+# Execute functions for --print-the-information-of-developer-tools
+if [ "$PRINT_THE_INFORMATION_OF_DEVELOPER_TOOLS" = true ]; then
+    core_debug_print "Executing functions for --print-the-information-of-developer-tools"
+    result=$(execute_function execute_print_information_developer_tools)
     raw_output="${raw_output}${result}"
-    result=$(execute_function discover_timezone)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function discover_network_time)
+fi
+
+# Execute functions for --print-power-and-battery-information
+if [ "$PRINT_POWER_AND_BATTERY_INFORMATION" = true ]; then
+    core_debug_print "Executing functions for --print-power-and-battery-information"
+    result=$(execute_function execute_print_power_battery_information)
     raw_output="${raw_output}${result}"
 fi
 
 # Set procedure name for processing
-procedure="system_time"
+procedure="hardware_profile"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2289,56 +2296,70 @@ core_generate_encryption_key() {
 
 
 
-# Function: discover_local_time
+# Function: execute_listing_available_datatypes
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_local_time() {
-    local now=$($CMD_DATE "+%Y-%m-%d %H:%M:%S %Z %z" 2>/dev/null)
-    local epoch=$($CMD_DATE "+%s" 2>/dev/null)
-    $CMD_PRINTF "SYSTEM_TIME|local|%s\n" "$now"
-    $CMD_PRINTF "SYSTEM_TIME|epoch|%s\n" "$epoch"
+execute_listing_available_datatypes() {
+    local result
+    result=$(system_profiler -listDataTypes 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 
-
-# Function: discover_timezone
+# Function: execute_print_hardware_information
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_timezone() {
-    local tz_name=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -i "Time Zone" | $CMD_HEAD -n 1)
-    local tz_env=$($CMD_DATE "+%Z %z" 2>/dev/null)
-    local tz_link=$($CMD_LS -l "$TZ_FILE" 2>/dev/null)
-    $CMD_PRINTF "SYSTEM_TIME|timezone_config|%s\n" "$tz_name"
-    $CMD_PRINTF "SYSTEM_TIME|timezone_runtime|%s\n" "$tz_env"
-    if [ -n "$tz_link" ]; then
-        $CMD_PRINTF "SYSTEM_TIME|timezone_file|%s\n" "$tz_link"
-    fi
+execute_print_hardware_information() {
+    local result
+    result=$(system_profiler SPHardwareDataType 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 
-
-# Function: discover_network_time
+# Function: execute_print_software_information
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_network_time() {
-    local ntp_status=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -Ei "Network Time|NTP|Time Server" | $CMD_HEAD -n 10)
-    if [ -n "$ntp_status" ]; then
-        $CMD_PRINTF "SYSTEM_TIME|ntp_probe|%s\n" "$ntp_status"
-    else
-        $CMD_PRINTF "SYSTEM_TIME|ntp_probe|not_available\n"
-    fi
+execute_print_software_information() {
+    local result
+    result=$(system_profiler SPSoftwareDataType 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 
+# Function: execute_print_information_developer_tools
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_print_information_developer_tools() {
+    local result
+    result=$(system_profiler SPDeveloperToolsDataType 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
+
+# Function: execute_print_power_battery_information
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_print_power_battery_information() {
+    local result
+    result=$(system_profiler SPPowerDataType 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
 
 
 JOB_ID=$(core_generate_job_id)

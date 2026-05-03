@@ -1,12 +1,12 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: system_time
+# Procedure Name: directory_cache
 # Tactic: Discovery
-# Technique: T1124
-# GUID: f1e0ae1b-0091-46ab-b263-9960536d6f9a
-# Intent: Discover local system time, timezone, and network time configuration on macOS
-# Author: @darmado | https://x.com/darmad0
-# created: 2026-04-27
+# Technique: T1087.002
+# GUID: b8345244-2885-4d0e-a0b3-33dec4eddc54
+# Intent: Query the Directory Service cache (T1087.002). Procedure name states scope; flags name the query shape. Sourced from LOOBins; confirm MITRE mapping per option.
+# Author: Ethan Nay
+# created: 2023-08-23
 # Updated: 2026-05-03
 # Version: 1.0.7
 # License: Apache 2.0
@@ -20,7 +20,7 @@
 NAME="" 
 # MITRE ATT&CK Mappings
 TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1124" #replace with you coresponding ttp_id
+TTP_ID="T1087.002" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,19 +92,18 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-LOCAL_TIME=false
-TIMEZONE=false
-NETWORK_TIME=false
-ALL=false
+INPUT_LOOKUP_USER=""
+LOOKUP_USER=false
+LIST_USERS=false
 
-TZ_FILE="/etc/localtime"
-DATETIME_PROFILE_TYPE="SPDateTimeDataType"
+CMD_DSCACHEUTIL="/usr/bin/dscacheutil"
+INPUT_USER=""
 
 # Project root path (set by build system)
 PROJECT_ROOT="/Users/darmado/Desktop/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="system_time"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="directory_cache"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -646,17 +645,19 @@ core_parse_args() {
                 SACRIFICIAL_CHILD=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --local-time)
-            LOCAL_TIME=true
-            ;;
-        --timezone)
-            TIMEZONE=true
-            ;;
-        --network-time)
-            NETWORK_TIME=true
-            ;;
-        --all)
-            ALL=true
+        --lookup-user)
+            if [ -n "$2" ] && [ "$2" != "${2#-}" ]; then
+                MISSING_VALUES="$MISSING_VALUES $1"
+            elif [ -n "$2" ]; then
+                INPUT_LOOKUP_USER="$2"
+                LOOKUP_USER=true
+                    shift
+            else
+                MISSING_VALUES="$MISSING_VALUES $1"
+                fi
+                ;;
+        --list-users)
+            LIST_USERS=true
             ;;
             *)
                 # Collect unknown arguments for error reporting
@@ -696,10 +697,8 @@ HELP:
   -d, --debug                   Enable debug output (includes verbose output)
 
 SCRIPT:
-  --local-time                     Discover current local date and time using date command
-  --timezone                       Discover timezone details and configured timezone files
-  --network-time                   Discover network time service and synchronization settings
-  --all                            Run all system time discovery checks
+  --lookup-user ENABLE|DISABLE     Look up one user by short name (requires --lookup-user value)
+  --list-users                     List all user records from the directory cache
 
 EXECUTION:
   --sacrificial-pid             Run main logic in a child shell; parent reads child stdout from a FIFO under
@@ -2084,6 +2083,9 @@ raw_output=""
 # Set global function language for this procedure
 FUNCTION_LANG="shell"
 
+# Process input arguments
+process_input_arguments
+
 # Helper function to execute procedure functions
 execute_function() {
     local func_name="$1"
@@ -2091,40 +2093,22 @@ execute_function() {
     $func_name
 }
 
-# Execute functions for --local-time
-if [ "$LOCAL_TIME" = true ]; then
-    core_debug_print "Executing functions for --local-time"
-    result=$(execute_function discover_local_time)
+# Execute functions for --lookup-user
+if [ "$LOOKUP_USER" = true ]; then
+    core_debug_print "Executing functions for --lookup-user"
+    result=$(execute_function execute_lookup_user)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --timezone
-if [ "$TIMEZONE" = true ]; then
-    core_debug_print "Executing functions for --timezone"
-    result=$(execute_function discover_timezone)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --network-time
-if [ "$NETWORK_TIME" = true ]; then
-    core_debug_print "Executing functions for --network-time"
-    result=$(execute_function discover_network_time)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --all
-if [ "$ALL" = true ]; then
-    core_debug_print "Executing functions for --all"
-    result=$(execute_function discover_local_time)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function discover_timezone)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function discover_network_time)
+# Execute functions for --list-users
+if [ "$LIST_USERS" = true ]; then
+    core_debug_print "Executing functions for --list-users"
+    result=$(execute_function execute_lookup_all_users)
     raw_output="${raw_output}${result}"
 fi
 
 # Set procedure name for processing
-procedure="system_time"
+procedure="directory_cache"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2287,55 +2271,46 @@ core_generate_encryption_key() {
 
 # Generate job ID now that core functions are defined
 
+# Input processing and type conversion
+process_input_arguments() {
+    # Process and validate input arguments based on their types
+    
+    # Process --lookup-user argument
+    if [ -n "${INPUT_LOOKUP_USER}" ]; then
+        # Process string input
+        LOOKUP_USER_ARG="${INPUT_LOOKUP_USER}"
+    fi
+}
 
 
-# Function: discover_local_time
+# Function: execute_lookup_user
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_local_time() {
-    local now=$($CMD_DATE "+%Y-%m-%d %H:%M:%S %Z %z" 2>/dev/null)
-    local epoch=$($CMD_DATE "+%s" 2>/dev/null)
-    $CMD_PRINTF "SYSTEM_TIME|local|%s\n" "$now"
-    $CMD_PRINTF "SYSTEM_TIME|epoch|%s\n" "$epoch"
+execute_lookup_user() {
+    local result
+    if [ -z "$INPUT_USER" ]; then
+        $CMD_PRINTF "RESULT|error|INPUT_USER is empty; pass username after --lookup-user\n"
+        return 1
+    fi
+    result=$("$CMD_DSCACHEUTIL" -q user -a name "$INPUT_USER" 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 
 
-# Function: discover_timezone
+# Function: execute_lookup_all_users
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_timezone() {
-    local tz_name=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -i "Time Zone" | $CMD_HEAD -n 1)
-    local tz_env=$($CMD_DATE "+%Z %z" 2>/dev/null)
-    local tz_link=$($CMD_LS -l "$TZ_FILE" 2>/dev/null)
-    $CMD_PRINTF "SYSTEM_TIME|timezone_config|%s\n" "$tz_name"
-    $CMD_PRINTF "SYSTEM_TIME|timezone_runtime|%s\n" "$tz_env"
-    if [ -n "$tz_link" ]; then
-        $CMD_PRINTF "SYSTEM_TIME|timezone_file|%s\n" "$tz_link"
-    fi
-    return 0
-}
-
-
-# Function: discover_network_time
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-discover_network_time() {
-    local ntp_status=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -Ei "Network Time|NTP|Time Server" | $CMD_HEAD -n 10)
-    if [ -n "$ntp_status" ]; then
-        $CMD_PRINTF "SYSTEM_TIME|ntp_probe|%s\n" "$ntp_status"
-    else
-        $CMD_PRINTF "SYSTEM_TIME|ntp_probe|not_available\n"
-    fi
+execute_lookup_all_users() {
+    local result
+    result=$("$CMD_DSCACHEUTIL" -q user 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 

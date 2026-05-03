@@ -7,8 +7,8 @@
 # Intent: Identifies valid local accounts and groups on macOS systems using various native commands
 # Author: @darmado | https://x.com/darmad0
 # created: 2023-10-06
-# Updated: 2025-06-03
-# Version: 1.5.3
+# Updated: 2026-05-03
+# Version: 1.5.9
 # License: Apache 2.0
 
 # Core function Info:
@@ -131,7 +131,7 @@ CMD_SHOW_USER_PROFILE="profiles show -user"
 CMD_SHOW_ALL_PROFILES="profiles show -all"
 
 # Project root path (set by build system)
-PROJECT_ROOT="/Users/darmado/tools/opensource/attack-macOS"  # Set by build system to project root directory
+PROJECT_ROOT="/Users/darmado/Desktop/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
 PROCEDURE_NAME="local_accounts"  # Set by build system from YAML procedure_name field
@@ -154,7 +154,7 @@ SHOW_HELP=false
 STEG_TRANSFORM=false # Enable steganography transformation
 STEG_EXTRACT=false # Extract hidden data from steganography
 STEG_EXTRACT_FILE="" # File to extract hidden data from
-ISOLATED=false # Enable memory isolation mode
+SACRIFICIAL_CHILD=false # When true: run main logic via child PID + FIFO (--sacrificial-pid); parent PID unchanged
 
 # OPSEC Check Settings (enabled by build script based on YAML configuration)
 CHECK_PERMS="false"
@@ -222,6 +222,37 @@ core_debug_print() {
     fi
 }
 
+# Purpose: Escape a string for use inside JSON double quotes (minimal: newlines, \, ")
+# Inputs: $1 - raw string
+# Outputs: escaped string on stdout
+core_json_escape_minimal() {
+    "$CMD_PRINTF" '%s' "$1" | "$CMD_TR" '\n\r' '  ' | "$CMD_SED" 's/\\/\\\\/g;s/"/\\"/g'
+}
+
+# Purpose: Emit one JSON object to stdout for machine pipelines when FORMAT is json/json-lines
+# Inputs: $1 - timestamp, $2 - error message
+# Outputs: One line JSON on stdout when FORMAT requests JSON; otherwise nothing
+# - stderr still gets the human [ERROR] line from core_handle_error
+core_emit_error_json_stdout() {
+    local ts="$1"
+    local msg="$2"
+    local fmt
+    fmt=$("$CMD_PRINTF" '%s' "${FORMAT:-}" | "$CMD_TR" '[:upper:]' '[:lower:]')
+    case "$fmt" in
+        json|json-lines)
+            local emsg eproc ettp etac
+            emsg=$(core_json_escape_minimal "$msg")
+            eproc=$(core_json_escape_minimal "${PROCEDURE_NAME:-unknown}")
+            ettp=$(core_json_escape_minimal "${TTP_ID:-}")
+            etac=$(core_json_escape_minimal "${TACTIC:-}")
+            $CMD_PRINTF '{"success":false,"timestamp":"%s","jobId":"%s","procedure":"%s","ttp_id":"%s","tactic":"%s","error":"%s"}\n' \
+                "$ts" "${JOB_ID:-}" "$eproc" "$ettp" "$etac" "$emsg"
+            ;;
+        *)
+            ;;
+    esac
+}
+
 # Purpose: Print verbose messages to stdout when verbose mode is enabled
 # Inputs: $1 - Message to print
 # Outputs: None (prints directly to stdout)
@@ -229,10 +260,11 @@ core_debug_print() {
 
 # Purpose: Handle errors consistently with proper formatting and logging
 # Inputs: $1 - Error message
-# Outputs: None (prints directly to stderr)
+# Outputs: None (prints human line to stderr; optional JSON line to stdout when FORMAT is json)
 # - 
-#   - Writes to stderr
-#   - Logs error message if LOG_ENABLED=true
+#   - Writes human-readable line to stderr (not stdout)
+#   - When FORMAT is json or json-lines, writes one JSON object to stdout so pipelines see a parseable failure
+#   - Logs error message if LOG_ENABLED=true (same fields as other log lines)
 #   - Returns error code 1
 core_handle_error() {
     local error_msg="$1"
@@ -242,6 +274,8 @@ core_handle_error() {
     if [ "$LOG_ENABLED" = true ]; then
         core_log_output "$error_msg" "error" false
     fi
+
+    core_emit_error_json_stdout "$timestamp" "$error_msg"
     
     return 1
 }
@@ -638,62 +672,62 @@ core_parse_args() {
             --verbose)
                 DEBUG=true
                 ;;
-            --isolated)
-                ISOLATED=true
+            --sacrificial-pid)
+                SACRIFICIAL_CHILD=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        -a|--all)
+        --all)
             ALL=true
             ;;
-        -d|--user-dirs)
+        --user-dirs)
             USER_DIRS=true
             ;;
-        -l|--dscl-users)
+        --dscl-users)
             DSCL_USERS=true
             ;;
-        -p|--passwd)
+        --passwd)
             PASSWD=true
             ;;
-        -i|--id)
+        --id)
             ID=true
             ;;
-        -w|--who)
+        --who)
             WHO=true
             ;;
-        -s|--plist)
+        --plist)
             PLIST=true
             ;;
-        -m|--dscacheutil)
+        --dscacheutil)
             DSCACHEUTIL=true
             ;;
-        -g|--all-groups)
+        --all-groups)
             ALL_GROUPS=true
             ;;
-        -gc|--cache-groups)
+        --cache-groups)
             CACHE_GROUPS=true
             ;;
-        -gd|--dscl-groups)
+        --dscl-groups)
             DSCL_GROUPS=true
             ;;
-        -ge|--etc-groups)
+        --etc-groups)
             ETC_GROUPS=true
             ;;
-        -gi|--id-groups)
+        --id-groups)
             ID_GROUPS=true
             ;;
-        -gg|--groups-cmd)
+        --groups-cmd)
             GROUPS_CMD=true
             ;;
-        -df|--defaults-find)
+        --defaults-find)
             DEFAULTS_FIND=true
             ;;
-        -lt|--last-logins)
+        --last-logins)
             LAST_LOGINS=true
             ;;
-        -pf|--profiles)
+        --profiles)
             PROFILES=true
             ;;
-        -pa|--profiles-all)
+        --profiles-all)
             PROFILES_ALL=true
             ;;
             *)
@@ -734,27 +768,28 @@ HELP:
   -d, --debug                   Enable debug output (includes verbose output)
 
 SCRIPT:
-  -a|--all                         Run all account discovery techniques
-  -d|--user-dirs                   List user directories using 'ls -la /Users'
-  -l|--dscl-users                  List users using 'dscl . -list /Users'
-  -p|--passwd                      Display content of '/etc/passwd'
-  -i|--id                          Show current user info using 'id' command
-  -w|--who                         List logged-in users with 'who' command
-  -s|--plist                       Read user list from loginwindow plist
-  -m|--dscacheutil                 List local users using 'dscacheutil -q user'
-  -g|--all-groups                  Run all group discovery techniques
-  -gc|--cache-groups               List groups using 'dscacheutil -q group'
-  -gd|--dscl-groups                List groups using 'dscl . -list /Groups'
-  -ge|--etc-groups                 List groups using 'grep /etc/group'
-  -gi|--id-groups                  List groups using 'id -G'
-  -gg|--groups-cmd                 List groups using 'groups' command
-  -df|--defaults-find              Find user account info using 'defaults find'
-  -lt|--last-logins                Show last user logins using 'last' command
-  -pf|--profiles                   List and show user configuration profiles
-  -pa|--profiles-all               Show all configuration profiles (requires sudo)
+  --all                            Run all user and group discovery techniques (combines all options below)
+  --user-dirs                      List user directories using 'ls -la /Users'
+  --dscl-users                     List users using 'dscl . -list /Users'
+  --passwd                         Display content of '/etc/passwd'
+  --id                             Show current user info using 'id' command
+  --who                            List logged-in users with 'who' command
+  --plist                          Read user list from loginwindow plist
+  --dscacheutil                    List local users using 'dscacheutil -q user'
+  --all-groups                     Run all group discovery techniques
+  --cache-groups                   List groups using 'dscacheutil -q group'
+  --dscl-groups                    List groups using 'dscl . -list /Groups'
+  --etc-groups                     List groups using 'grep /etc/group'
+  --id-groups                      List groups using 'id -G'
+  --groups-cmd                     List groups using 'groups' command
+  --defaults-find                  Find user account info using 'defaults find'
+  --last-logins                    Show last user logins using 'last' command
+  --profiles                       List and show user configuration profiles
+  --profiles-all                   Show all configuration profiles (requires sudo)
 
 EXECUTION:
-  --isolated                    Enable memory isolation mode (spawns isolated processes)
+  --sacrificial-pid             Run main logic in a child shell; parent reads child stdout from a FIFO under
+                                /tmp/mem_<JOB_ID>/ (extra child PID(s); same user as parent — not sandboxed)
 
 Output Options:
   --format TYPE                 
@@ -2057,41 +2092,39 @@ core_main() {
     # Step 5: Validate required commands
     core_validate_command || exit 1
     
-    # Step 6: Check if isolated execution is requested
-    if [ "$ISOLATED" = "true" ]; then
-        core_debug_print "Executing script in memory isolated mode"
+    # Step 6: Optional --sacrificial-pid (child PID + FIFO; parent remains current shell)
+    if [ "$SACRIFICIAL_CHILD" = "true" ]; then
+        core_debug_print "Executing script with --sacrificial-pid (child PID + FIFO under /tmp)"
         
-        # Create isolated execution environment
+        # Child PID + FIFO capture (not a sandboxed process tree)
         local buffer_name="main_$(date +%s)"
-        if memory_create_buffer "$buffer_name"; then
-            # Execute main logic in isolated process
-            memory_spawn_isolated "$buffer_name" "$(declare -f core_execute_main_logic); core_execute_main_logic"
+        if fifo_create "$buffer_name"; then
+            # Run main logic in sacrificial child (stdout via FIFO)
+            spawn_sacrificial_pid "$buffer_name" "$(declare -f core_execute_main_logic); core_execute_main_logic"
             sleep 1  # Allow execution time
             
-            # Read results from isolated process
-            local isolated_result=$(memory_read_buffer "${buffer_name}_proc")
+            # Read child stdout from FIFO
+            local child_stdout=$(fifo_read "${buffer_name}_proc")
             
-            # Cleanup isolation
-            memory_cleanup_buffer "$buffer_name"
+            fifo_cleanup "$buffer_name"
             
-            # Output results
-            if [ -n "$isolated_result" ]; then
-                printf "%s\n" "$isolated_result"
+            if [ -n "$child_stdout" ]; then
+                printf "%s\n" "$child_stdout"
             fi
             
-            core_debug_print "Isolated execution completed"
+            core_debug_print "Child-PID / FIFO path completed (parent PID unchanged)"
             return 0
         else
-            core_handle_error "Failed to create isolated execution environment, falling back to normal execution"
+            core_handle_error "Failed to create FIFO for sacrificial PID path, falling back to normal execution"
             # Fall through to normal execution
         fi
     fi
     
-    # Step 7: Normal execution (or fallback from failed isolation)
+    # Step 7: Normal execution (or fallback if FIFO/child path failed)
     core_execute_main_logic
 }
 
-# Purpose: Execute the main script logic (can be called normally or in isolation)
+# Purpose: Execute the main script logic (inline, or from child when --sacrificial-pid)
 # Inputs: None (uses global variables)
 # Outputs: Processed script results
 # - Contains all the core execution logic
@@ -2144,9 +2177,9 @@ execute_function() {
     $func_name
 }
 
-# Execute functions for -a|--all
+# Execute functions for --all
 if [ "$ALL" = true ]; then
-    core_debug_print "Executing functions for -a|--all"
+    core_debug_print "Executing functions for --all"
     result=$(execute_function list_user_dirs)
     raw_output="${raw_output}${result}"
     result=$(execute_function list_dscl_users)
@@ -2159,6 +2192,8 @@ if [ "$ALL" = true ]; then
     raw_output="${raw_output}${result}"
     result=$(execute_function read_loginwindow_plist)
     raw_output="${raw_output}${result}"
+    result=$(execute_function list_dscacheutil_users)
+    raw_output="${raw_output}${result}"
     result=$(execute_function list_groups_dscacheutil)
     raw_output="${raw_output}${result}"
     result=$(execute_function list_groups_dscl)
@@ -2168,8 +2203,6 @@ if [ "$ALL" = true ]; then
     result=$(execute_function list_groups_id)
     raw_output="${raw_output}${result}"
     result=$(execute_function list_groups_cmd)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function list_dscacheutil_users)
     raw_output="${raw_output}${result}"
     result=$(execute_function find_user_defaults)
     raw_output="${raw_output}${result}"
@@ -2181,58 +2214,58 @@ if [ "$ALL" = true ]; then
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -d|--user-dirs
+# Execute functions for --user-dirs
 if [ "$USER_DIRS" = true ]; then
-    core_debug_print "Executing functions for -d|--user-dirs"
+    core_debug_print "Executing functions for --user-dirs"
     result=$(execute_function list_user_dirs)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -l|--dscl-users
+# Execute functions for --dscl-users
 if [ "$DSCL_USERS" = true ]; then
-    core_debug_print "Executing functions for -l|--dscl-users"
+    core_debug_print "Executing functions for --dscl-users"
     result=$(execute_function list_dscl_users)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -p|--passwd
+# Execute functions for --passwd
 if [ "$PASSWD" = true ]; then
-    core_debug_print "Executing functions for -p|--passwd"
+    core_debug_print "Executing functions for --passwd"
     result=$(execute_function extract_passwd_users)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -i|--id
+# Execute functions for --id
 if [ "$ID" = true ]; then
-    core_debug_print "Executing functions for -i|--id"
+    core_debug_print "Executing functions for --id"
     result=$(execute_function show_id_info)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -w|--who
+# Execute functions for --who
 if [ "$WHO" = true ]; then
-    core_debug_print "Executing functions for -w|--who"
+    core_debug_print "Executing functions for --who"
     result=$(execute_function list_logged_users)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -s|--plist
+# Execute functions for --plist
 if [ "$PLIST" = true ]; then
-    core_debug_print "Executing functions for -s|--plist"
+    core_debug_print "Executing functions for --plist"
     result=$(execute_function read_loginwindow_plist)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -m|--dscacheutil
+# Execute functions for --dscacheutil
 if [ "$DSCACHEUTIL" = true ]; then
-    core_debug_print "Executing functions for -m|--dscacheutil"
+    core_debug_print "Executing functions for --dscacheutil"
     result=$(execute_function list_dscacheutil_users)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -g|--all-groups
+# Execute functions for --all-groups
 if [ "$ALL_GROUPS" = true ]; then
-    core_debug_print "Executing functions for -g|--all-groups"
+    core_debug_print "Executing functions for --all-groups"
     result=$(execute_function list_groups_dscacheutil)
     raw_output="${raw_output}${result}"
     result=$(execute_function list_groups_dscl)
@@ -2245,67 +2278,67 @@ if [ "$ALL_GROUPS" = true ]; then
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -gc|--cache-groups
+# Execute functions for --cache-groups
 if [ "$CACHE_GROUPS" = true ]; then
-    core_debug_print "Executing functions for -gc|--cache-groups"
+    core_debug_print "Executing functions for --cache-groups"
     result=$(execute_function list_groups_dscacheutil)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -gd|--dscl-groups
+# Execute functions for --dscl-groups
 if [ "$DSCL_GROUPS" = true ]; then
-    core_debug_print "Executing functions for -gd|--dscl-groups"
+    core_debug_print "Executing functions for --dscl-groups"
     result=$(execute_function list_groups_dscl)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -ge|--etc-groups
+# Execute functions for --etc-groups
 if [ "$ETC_GROUPS" = true ]; then
-    core_debug_print "Executing functions for -ge|--etc-groups"
+    core_debug_print "Executing functions for --etc-groups"
     result=$(execute_function list_groups_etc)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -gi|--id-groups
+# Execute functions for --id-groups
 if [ "$ID_GROUPS" = true ]; then
-    core_debug_print "Executing functions for -gi|--id-groups"
+    core_debug_print "Executing functions for --id-groups"
     result=$(execute_function list_groups_id)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -gg|--groups-cmd
+# Execute functions for --groups-cmd
 if [ "$GROUPS_CMD" = true ]; then
-    core_debug_print "Executing functions for -gg|--groups-cmd"
+    core_debug_print "Executing functions for --groups-cmd"
     result=$(execute_function list_groups_cmd)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -df|--defaults-find
+# Execute functions for --defaults-find
 if [ "$DEFAULTS_FIND" = true ]; then
-    core_debug_print "Executing functions for -df|--defaults-find"
+    core_debug_print "Executing functions for --defaults-find"
     result=$(execute_function find_user_defaults)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -lt|--last-logins
+# Execute functions for --last-logins
 if [ "$LAST_LOGINS" = true ]; then
-    core_debug_print "Executing functions for -lt|--last-logins"
+    core_debug_print "Executing functions for --last-logins"
     result=$(execute_function show_last_logins)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -pf|--profiles
+# Execute functions for --profiles
 if [ "$PROFILES" = true ]; then
-    core_debug_print "Executing functions for -pf|--profiles"
+    core_debug_print "Executing functions for --profiles"
     result=$(execute_function list_user_profiles)
     raw_output="${raw_output}${result}"
     result=$(execute_function show_user_profile_details)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for -pa|--profiles-all
+# Execute functions for --profiles-all
 if [ "$PROFILES_ALL" = true ]; then
-    core_debug_print "Executing functions for -pa|--profiles-all"
+    core_debug_print "Executing functions for --profiles-all"
     result=$(execute_function show_all_profiles)
     raw_output="${raw_output}${result}"
 fi
@@ -2747,20 +2780,20 @@ show_all_profiles() {
 JOB_ID=$(core_generate_job_id)
 
 # =============================================================================
-# MEMORY ISOLATION SYSTEM - Pure Memory Buffer Communication
+# FIFO IPC when --sacrificial-pid (named pipes under /tmp; not OS-level sandbox)
 # =============================================================================
 
-# Purpose: Create memory buffer using named pipes (FIFOs) - pure memory isolation
+# Purpose: Create a named pipe (FIFO) under /tmp for subprocess stdout capture
 # Inputs: $1 = buffer name (unique identifier)
 # Outputs: 0 if success, 1 if error
-# - Creates memory-only communication channel using named pipes
-memory_create_buffer() {
+# - mkfifo under /tmp/mem_<JOB_ID>/ (filesystem FIFO, not RAM-only)
+fifo_create() {
     local buffer_name="${1:-main}"
     local pipe_dir="/tmp/mem_${JOB_ID}"
     local pipe_path="${pipe_dir}/${buffer_name}.pipe"
     
     if [ -z "$buffer_name" ]; then
-        core_handle_error "Buffer name required for memory isolation"
+        core_handle_error "Buffer name required for fifo_create"
         return 1
     fi
     
@@ -2772,34 +2805,34 @@ memory_create_buffer() {
         }
     fi
     
-    # Create named pipe (FIFO) for memory communication
+    # Create named pipe (FIFO) on disk under pipe_dir
     if mkfifo "$pipe_path" 2>/dev/null; then
-        core_debug_print "Created memory buffer: $buffer_name (pipe: $pipe_path)"
+        core_debug_print "fifo_create: $buffer_name (pipe: $pipe_path)"
         return 0
     else
-        core_handle_error "Failed to create memory buffer: $buffer_name"
+        core_handle_error "fifo_create failed: $buffer_name"
         return 1
     fi
 }
 
-# Purpose: Write data to memory buffer using named pipe
+# Purpose: Write data to FIFO
 # Inputs: $1 = buffer name, $2 = data to write
 # Outputs: 0 if success, 1 if error
-# - Pure memory write via named pipe
-memory_write_buffer() {
+# - Pure fifo_write via named pipe
+fifo_write() {
     local buffer_name="$1"
     local data="$2"
     local pipe_dir="/tmp/mem_${JOB_ID}"
     local pipe_path="${pipe_dir}/${buffer_name}.pipe"
     
     if [ -z "$buffer_name" ] || [ -z "$data" ]; then
-        core_handle_error "Buffer name and data required for memory write"
+        core_handle_error "Buffer name and data required for fifo_write"
         return 1
     fi
     
     # Check if pipe exists
     if [ ! -p "$pipe_path" ]; then
-        core_handle_error "Memory buffer does not exist: $buffer_name"
+        core_handle_error "FIFO missing: $buffer_name"
         return 1
     fi
     
@@ -2807,31 +2840,31 @@ memory_write_buffer() {
     printf "%s\n" "$data" > "$pipe_path" &
     
     if [ $? -eq 0 ]; then
-        core_debug_print "Wrote to memory buffer: $buffer_name"
+        core_debug_print "Wrote to FIFO: $buffer_name"
         return 0
     else
-        core_handle_error "Failed to write to memory buffer: $buffer_name"
+        core_handle_error "fifo_write failed: $buffer_name"
         return 1
     fi
 }
 
-# Purpose: Read data from memory buffer using named pipe
+# Purpose: Read data from FIFO
 # Inputs: $1 = buffer name
 # Outputs: Buffer contents to stdout
-# - Memory-only read via named pipe
-memory_read_buffer() {
+# - Read from FIFO
+fifo_read() {
     local buffer_name="$1"
     local pipe_dir="/tmp/mem_${JOB_ID}"
     local pipe_path="${pipe_dir}/${buffer_name}.pipe"
     
     if [ -z "$buffer_name" ]; then
-        core_handle_error "Buffer name required for memory read"
+        core_handle_error "Buffer name required for fifo_read"
         return 1
     fi
     
     # Check if pipe exists
     if [ ! -p "$pipe_path" ]; then
-        core_debug_print "Memory buffer does not exist: $buffer_name"
+        core_debug_print "FIFO missing: $buffer_name"
         return 1
     fi
     
@@ -2859,29 +2892,29 @@ memory_read_buffer() {
         printf "%s" "$all_data"
         return 0
     else
-        core_debug_print "No data available in buffer: $buffer_name"
+        core_debug_print "No data in FIFO: $buffer_name"
         return 1
     fi
 }
 
-# Purpose: Spawn isolated process using memory buffer communication
+# Purpose: Run command in a background subshell; redirect stdout to a FIFO (child process of this shell)
 # Inputs: $1 = buffer name, $2 = command to execute
 # Outputs: 0 if success, 1 if error
-# - Creates isolated process with named pipe communication
-memory_spawn_isolated() {
+# - Uses mkfifo path under /tmp; see comments above — not a security boundary
+spawn_sacrificial_pid() {
     local buffer_name="$1"
     local command="$2"
     local pipe_dir="/tmp/mem_${JOB_ID}"
     local pipe_path="${pipe_dir}/${buffer_name}_proc.pipe"
     
     if [ -z "$buffer_name" ] || [ -z "$command" ]; then
-        core_handle_error "Buffer name and command required for isolated spawn"
+        core_handle_error "Buffer name and command required for spawn_sacrificial_pid"
         return 1
     fi
     
-    # Create isolated pipe for process communication
-    if memory_create_buffer "${buffer_name}_proc"; then
-        # Execute command in background with output to memory buffer
+    # FIFO for child stdout; sacrificial PID is disposable relative to parent shell
+    if fifo_create "${buffer_name}_proc"; then
+        # Background subshell + eval; stdout redirected into FIFO
         (
             eval "$command" 2>&1 > "${pipe_path}" &
         ) &
@@ -2889,18 +2922,18 @@ memory_spawn_isolated() {
         local proc_pid=$!
         echo "$proc_pid" > "${pipe_path}.pid"
         
-        core_debug_print "Spawned isolated process: $buffer_name (PID: $proc_pid)"
+        core_debug_print "spawn_sacrificial_pid: $buffer_name (recorded PID: $proc_pid)"
         return 0
     else
-        core_handle_error "Failed to spawn isolated process: $buffer_name"
+        core_handle_error "Failed spawn_sacrificial_pid for buffer: $buffer_name"
         return 1
     fi
 }
 
-# Purpose: Check if memory buffer exists and is active
+# Purpose: Check if FIFO exists and is readable
 # Inputs: $1 = buffer name
 # Outputs: 0 if active, 1 if not active
-memory_check_buffer() {
+fifo_check() {
     local buffer_name="$1"
     local pipe_dir="/tmp/mem_${JOB_ID}"
     local pipe_path="${pipe_dir}/${buffer_name}.pipe"
@@ -2914,10 +2947,10 @@ memory_check_buffer() {
     return $?
 }
 
-# Purpose: Clean up memory buffer (remove pipe and kill processes)
+# Purpose: Clean up FIFO and PIDs (remove pipe and kill processes)
 # Inputs: $1 = buffer name
 # Outputs: 0 if success, 1 if error
-memory_cleanup_buffer() {
+fifo_cleanup() {
     local buffer_name="$1"
     local pipe_dir="/tmp/mem_${JOB_ID}"
     local pipe_path="${pipe_dir}/${buffer_name}.pipe"
@@ -2941,7 +2974,7 @@ memory_cleanup_buffer() {
     # Remove named pipe
     if [ -p "$pipe_path" ]; then
         rm -f "$pipe_path"
-        core_debug_print "Removed memory buffer: $pipe_path"
+        core_debug_print "Removed FIFO: $pipe_path"
     fi
     
     # Also clean up process pipe
@@ -2960,15 +2993,15 @@ memory_cleanup_buffer() {
         rm -f "$proc_pipe"
     fi
     
-    core_debug_print "Cleaned up memory buffer: $buffer_name"
+    core_debug_print "fifo_cleanup done: $buffer_name"
     return 0
 }
 
-# Purpose: Clean up all memory buffers for current job
+# Purpose: fifo_cleanup_all for current job
 # Inputs: None
 # Outputs: None
 # - Emergency cleanup function
-memory_cleanup_all() {
+fifo_cleanup_all() {
     local pipe_dir="/tmp/mem_${JOB_ID}"
     
     if [ -d "$pipe_dir" ]; then
@@ -2985,7 +3018,7 @@ memory_cleanup_all() {
         
         # Remove entire pipe directory
         rm -rf "$pipe_dir"
-        core_debug_print "All memory buffers cleaned up for job: $JOB_ID"
+        core_debug_print "All FIFO job files cleaned up for job: $JOB_ID"
     fi
 }
 
@@ -3009,21 +3042,21 @@ core_get_log_filename() {
 }
 
 # =============================================================================
-# MEMORY ISOLATION SYSTEM - STEALTH MODE (EDR Evasion)
+# FIFO STEALTH VARIANT (alternate paths under /tmp; optional OPSEC experiments)
 # =============================================================================
 
-# Purpose: Create memory buffer using native methods to avoid EDR detection
+# Purpose: Create FIFO using alternate layout when stealth_mode=true
 # Inputs: $1 = buffer name, $2 = stealth mode (true/false)
 # Outputs: 0 if success, 1 if error
 # - Minimizes process creation and suspicious patterns
-memory_create_buffer_stealth() {
+fifo_create_stealth() {
     local buffer_name="${1:-main}"
     local stealth_mode="${2:-false}"
     local socket_dir="/tmp/.${USER}_cache"  # Mimics system cache directory
     local socket_path="${socket_dir}/.${buffer_name}"  # Hidden file
     
     if [ -z "$buffer_name" ]; then
-        core_handle_error "Buffer name required for memory isolation"
+        core_handle_error "Buffer name required for fifo_create_stealth"
         return 1
     fi
     
@@ -3046,24 +3079,24 @@ memory_create_buffer_stealth() {
         if mkfifo "$socket_path" 2>/dev/null; then
             # Make it look like a cache file
             touch "${socket_path}.cache" 2>/dev/null
-            core_debug_print "Created stealth memory buffer: $buffer_name (fifo: $socket_path)"
+            core_debug_print "fifo_create_stealth: $buffer_name (fifo: $socket_path)"
             return 0
         else
-            core_handle_error "Failed to create stealth memory buffer: $buffer_name"
+            core_handle_error "fifo_create_stealth failed: $buffer_name"
             return 1
         fi
     else
         # Original method with netcat (less stealthy)
-        memory_create_buffer "$buffer_name"
+        fifo_create "$buffer_name"
         return $?
     fi
 }
 
-# Purpose: Memory communication using file descriptors (no processes)
+# Purpose: Stealth-mode FIFO write (optional hidden path under /tmp)
 # Inputs: $1 = buffer name, $2 = data, $3 = stealth mode
 # Outputs: 0 if success, 1 if error
 # - Uses pure shell file descriptors to avoid process creation
-memory_write_buffer_stealth() {
+fifo_write_stealth() {
     local buffer_name="$1"
     local data="$2"
     local stealth_mode="${3:-false}"
@@ -3071,7 +3104,7 @@ memory_write_buffer_stealth() {
     local socket_path="${socket_dir}/.${buffer_name}"
     
     if [ -z "$buffer_name" ] || [ -z "$data" ]; then
-        core_handle_error "Buffer name and data required for memory write"
+        core_handle_error "Buffer name and data required for fifo_write_stealth"
         return 1
     fi
     
@@ -3085,31 +3118,31 @@ memory_write_buffer_stealth() {
             # Store minimal metadata in hidden file
             printf "%d\n" "$write_pid" > "${socket_path}.pid" 2>/dev/null
             
-            core_debug_print "Wrote to stealth memory buffer: $buffer_name"
+            core_debug_print "fifo_write_stealth: $buffer_name"
             return 0
         else
-            core_handle_error "Stealth memory buffer does not exist: $buffer_name"
+            core_handle_error "Stealth FIFO missing: $buffer_name"
             return 1
         fi
     else
         # Original method
-        memory_write_buffer "$buffer_name" "$data"
+        fifo_write "$buffer_name" "$data"
         return $?
     fi
 }
 
-# Purpose: Read from memory buffer using shell built-ins only
+# Purpose: Stealth-mode FIFO read using shell built-ins only
 # Inputs: $1 = buffer name, $2 = stealth mode
 # Outputs: Buffer contents to stdout
 # - Uses shell read built-in to avoid process creation
-memory_read_buffer_stealth() {
+fifo_read_stealth() {
     local buffer_name="$1"
     local stealth_mode="${2:-false}"
     local socket_dir="/tmp/.${USER}_cache"
     local socket_path="${socket_dir}/.${buffer_name}"
     
     if [ -z "$buffer_name" ]; then
-        core_handle_error "Buffer name required for memory read"
+        core_handle_error "Buffer name required for fifo_read_stealth"
         return 1
     fi
     
@@ -3130,20 +3163,20 @@ memory_read_buffer_stealth() {
                 return 1
             fi
         else
-            core_debug_print "Stealth memory buffer does not exist: $buffer_name"
+            core_debug_print "Stealth FIFO missing: $buffer_name"
             return 1
         fi
     else
         # Original method
-        memory_read_buffer "$buffer_name"
+        fifo_read "$buffer_name"
         return $?
     fi
 }
 
-# Purpose: Clean up stealth memory buffers (minimal footprint)
+# Purpose: Clean up stealth FIFO paths (minimal footprint)
 # Inputs: $1 = buffer name, $2 = stealth mode
 # Outputs: 0 if success, 1 if error
-memory_cleanup_buffer_stealth() {
+fifo_cleanup_stealth() {
     local buffer_name="$1"
     local stealth_mode="${2:-false}"
     local socket_dir="/tmp/.${USER}_cache"
@@ -3167,20 +3200,20 @@ memory_cleanup_buffer_stealth() {
         # Remove cache directory if empty (looks natural)
         rmdir "$socket_dir" 2>/dev/null || true
         
-        core_debug_print "Cleaned up stealth memory buffer: $buffer_name"
+        core_debug_print "fifo_cleanup_stealth: $buffer_name"
         return 0
     else
         # Original method
-        memory_cleanup_buffer "$buffer_name"
+        fifo_cleanup "$buffer_name"
         return $?
     fi
 }
 
-# Purpose: Execute command in memory-isolated environment with minimal telemetry
+# Purpose: Execute command via stealth FIFO path (experimental)
 # Inputs: $1 = command, $2 = stealth mode
-# Outputs: Command output via memory buffer
+# Outputs: Command output via FIFO
 # - Reduces process tree visibility
-memory_exec_stealth() {
+fifo_exec_stealth() {
     local command="$1"
     local stealth_mode="${2:-true}"
     local buffer_name="exec_$(date +%s)"
@@ -3191,7 +3224,7 @@ memory_exec_stealth() {
     fi
     
     # Create stealth buffer
-    if memory_create_buffer_stealth "$buffer_name" "$stealth_mode"; then
+    if fifo_create_stealth "$buffer_name" "$stealth_mode"; then
         # Execute command with output redirect (background process)
         (
             # Change process name to look innocent
@@ -3204,10 +3237,10 @@ memory_exec_stealth() {
         
         # Brief delay then read results
         sleep 0.2
-        memory_read_buffer_stealth "$buffer_name" "$stealth_mode"
+        fifo_read_stealth "$buffer_name" "$stealth_mode"
         
         # Cleanup
-        memory_cleanup_buffer_stealth "$buffer_name" "$stealth_mode"
+        fifo_cleanup_stealth "$buffer_name" "$stealth_mode"
         
         return 0
     else
@@ -3220,7 +3253,7 @@ memory_exec_stealth() {
 # Inputs: None
 # Outputs: Risk assessment string
 # - Analyzes current system for EDR presence
-memory_assess_edr_risk() {
+edr_assess_risk() {
     local risk_level="LOW"
     local risk_factors=""
     
@@ -3258,35 +3291,31 @@ memory_assess_edr_risk() {
     esac
 }
 
-# Purpose: Execute function with optional memory isolation
+# Purpose: Execute function; if SACRIFICIAL_CHILD=true use child PID + FIFO
 # Inputs: $1 = function name, $@ = function arguments
-# Outputs: Function result, optionally through memory isolation
-# - Uses memory isolation if ISOLATED=true
+# Outputs: Function result (from FIFO when SACRIFICIAL_CHILD=true)
+# - Uses spawn_sacrificial_pid if SACRIFICIAL_CHILD=true (same as --sacrificial-pid main path)
 core_execute_function() {
     local func_name="$1"
     shift
     local func_args="$*"
     
-    if [ "$ISOLATED" = "true" ]; then
-        # Execute in memory isolated environment
+    if [ "$SACRIFICIAL_CHILD" = "true" ]; then
         local buffer_name="func_$(date +%s)"
-        core_debug_print "Executing $func_name in isolated mode"
+        core_debug_print "core_execute_function: $func_name via spawn_sacrificial_pid (--sacrificial-pid)"
         
-        if memory_create_buffer "$buffer_name"; then
-            # Execute function in isolated process
-            memory_spawn_isolated "$buffer_name" "$func_name $func_args"
+        if fifo_create "$buffer_name"; then
+            spawn_sacrificial_pid "$buffer_name" "$func_name $func_args"
             sleep 0.5  # Brief delay for execution
             
-            # Read results
-            local result=$(memory_read_buffer "${buffer_name}_proc")
+            local result=$(fifo_read "${buffer_name}_proc")
             
-            # Cleanup
-            memory_cleanup_buffer "$buffer_name"
+            fifo_cleanup "$buffer_name"
             
             printf "%s" "$result"
             return 0
         else
-            core_handle_error "Failed to create isolated execution environment"
+            core_handle_error "Failed FIFO setup for spawn_sacrificial_pid path"
             # Fallback to normal execution
             $func_name "$@"
             return $?

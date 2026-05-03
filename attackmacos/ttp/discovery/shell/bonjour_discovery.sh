@@ -1,14 +1,14 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: system_time
+# Procedure Name: bonjour_discovery
 # Tactic: Discovery
-# Technique: T1124
-# GUID: f1e0ae1b-0091-46ab-b263-9960536d6f9a
-# Intent: Discover local system time, timezone, and network time configuration on macOS
-# Author: @darmado | https://x.com/darmad0
-# created: 2026-04-27
+# Technique: T1046
+# GUID: 4901b638-6b3f-427c-bac8-f82e674ab90c
+# Intent: Discover local network services using the DNS-Based Service Discovery (SD) protocol. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
+# Author: Brendan Chamberlain (@infosecB)
+# created: 2023-05-19
 # Updated: 2026-05-03
-# Version: 1.0.7
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:
@@ -20,7 +20,7 @@
 NAME="" 
 # MITRE ATT&CK Mappings
 TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1124" #replace with you coresponding ttp_id
+TTP_ID="T1046" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,19 +92,18 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-LOCAL_TIME=false
-TIMEZONE=false
-NETWORK_TIME=false
-ALL=false
+DISCOVER_SSH_HOSTS=false
+DISCOVER_WEB_HOSTS=false
+DISCOVER_HOSTS_SERVING_REMOTE_SCREEN_SHARING=false
+DISCOVER_HOSTS_SERVING_SMB=false
 
-TZ_FILE="/etc/localtime"
-DATETIME_PROFILE_TYPE="SPDateTimeDataType"
+CMD_DNS_SD="/usr/bin/dns-sd"
 
 # Project root path (set by build system)
 PROJECT_ROOT="/Users/darmado/Desktop/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="system_time"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="bonjour_discovery"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -646,17 +645,17 @@ core_parse_args() {
                 SACRIFICIAL_CHILD=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --local-time)
-            LOCAL_TIME=true
+        --discover-ssh-hosts)
+            DISCOVER_SSH_HOSTS=true
             ;;
-        --timezone)
-            TIMEZONE=true
+        --discover-web-hosts)
+            DISCOVER_WEB_HOSTS=true
             ;;
-        --network-time)
-            NETWORK_TIME=true
+        --discover-hosts-serving-remote-screen-sharing)
+            DISCOVER_HOSTS_SERVING_REMOTE_SCREEN_SHARING=true
             ;;
-        --all)
-            ALL=true
+        --discover-hosts-serving-smb)
+            DISCOVER_HOSTS_SERVING_SMB=true
             ;;
             *)
                 # Collect unknown arguments for error reporting
@@ -696,10 +695,10 @@ HELP:
   -d, --debug                   Enable debug output (includes verbose output)
 
 SCRIPT:
-  --local-time                     Discover current local date and time using date command
-  --timezone                       Discover timezone details and configured timezone files
-  --network-time                   Discover network time service and synchronization settings
-  --all                            Run all system time discovery checks
+  --discover-ssh-hosts             Hosts serving SSH can be discovered using the _ssh._tcp service string.
+  --discover-web-hosts             Hosts serving web services can be discovered using the _http._tcp service string.
+  --discover-hosts-serving-remote-screen-sharing Hosts serving remote screen sharing can be discovered using the _rfb._tcp service string.
+  --discover-hosts-serving-smb     Hosts serving SMB can be discovered using the _smb._tcp service string.
 
 EXECUTION:
   --sacrificial-pid             Run main logic in a child shell; parent reads child stdout from a FIFO under
@@ -2091,40 +2090,36 @@ execute_function() {
     $func_name
 }
 
-# Execute functions for --local-time
-if [ "$LOCAL_TIME" = true ]; then
-    core_debug_print "Executing functions for --local-time"
-    result=$(execute_function discover_local_time)
+# Execute functions for --discover-ssh-hosts
+if [ "$DISCOVER_SSH_HOSTS" = true ]; then
+    core_debug_print "Executing functions for --discover-ssh-hosts"
+    result=$(execute_function execute_discover_ssh_hosts)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --timezone
-if [ "$TIMEZONE" = true ]; then
-    core_debug_print "Executing functions for --timezone"
-    result=$(execute_function discover_timezone)
+# Execute functions for --discover-web-hosts
+if [ "$DISCOVER_WEB_HOSTS" = true ]; then
+    core_debug_print "Executing functions for --discover-web-hosts"
+    result=$(execute_function execute_discover_web_hosts)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --network-time
-if [ "$NETWORK_TIME" = true ]; then
-    core_debug_print "Executing functions for --network-time"
-    result=$(execute_function discover_network_time)
+# Execute functions for --discover-hosts-serving-remote-screen-sharing
+if [ "$DISCOVER_HOSTS_SERVING_REMOTE_SCREEN_SHARING" = true ]; then
+    core_debug_print "Executing functions for --discover-hosts-serving-remote-screen-sharing"
+    result=$(execute_function execute_discover_hosts_serving_remote_screen_sharing)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --all
-if [ "$ALL" = true ]; then
-    core_debug_print "Executing functions for --all"
-    result=$(execute_function discover_local_time)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function discover_timezone)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function discover_network_time)
+# Execute functions for --discover-hosts-serving-smb
+if [ "$DISCOVER_HOSTS_SERVING_SMB" = true ]; then
+    core_debug_print "Executing functions for --discover-hosts-serving-smb"
+    result=$(execute_function execute_discover_hosts_serving_smb)
     raw_output="${raw_output}${result}"
 fi
 
 # Set procedure name for processing
-procedure="system_time"
+procedure="bonjour_discovery"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2289,56 +2284,57 @@ core_generate_encryption_key() {
 
 
 
-# Function: discover_local_time
+# Function: execute_discover_ssh_hosts
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_local_time() {
-    local now=$($CMD_DATE "+%Y-%m-%d %H:%M:%S %Z %z" 2>/dev/null)
-    local epoch=$($CMD_DATE "+%s" 2>/dev/null)
-    $CMD_PRINTF "SYSTEM_TIME|local|%s\n" "$now"
-    $CMD_PRINTF "SYSTEM_TIME|epoch|%s\n" "$epoch"
+execute_discover_ssh_hosts() {
+    local result
+    result=$(dns-sd -B _ssh._tcp 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 
-
-# Function: discover_timezone
+# Function: execute_discover_web_hosts
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_timezone() {
-    local tz_name=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -i "Time Zone" | $CMD_HEAD -n 1)
-    local tz_env=$($CMD_DATE "+%Z %z" 2>/dev/null)
-    local tz_link=$($CMD_LS -l "$TZ_FILE" 2>/dev/null)
-    $CMD_PRINTF "SYSTEM_TIME|timezone_config|%s\n" "$tz_name"
-    $CMD_PRINTF "SYSTEM_TIME|timezone_runtime|%s\n" "$tz_env"
-    if [ -n "$tz_link" ]; then
-        $CMD_PRINTF "SYSTEM_TIME|timezone_file|%s\n" "$tz_link"
-    fi
+execute_discover_web_hosts() {
+    local result
+    result=$(dns-sd -B _http._tcp 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 
-
-# Function: discover_network_time
+# Function: execute_discover_hosts_serving_remote_screen_sharing
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_network_time() {
-    local ntp_status=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -Ei "Network Time|NTP|Time Server" | $CMD_HEAD -n 10)
-    if [ -n "$ntp_status" ]; then
-        $CMD_PRINTF "SYSTEM_TIME|ntp_probe|%s\n" "$ntp_status"
-    else
-        $CMD_PRINTF "SYSTEM_TIME|ntp_probe|not_available\n"
-    fi
+execute_discover_hosts_serving_remote_screen_sharing() {
+    local result
+    result=$(dns-sd -B _rfb._tcp 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 
+# Function: execute_discover_hosts_serving_smb
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_discover_hosts_serving_smb() {
+    local result
+    result=$(dns-sd -B _smb._tcp 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
 
 
 JOB_ID=$(core_generate_job_id)

@@ -1,14 +1,14 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: system_time
+# Procedure Name: file_attributes
 # Tactic: Discovery
-# Technique: T1124
-# GUID: f1e0ae1b-0091-46ab-b263-9960536d6f9a
-# Intent: Discover local system time, timezone, and network time configuration on macOS
-# Author: @darmado | https://x.com/darmad0
-# created: 2026-04-27
+# Technique: T1082
+# GUID: 19d4d21a-cb3f-4e57-bafd-cc6d019070be
+# Intent: Get attributes of files and directories. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
+# Author: Chris Campbell (@texasbe2trill)
+# created: 2023-04-23
 # Updated: 2026-05-03
-# Version: 1.0.7
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:
@@ -20,7 +20,7 @@
 NAME="" 
 # MITRE ATT&CK Mappings
 TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1124" #replace with you coresponding ttp_id
+TTP_ID="T1082" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,19 +92,15 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-LOCAL_TIME=false
-TIMEZONE=false
-NETWORK_TIME=false
-ALL=false
+ITERATE_THROUGH_A_DIRECTORY_TO_GETFILEINFO=false
 
-TZ_FILE="/etc/localtime"
-DATETIME_PROFILE_TYPE="SPDateTimeDataType"
+CMD_GETFILEINFO="/usr/bin/GetFileInfo"
 
 # Project root path (set by build system)
 PROJECT_ROOT="/Users/darmado/Desktop/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="system_time"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="file_attributes"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -646,17 +642,8 @@ core_parse_args() {
                 SACRIFICIAL_CHILD=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --local-time)
-            LOCAL_TIME=true
-            ;;
-        --timezone)
-            TIMEZONE=true
-            ;;
-        --network-time)
-            NETWORK_TIME=true
-            ;;
-        --all)
-            ALL=true
+        --iterate-through-a-directory-to-getfileinfo)
+            ITERATE_THROUGH_A_DIRECTORY_TO_GETFILEINFO=true
             ;;
             *)
                 # Collect unknown arguments for error reporting
@@ -696,10 +683,7 @@ HELP:
   -d, --debug                   Enable debug output (includes verbose output)
 
 SCRIPT:
-  --local-time                     Discover current local date and time using date command
-  --timezone                       Discover timezone details and configured timezone files
-  --network-time                   Discover network time service and synchronization settings
-  --all                            Run all system time discovery checks
+  --iterate-through-a-directory-to-getfileinfo A bash or zsh oneliner can provide an attacker with information about specific files of interest.
 
 EXECUTION:
   --sacrificial-pid             Run main logic in a child shell; parent reads child stdout from a FIFO under
@@ -2091,40 +2075,15 @@ execute_function() {
     $func_name
 }
 
-# Execute functions for --local-time
-if [ "$LOCAL_TIME" = true ]; then
-    core_debug_print "Executing functions for --local-time"
-    result=$(execute_function discover_local_time)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --timezone
-if [ "$TIMEZONE" = true ]; then
-    core_debug_print "Executing functions for --timezone"
-    result=$(execute_function discover_timezone)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --network-time
-if [ "$NETWORK_TIME" = true ]; then
-    core_debug_print "Executing functions for --network-time"
-    result=$(execute_function discover_network_time)
-    raw_output="${raw_output}${result}"
-fi
-
-# Execute functions for --all
-if [ "$ALL" = true ]; then
-    core_debug_print "Executing functions for --all"
-    result=$(execute_function discover_local_time)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function discover_timezone)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function discover_network_time)
+# Execute functions for --iterate-through-a-directory-to-getfileinfo
+if [ "$ITERATE_THROUGH_A_DIRECTORY_TO_GETFILEINFO" = true ]; then
+    core_debug_print "Executing functions for --iterate-through-a-directory-to-getfileinfo"
+    result=$(execute_function execute_iterate_through_directory_getfileinfo)
     raw_output="${raw_output}${result}"
 fi
 
 # Set procedure name for processing
-procedure="system_time"
+procedure="file_attributes"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2289,56 +2248,18 @@ core_generate_encryption_key() {
 
 
 
-# Function: discover_local_time
+# Function: execute_iterate_through_directory_getfileinfo
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_local_time() {
-    local now=$($CMD_DATE "+%Y-%m-%d %H:%M:%S %Z %z" 2>/dev/null)
-    local epoch=$($CMD_DATE "+%s" 2>/dev/null)
-    $CMD_PRINTF "SYSTEM_TIME|local|%s\n" "$now"
-    $CMD_PRINTF "SYSTEM_TIME|epoch|%s\n" "$epoch"
+execute_iterate_through_directory_getfileinfo() {
+    local result
+    result=$(for FILE in ~/Downloads/*; do echo $(GetFileInfo $FILE) >> fileinfo.txt; sleep 2; done 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
-
-
-# Function: discover_timezone
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-discover_timezone() {
-    local tz_name=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -i "Time Zone" | $CMD_HEAD -n 1)
-    local tz_env=$($CMD_DATE "+%Z %z" 2>/dev/null)
-    local tz_link=$($CMD_LS -l "$TZ_FILE" 2>/dev/null)
-    $CMD_PRINTF "SYSTEM_TIME|timezone_config|%s\n" "$tz_name"
-    $CMD_PRINTF "SYSTEM_TIME|timezone_runtime|%s\n" "$tz_env"
-    if [ -n "$tz_link" ]; then
-        $CMD_PRINTF "SYSTEM_TIME|timezone_file|%s\n" "$tz_link"
-    fi
-    return 0
-}
-
-
-# Function: discover_network_time
-# Type: main
-# Languages: shell
-FUNCTION_LANG="shell"
-# Sudo privileges: Not required
-
-discover_network_time() {
-    local ntp_status=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -Ei "Network Time|NTP|Time Server" | $CMD_HEAD -n 10)
-    if [ -n "$ntp_status" ]; then
-        $CMD_PRINTF "SYSTEM_TIME|ntp_probe|%s\n" "$ntp_status"
-    else
-        $CMD_PRINTF "SYSTEM_TIME|ntp_probe|not_available\n"
-    fi
-    return 0
-}
-
 
 
 JOB_ID=$(core_generate_job_id)

@@ -1,14 +1,14 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: system_time
+# Procedure Name: directory_service
 # Tactic: Discovery
-# Technique: T1124
-# GUID: f1e0ae1b-0091-46ab-b263-9960536d6f9a
-# Intent: Discover local system time, timezone, and network time configuration on macOS
-# Author: @darmado | https://x.com/darmad0
-# created: 2026-04-27
+# Technique: T1087.002
+# GUID: 9ed1a2a7-52cf-4a14-82cf-15c466b69a55
+# Intent: Interact with Directory Services. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
+# Author: Jonathan Bar Or (@yo_yo_yo_jbo)
+# created: 2023-04-25
 # Updated: 2026-05-03
-# Version: 1.0.7
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:
@@ -20,7 +20,7 @@
 NAME="" 
 # MITRE ATT&CK Mappings
 TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1124" #replace with you coresponding ttp_id
+TTP_ID="T1087.002" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,19 +92,27 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-LOCAL_TIME=false
-TIMEZONE=false
-NETWORK_TIME=false
-ALL=false
+LOCAL_USER_ENUMERATION=false
+ACTIVE_DIRECTORY_USER_ENUMERATION=false
+LOCAL_USER_INFORMATION_GATHERING=false
+ACTIVE_DIRECTORY_USER_INFORMATION_GATHERING=false
+LOCAL_GROUP_ENUMERATION=false
+ACTIVE_DIRECTORY_GROUP_ENUMERATION=false
+LOCAL_GROUP_INFORMATION_GATHERING=false
+ACTIVE_DIRECTORY_GROUP_INFORMATION_GATHERING=false
+COMPUTER_ENUMRATION=false
+SHARE_ENUMRATION=false
+PASSWORD_POLICY_DISCOVERY=false
+CHANGE_A_USER_PASSWORD=false
+LOCAL_ACCOUNT_CREATION=false
 
-TZ_FILE="/etc/localtime"
-DATETIME_PROFILE_TYPE="SPDateTimeDataType"
+CMD_DSCL="/usr/bin/dscl"
 
 # Project root path (set by build system)
 PROJECT_ROOT="/Users/darmado/Desktop/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="system_time"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="directory_service"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -646,17 +654,44 @@ core_parse_args() {
                 SACRIFICIAL_CHILD=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --local-time)
-            LOCAL_TIME=true
+        --local-user-enumeration)
+            LOCAL_USER_ENUMERATION=true
             ;;
-        --timezone)
-            TIMEZONE=true
+        --active-directory-user-enumeration)
+            ACTIVE_DIRECTORY_USER_ENUMERATION=true
             ;;
-        --network-time)
-            NETWORK_TIME=true
+        --local-user-information-gathering)
+            LOCAL_USER_INFORMATION_GATHERING=true
             ;;
-        --all)
-            ALL=true
+        --active-directory-user-information-gathering)
+            ACTIVE_DIRECTORY_USER_INFORMATION_GATHERING=true
+            ;;
+        --local-group-enumeration)
+            LOCAL_GROUP_ENUMERATION=true
+            ;;
+        --active-directory-group-enumeration)
+            ACTIVE_DIRECTORY_GROUP_ENUMERATION=true
+            ;;
+        --local-group-information-gathering)
+            LOCAL_GROUP_INFORMATION_GATHERING=true
+            ;;
+        --active-directory-group-information-gathering)
+            ACTIVE_DIRECTORY_GROUP_INFORMATION_GATHERING=true
+            ;;
+        --computer-enumration)
+            COMPUTER_ENUMRATION=true
+            ;;
+        --share-enumration)
+            SHARE_ENUMRATION=true
+            ;;
+        --password-policy-discovery)
+            PASSWORD_POLICY_DISCOVERY=true
+            ;;
+        --change-a-user-password)
+            CHANGE_A_USER_PASSWORD=true
+            ;;
+        --local-account-creation)
+            LOCAL_ACCOUNT_CREATION=true
             ;;
             *)
                 # Collect unknown arguments for error reporting
@@ -696,10 +731,19 @@ HELP:
   -d, --debug                   Enable debug output (includes verbose output)
 
 SCRIPT:
-  --local-time                     Discover current local date and time using date command
-  --timezone                       Discover timezone details and configured timezone files
-  --network-time                   Discover network time service and synchronization settings
-  --all                            Run all system time discovery checks
+  --local-user-enumeration         Enumerate all local users.
+  --active-directory-user-enumeration Enumerate all Active Directory users.
+  --local-user-information-gathering Gain useful local user information such as when their password was last set, their keyboard layout, 
+  --active-directory-user-information-gathering Gain useful Active Directory user information such as when their password was last set, their keyboa
+  --local-group-enumeration        Enumerate all local groups.
+  --active-directory-group-enumeration Enumerate all Active Directory groups.
+  --local-group-information-gathering Gain useful local group information such as which users belong to that group, SMB SIDs and group ID.
+  --active-directory-group-information-gathering Gain useful Active Directory group information such as which users belong to that group, SMB SIDs an
+  --computer-enumration            Enumerate all computers in an Active Directory.
+  --share-enumration               Enumerate all shares.
+  --password-policy-discovery      Gain password policy information
+  --change-a-user-password         Change an existing user's password.
+  --local-account-creation         Create a local account
 
 EXECUTION:
   --sacrificial-pid             Run main logic in a child shell; parent reads child stdout from a FIFO under
@@ -2091,40 +2135,99 @@ execute_function() {
     $func_name
 }
 
-# Execute functions for --local-time
-if [ "$LOCAL_TIME" = true ]; then
-    core_debug_print "Executing functions for --local-time"
-    result=$(execute_function discover_local_time)
+# Execute functions for --local-user-enumeration
+if [ "$LOCAL_USER_ENUMERATION" = true ]; then
+    core_debug_print "Executing functions for --local-user-enumeration"
+    result=$(execute_function execute_local_user_enumeration)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --timezone
-if [ "$TIMEZONE" = true ]; then
-    core_debug_print "Executing functions for --timezone"
-    result=$(execute_function discover_timezone)
+# Execute functions for --active-directory-user-enumeration
+if [ "$ACTIVE_DIRECTORY_USER_ENUMERATION" = true ]; then
+    core_debug_print "Executing functions for --active-directory-user-enumeration"
+    result=$(execute_function execute_active_directory_user_enumeration)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --network-time
-if [ "$NETWORK_TIME" = true ]; then
-    core_debug_print "Executing functions for --network-time"
-    result=$(execute_function discover_network_time)
+# Execute functions for --local-user-information-gathering
+if [ "$LOCAL_USER_INFORMATION_GATHERING" = true ]; then
+    core_debug_print "Executing functions for --local-user-information-gathering"
+    result=$(execute_function execute_local_user_information_gathering)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --all
-if [ "$ALL" = true ]; then
-    core_debug_print "Executing functions for --all"
-    result=$(execute_function discover_local_time)
+# Execute functions for --active-directory-user-information-gathering
+if [ "$ACTIVE_DIRECTORY_USER_INFORMATION_GATHERING" = true ]; then
+    core_debug_print "Executing functions for --active-directory-user-information-gathering"
+    result=$(execute_function execute_active_directory_user_information_gathering)
     raw_output="${raw_output}${result}"
-    result=$(execute_function discover_timezone)
+fi
+
+# Execute functions for --local-group-enumeration
+if [ "$LOCAL_GROUP_ENUMERATION" = true ]; then
+    core_debug_print "Executing functions for --local-group-enumeration"
+    result=$(execute_function execute_local_group_enumeration)
     raw_output="${raw_output}${result}"
-    result=$(execute_function discover_network_time)
+fi
+
+# Execute functions for --active-directory-group-enumeration
+if [ "$ACTIVE_DIRECTORY_GROUP_ENUMERATION" = true ]; then
+    core_debug_print "Executing functions for --active-directory-group-enumeration"
+    result=$(execute_function execute_active_directory_group_enumeration)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --local-group-information-gathering
+if [ "$LOCAL_GROUP_INFORMATION_GATHERING" = true ]; then
+    core_debug_print "Executing functions for --local-group-information-gathering"
+    result=$(execute_function execute_local_group_information_gathering)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --active-directory-group-information-gathering
+if [ "$ACTIVE_DIRECTORY_GROUP_INFORMATION_GATHERING" = true ]; then
+    core_debug_print "Executing functions for --active-directory-group-information-gathering"
+    result=$(execute_function execute_active_directory_group_information_gathering)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --computer-enumration
+if [ "$COMPUTER_ENUMRATION" = true ]; then
+    core_debug_print "Executing functions for --computer-enumration"
+    result=$(execute_function execute_computer_enumration)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --share-enumration
+if [ "$SHARE_ENUMRATION" = true ]; then
+    core_debug_print "Executing functions for --share-enumration"
+    result=$(execute_function execute_share_enumration)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --password-policy-discovery
+if [ "$PASSWORD_POLICY_DISCOVERY" = true ]; then
+    core_debug_print "Executing functions for --password-policy-discovery"
+    result=$(execute_function execute_password_policy_discovery)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --change-a-user-password
+if [ "$CHANGE_A_USER_PASSWORD" = true ]; then
+    core_debug_print "Executing functions for --change-a-user-password"
+    result=$(execute_function execute_change_user_password)
+    raw_output="${raw_output}${result}"
+fi
+
+# Execute functions for --local-account-creation
+if [ "$LOCAL_ACCOUNT_CREATION" = true ]; then
+    core_debug_print "Executing functions for --local-account-creation"
+    result=$(execute_function execute_local_account_creation)
     raw_output="${raw_output}${result}"
 fi
 
 # Set procedure name for processing
-procedure="system_time"
+procedure="directory_service"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2289,56 +2392,207 @@ core_generate_encryption_key() {
 
 
 
-# Function: discover_local_time
+# Function: execute_local_user_enumeration
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_local_time() {
-    local now=$($CMD_DATE "+%Y-%m-%d %H:%M:%S %Z %z" 2>/dev/null)
-    local epoch=$($CMD_DATE "+%s" 2>/dev/null)
-    $CMD_PRINTF "SYSTEM_TIME|local|%s\n" "$now"
-    $CMD_PRINTF "SYSTEM_TIME|epoch|%s\n" "$epoch"
+execute_local_user_enumeration() {
+    local result
+    result=$(dscl . -list /Users
+dscl . list /Users
+dscl . ls /Users
+ 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 
-
-# Function: discover_timezone
+# Function: execute_active_directory_user_enumeration
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_timezone() {
-    local tz_name=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -i "Time Zone" | $CMD_HEAD -n 1)
-    local tz_env=$($CMD_DATE "+%Z %z" 2>/dev/null)
-    local tz_link=$($CMD_LS -l "$TZ_FILE" 2>/dev/null)
-    $CMD_PRINTF "SYSTEM_TIME|timezone_config|%s\n" "$tz_name"
-    $CMD_PRINTF "SYSTEM_TIME|timezone_runtime|%s\n" "$tz_env"
-    if [ -n "$tz_link" ]; then
-        $CMD_PRINTF "SYSTEM_TIME|timezone_file|%s\n" "$tz_link"
-    fi
+execute_active_directory_user_enumeration() {
+    local result
+    result=$(dscl "/Active Directory/TEST/All Domains" -list /Users
+dscl "/Active Directory/TEST/All Domains" list /Users
+dscl "/Active Directory/TEST/All Domains" ls /Users
+ 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 
-
-# Function: discover_network_time
+# Function: execute_local_user_information_gathering
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_network_time() {
-    local ntp_status=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -Ei "Network Time|NTP|Time Server" | $CMD_HEAD -n 10)
-    if [ -n "$ntp_status" ]; then
-        $CMD_PRINTF "SYSTEM_TIME|ntp_probe|%s\n" "$ntp_status"
-    else
-        $CMD_PRINTF "SYSTEM_TIME|ntp_probe|not_available\n"
-    fi
+execute_local_user_information_gathering() {
+    local result
+    result=$(dscl . -read /Users/$USERNAME
+dscl . read /Users/$USERNAME
+dscl . cat /Users/$USERNAME
+ 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 
+# Function: execute_active_directory_user_information_gathering
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_active_directory_user_information_gathering() {
+    local result
+    result=$(dscl "/Active Directory/TEST/All Domains" -read /Users/$USERNAME
+dscl "/Active Directory/TEST/All Domains" read /Users/$USERNAME
+dscl "/Active Directory/TEST/All Domains" cat /Users/$USERNAME
+ 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
+
+# Function: execute_local_group_enumeration
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_local_group_enumeration() {
+    local result
+    result=$(dscl . -list /Groups
+dscl . list /Groups
+dscl . ls /Groups
+ 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
+
+# Function: execute_active_directory_group_enumeration
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_active_directory_group_enumeration() {
+    local result
+    result=$(dscl "/Active Directory/TEST/All Domains" -list /Groups
+dscl "/Active Directory/TEST/All Domains" list /Groups
+dscl "/Active Directory/TEST/All Domains" ls /Groups
+ 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
+
+# Function: execute_local_group_information_gathering
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_local_group_information_gathering() {
+    local result
+    result=$(dscl . -read /Groups/$GROUPNAME
+dscl . read /Groups/$GROUPNAME
+dscl . cat /Groups/$GROUPNAME
+ 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
+
+# Function: execute_active_directory_group_information_gathering
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_active_directory_group_information_gathering() {
+    local result
+    result=$(dscl "/Active Directory/TEST/All Domains" -read /Groups/$GROUPNAME
+dscl "/Active Directory/TEST/All Domains" read /Groups/$GROUPNAME
+dscl "/Active Directory/TEST/All Domains" cat /Groups/$GROUPNAME
+ 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
+
+# Function: execute_computer_enumration
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_computer_enumration() {
+    local result
+    result=$(dscl  "/Active Directory/TEST/All Domains" -list /Computers
+dscl  "/Active Directory/TEST/All Domains" list /Computers
+dscl  "/Active Directory/TEST/All Domains" ls /Computers
+ 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
+
+# Function: execute_share_enumration
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_share_enumration() {
+    local result
+    result=$(dscl . -list /SharePoints
+dscl . list /SharePoints
+dscl . ls /SharePoints
+ 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
+
+# Function: execute_password_policy_discovery
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_password_policy_discovery() {
+    local result
+    result=$(dscl . -read /Config/shadowhash
+dscl . read /Config/shadowhash
+dscl . cat /Config/shadowhash
+ 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
+
+# Function: execute_change_user_password
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_change_user_password() {
+    local result
+    result=$(dscl . passwd /Users/$USERNAME oldPassword newPassword 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
+
+# Function: execute_local_account_creation
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_local_account_creation() {
+    local result
+    result=$(dscl -create 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
 
 
 JOB_ID=$(core_generate_job_id)

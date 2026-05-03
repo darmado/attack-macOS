@@ -1,20 +1,21 @@
 
 # Script Name: browser_bookmarks.sh
-# MITRE ATT&CK Technique: T1217 - Browser Bookmark Discovery
+# MITRE ATT&CK: T1217 — Browser Information Discovery (Discovery); this script focuses on bookmarks / related plist DBs.
 # Tactic: Discovery
 # Platform: macOS
+# Sub-techniques: none for T1217 on Enterprise ATT&CK (verify on the version permalink before inventing IDs).
 
 # Author: @darmado x.com/darmad0
 # Date: Sun Oct 20 22:34:04 PDT 2024
 # Version: 1.2
 
 # Description:
-# This script extracts browser bookmarks from Safari, Chrome, Firefox, and Brave on macOS systems.
-# It follows MITRE ATT&CK Technique T1217: Browser Bookmark Discovery.
-# The script uses native macOS commands and APIs for maximum compatibility.
+# Enumerates browser-resident data (bookmarks, Safari reading list / cloud tabs, etc.) per T1217 intent:
+# personal context and internal resource hints from saved browser state. Uses native macOS paths and tools.
 
 # References:
-# - https://attack.mitre.org/techniques/T1217/
+# - https://attack.mitre.org/techniques/T1217/ (technique + Procedure Examples)
+# - https://github.com/mitre/cti (STIX enterprise-attack; optional offline verification)
 # - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1217/T1217.md
 
 #------------------------------------------------------------------------------
@@ -55,7 +56,7 @@ HTTP_HEADERS=(
 # MITRE ATT&CK Mappings
 TACTIC="Discovery"
 TTP_ID="T1217"
-SUBTECHNIQUE_ID="T1217.001"
+SUBTECHNIQUE_ID=""
 
 TACTIC_ENCRYPT="Defense Evasion"
 TTP_ID_ENCRYPT="T1027"

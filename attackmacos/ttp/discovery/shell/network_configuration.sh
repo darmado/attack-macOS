@@ -1,14 +1,14 @@
 #!/bin/sh
 # POSIX-compliant
-# Procedure Name: system_time
+# Procedure Name: network_configuration
 # Tactic: Discovery
-# Technique: T1124
-# GUID: f1e0ae1b-0091-46ab-b263-9960536d6f9a
-# Intent: Discover local system time, timezone, and network time configuration on macOS
-# Author: @darmado | https://x.com/darmad0
-# created: 2026-04-27
+# Technique: T1016
+# GUID: 4b357962-c9bc-4ca2-b413-8f6d5261cefc
+# Intent: Display basic network information, check the dns config, set the computer hostname and perform several other tasks. Sourced from LOOBins; confirm MITRE mapping for each enabled option.
+# Author: Ethan Nay
+# created: 2023-06-21
 # Updated: 2026-05-03
-# Version: 1.0.7
+# Version: 1.0.5
 # License: Apache 2.0
 
 # Core function Info:
@@ -20,7 +20,7 @@
 NAME="" 
 # MITRE ATT&CK Mappings
 TACTIC="Discovery" #replace with you coresponding tactic
-TTP_ID="T1124" #replace with you coresponding ttp_id
+TTP_ID="T1016" #replace with you coresponding ttp_id
 
 TACTIC_ENCRYPT="Defense Evasion" # DO NOT MODIFY
 TTP_ID_ENCRYPT="T1027" # DO NOT MODIFY
@@ -92,19 +92,18 @@ CMD_WC="wc"
 CMD_CAT="cat"
 CMD_LSOF="lsof"
 
-LOCAL_TIME=false
-TIMEZONE=false
-NETWORK_TIME=false
-ALL=false
+DNS_CONFIGURATION=false
+PROXY_CONFIGURATION=false
+NETWORK_REACHABILITY=false
+HOSTNAME_LOCALHOST_NAME_AND_COMPUTERNAME=false
 
-TZ_FILE="/etc/localtime"
-DATETIME_PROFILE_TYPE="SPDateTimeDataType"
+CMD_SCUTIL="/usr/bin/scutil"
 
 # Project root path (set by build system)
 PROJECT_ROOT="/Users/darmado/Desktop/attack-macOS"  # Set by build system to project root directory
 
 # Procedure Information (set by build system)
-PROCEDURE_NAME="system_time"  # Set by build system from YAML procedure_name field
+PROCEDURE_NAME="network_configuration"  # Set by build system from YAML procedure_name field
 
 # Function execution tracking
 FUNCTION_LANG=""  # Ued by log_output at execution time
@@ -646,17 +645,17 @@ core_parse_args() {
                 SACRIFICIAL_CHILD=true
                 ;;
 # We need to  accomidate the unknown rgs condiuton for the new args we add from the yaml
-        --local-time)
-            LOCAL_TIME=true
+        --dns-configuration)
+            DNS_CONFIGURATION=true
             ;;
-        --timezone)
-            TIMEZONE=true
+        --proxy-configuration)
+            PROXY_CONFIGURATION=true
             ;;
-        --network-time)
-            NETWORK_TIME=true
+        --network-reachability)
+            NETWORK_REACHABILITY=true
             ;;
-        --all)
-            ALL=true
+        --hostname-localhost-name-and-computername)
+            HOSTNAME_LOCALHOST_NAME_AND_COMPUTERNAME=true
             ;;
             *)
                 # Collect unknown arguments for error reporting
@@ -696,10 +695,10 @@ HELP:
   -d, --debug                   Enable debug output (includes verbose output)
 
 SCRIPT:
-  --local-time                     Discover current local date and time using date command
-  --timezone                       Discover timezone details and configured timezone files
-  --network-time                   Discover network time service and synchronization settings
-  --all                            Run all system time discovery checks
+  --dns-configuration              Get the current DNS configuration of the systems
+  --proxy-configuration            Get the current proxy configuration of the systems
+  --network-reachability           Check if the destination host is reachable from your Mac
+  --hostname-localhost-name-and-computername Display the current hostname, localhost name and computername
 
 EXECUTION:
   --sacrificial-pid             Run main logic in a child shell; parent reads child stdout from a FIFO under
@@ -2091,40 +2090,36 @@ execute_function() {
     $func_name
 }
 
-# Execute functions for --local-time
-if [ "$LOCAL_TIME" = true ]; then
-    core_debug_print "Executing functions for --local-time"
-    result=$(execute_function discover_local_time)
+# Execute functions for --dns-configuration
+if [ "$DNS_CONFIGURATION" = true ]; then
+    core_debug_print "Executing functions for --dns-configuration"
+    result=$(execute_function execute_dns_configuration)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --timezone
-if [ "$TIMEZONE" = true ]; then
-    core_debug_print "Executing functions for --timezone"
-    result=$(execute_function discover_timezone)
+# Execute functions for --proxy-configuration
+if [ "$PROXY_CONFIGURATION" = true ]; then
+    core_debug_print "Executing functions for --proxy-configuration"
+    result=$(execute_function execute_proxy_configuration)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --network-time
-if [ "$NETWORK_TIME" = true ]; then
-    core_debug_print "Executing functions for --network-time"
-    result=$(execute_function discover_network_time)
+# Execute functions for --network-reachability
+if [ "$NETWORK_REACHABILITY" = true ]; then
+    core_debug_print "Executing functions for --network-reachability"
+    result=$(execute_function execute_network_reachability)
     raw_output="${raw_output}${result}"
 fi
 
-# Execute functions for --all
-if [ "$ALL" = true ]; then
-    core_debug_print "Executing functions for --all"
-    result=$(execute_function discover_local_time)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function discover_timezone)
-    raw_output="${raw_output}${result}"
-    result=$(execute_function discover_network_time)
+# Execute functions for --hostname-localhost-name-and-computername
+if [ "$HOSTNAME_LOCALHOST_NAME_AND_COMPUTERNAME" = true ]; then
+    core_debug_print "Executing functions for --hostname-localhost-name-and-computername"
+    result=$(execute_function execute_hostname_localhost_name_computername)
     raw_output="${raw_output}${result}"
 fi
 
 # Set procedure name for processing
-procedure="system_time"
+procedure="network_configuration"
         # This section is intentionally left empty as it will be filled by
         # technique-specific implementations when sourcing this base script
         # If no raw_output is set by the script, exit gracefully
@@ -2289,56 +2284,57 @@ core_generate_encryption_key() {
 
 
 
-# Function: discover_local_time
+# Function: execute_dns_configuration
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_local_time() {
-    local now=$($CMD_DATE "+%Y-%m-%d %H:%M:%S %Z %z" 2>/dev/null)
-    local epoch=$($CMD_DATE "+%s" 2>/dev/null)
-    $CMD_PRINTF "SYSTEM_TIME|local|%s\n" "$now"
-    $CMD_PRINTF "SYSTEM_TIME|epoch|%s\n" "$epoch"
+execute_dns_configuration() {
+    local result
+    result=$(scutil --dns 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 
-
-# Function: discover_timezone
+# Function: execute_proxy_configuration
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_timezone() {
-    local tz_name=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -i "Time Zone" | $CMD_HEAD -n 1)
-    local tz_env=$($CMD_DATE "+%Z %z" 2>/dev/null)
-    local tz_link=$($CMD_LS -l "$TZ_FILE" 2>/dev/null)
-    $CMD_PRINTF "SYSTEM_TIME|timezone_config|%s\n" "$tz_name"
-    $CMD_PRINTF "SYSTEM_TIME|timezone_runtime|%s\n" "$tz_env"
-    if [ -n "$tz_link" ]; then
-        $CMD_PRINTF "SYSTEM_TIME|timezone_file|%s\n" "$tz_link"
-    fi
+execute_proxy_configuration() {
+    local result
+    result=$(scutil --proxy 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 
-
-# Function: discover_network_time
+# Function: execute_network_reachability
 # Type: main
 # Languages: shell
 FUNCTION_LANG="shell"
 # Sudo privileges: Not required
 
-discover_network_time() {
-    local ntp_status=$($CMD_SYSTEM_PROFILER "$DATETIME_PROFILE_TYPE" 2>/dev/null | $CMD_GREP -Ei "Network Time|NTP|Time Server" | $CMD_HEAD -n 10)
-    if [ -n "$ntp_status" ]; then
-        $CMD_PRINTF "SYSTEM_TIME|ntp_probe|%s\n" "$ntp_status"
-    else
-        $CMD_PRINTF "SYSTEM_TIME|ntp_probe|not_available\n"
-    fi
+execute_network_reachability() {
+    local result
+    result=$(scutil -r { nodename | address | local-address remote-address } 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
     return 0
 }
 
+# Function: execute_hostname_localhost_name_computername
+# Type: main
+# Languages: shell
+FUNCTION_LANG="shell"
+# Sudo privileges: Not required
+
+execute_hostname_localhost_name_computername() {
+    local result
+    result=$(scutil --get { HostName | LocalHostName | ComputerName } 2>&1)
+    $CMD_PRINTF "RESULT|%s\n" "$result"
+    return 0
+}
 
 
 JOB_ID=$(core_generate_job_id)
