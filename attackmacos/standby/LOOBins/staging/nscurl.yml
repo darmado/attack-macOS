@@ -1,0 +1,80 @@
+procedure_name: nscurl
+tactic: Defense Evasion
+ttp_id: T9999
+guid: $GUID
+intent: Download, upload, and read files.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Leo Pitt (@_D00mfist)'
+created: '2023-05-22'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection:
+- ioc: 'Jamf Protect: Detect all curl and nscurl activity'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/all_curl_activity
+- ioc: 'Jamf Protect: Detect file downloads using the insecure argument for curl and nscurl'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/file_download_curl_insecure
+- ioc: 'Sigma: File Download Via Nscurl - MacOS'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_nscurl_usage.yml
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://www.agnosticdev.com/content/how-diagnose-app-transport-security-issues-using-nscurl-and-openssl
+  description: How to Diagnose App Transport Security Issues using nscurl and OpenSSL
+- link: https://danielcortez.substack.com/p/living-off-the-land-exploring-macos
+  description: 'Living-off-the-Land: Exploring macOS LOOBins and Crafting Detection Rules - nscurl'
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --download-file
+    description: Download file and ignore cert checking
+    execute_function:
+    - execute_download_file
+  - option: --download-file
+    description: Download file to the Downloads directory using -dl
+    execute_function:
+    - execute_download_file
+  - option: --download-file
+    description: Download file to a designated directory using -dir
+    execute_function:
+    - execute_download_file
+  global_variable:
+  - name: CMD_NSCURL
+    type: string
+    default_value: /usr/bin/nscurl
+  functions:
+  - name: execute_download_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_download_file() {\n    local result\n    result=$(nscurl -k https://google.com -o /private/tmp/google 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_download_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_download_file() {\n    local result\n    result=$(nscurl https://google.com -dl 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_download_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_download_file() {\n    local result\n    result=$(nscurl https://google.com -dir /private/tmp/google 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

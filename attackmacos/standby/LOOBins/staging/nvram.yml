@@ -1,0 +1,44 @@
+procedure_name: nvram
+tactic: Discovery
+ttp_id: T9999
+guid: $GUID
+intent: Access and manage the host's non-volatile random-access memory (NVRAM).
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Brendan Chamberlain (@infosecB)'
+created: '2023-05-23'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://ss64.com/osx/nvram.html
+  description: SS64 man page
+acknowledgement:
+- person: Jonathan Bar Or (@yo_yo_yo_jbo)
+  handle: ''
+procedure:
+  arguments:
+  - option: --get-nvram-variables
+    description: The -p option prints all the nvram variables that contain some potentially sensitive information lik
+    execute_function:
+    - execute_get_nvram_variables
+  global_variable:
+  - name: CMD_NVRAM
+    type: string
+    default_value: /usr/sbin/nvram
+  functions:
+  - name: execute_get_nvram_variables
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_get_nvram_variables() {\n    local result\n    result=$(nvram -p 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\"\
+      \ \"$result\"\n    return 0\n}"

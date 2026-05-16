@@ -1,0 +1,35 @@
+{
+  "by_tactic": {
+    "collection": 8,
+    "command-and-control": 8,
+    "credential-access": 11,
+    "defense-impairment": 8,
+    "discovery": 24,
+    "execution": 5,
+    "exfiltration": 5,
+    "impact": 6,
+    "initial-access": 3,
+    "lateral-movement": 1,
+    "persistence": 18,
+    "privilege-escalation": 18,
+    "reconnaissance": 1,
+    "stealth": 19
+  },
+  "executors_filter": null,
+  "heuristic_note": "Substring scan of executor commands, cleanup, and ART dependency/prereq fields. url_literal includes benign URLs. attack-macOS shipped procedures remain native-tooling-first; review before promoting standby into core/config/.",
+  "heuristic_remote_signal_counts": {
+    "curl": 20,
+    "dependencies_block": 77,
+    "git_clone": 1,
+    "powershell_web": 1,
+    "url_literal": 17,
+    "wget": 9
+  },
+  "heuristic_remote_signal_version": "art-standby-1",
+  "index_url": "https://raw.githubusercontent.com/redcanaryco/atomic-red-team/refs/heads/master/atomics/Indexes/macos-index.yaml",
+  "kept_techniques": 135,
+  "kept_tests": 302,
+  "kept_tests_heuristic_remote_or_prereq_signals": 83,
+  "total_techniques": 872,
+  "total_tests": 302
+}

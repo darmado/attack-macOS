@@ -1,0 +1,88 @@
+procedure_name: sw_vers
+tactic: Discovery
+ttp_id: T9999
+guid: $GUID
+intent: Prints macOS version information.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Eliott (@Koyiott)'
+created: '2023-09-11'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://macosbin.com/bin/sw_vers
+  description: macOS/binaries/sw_vers
+- link: https://ss64.com/osx/sw_vers.html
+  description: sw_vers man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --retrieving-macos-version-information
+    description: Fetch detailed macOS version information including the build version, product name, and product vers
+    execute_function:
+    - execute_retrieving_macos_version_information
+  - option: --retrieving-macos-product-version
+    description: Fetch macOS product version.
+    execute_function:
+    - execute_retrieving_macos_product_version
+  - option: --retrieving-macos-product-name
+    description: Fetch detailed macOS product name.
+    execute_function:
+    - execute_retrieving_macos_product_name
+  - option: --retrieving-macos-build-version
+    description: Fetch detailed macOS build version.
+    execute_function:
+    - execute_retrieving_macos_build_version
+  global_variable:
+  - name: CMD_SW_VERS
+    type: string
+    default_value: /usr/bin/sw_vers
+  functions:
+  - name: execute_retrieving_macos_version_information
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_retrieving_macos_version_information() {\n    local result\n    result=$(sw_vers 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_retrieving_macos_product_version
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_retrieving_macos_product_version() {\n    local result\n    result=$(sw_vers -productVersion 2>&1)\n  \
+      \  $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_retrieving_macos_product_name
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_retrieving_macos_product_name() {\n    local result\n    result=$(sw_vers -productName 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_retrieving_macos_build_version
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_retrieving_macos_build_version() {\n    local result\n    result=$(sw_vers -buildVersion 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

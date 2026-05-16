@@ -1,0 +1,83 @@
+procedure_name: sqlite3
+tactic: Discovery
+ttp_id: T9999
+guid: $GUID
+intent: Query and manage sqlite databases.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Brendan Chamberlain (@infosecB)'
+created: '2023-05-23'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection:
+- ioc: 'Elastic Detection Rules: Potential Privacy Control Bypass via TCCDB Modification'
+  analysis: https://github.com/elastic/detection-rules/blob/e9baebc2bc18f90ae16501613cd9521a16a38ad7/rules/macos/defense_evasion_privacy_controls_tcc_database_modification.toml
+- ioc: 'Splunk Security Content: Suspicious SQLite3 LSQuarantine Behavior'
+  analysis: https://github.com/splunk/security_content/blob/c65dda5c0aa73a97f28c49c20739971ec1ba18a6/dev/endpoint/suspicious_sqlite3_lsquarantine_behavior.yml#L2
+- ioc: 'Jamf Protect: Detect SQLite3 activity used to associated URLs with downloaded files'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/sqlite3_downloads
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://github.com/bp88/JSS-Scripts/blob/master/TCC.db%20Modifier.sh
+  description: TCC.db Modifier Script
+- link: https://redcanary.com/blog/clipping-silver-sparrows-wings/
+  description: 'Clipping Silver Sparrow’s wings: Outing macOS malware before it takes flight'
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --get-apps-with-full-disk-access
+    description: The following command interacts with the TCC (Transparency, Consent, and Control) database to show t
+    execute_function:
+    - execute_get_apps_full_disk_access
+  - option: --get-firefox-cookie-data
+    description: The following one-liner can be used to kill Firefox and dump cookie data from the user's Firefox pro
+    execute_function:
+    - execute_get_firefox_cookie_data
+  - option: --view-url-associated-with-file-downloads
+    description: 'The following sqlite command is commonly used by macOS malware to view the URL in which the payload '
+    execute_function:
+    - execute_view_url_associated_file_downloads
+  global_variable:
+  - name: CMD_SQLITE3
+    type: string
+    default_value: /usr/bin/sqlite3
+  functions:
+  - name: execute_get_apps_full_disk_access
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_get_apps_full_disk_access() {\n    local result\n    result=$(sqlite3 /Library/Application\\ Support/com.apple.TCC/TCC.db\
+      \ \\\n'select client from access where auth_value and service = \"kTCCServiceSystemPolicyAllFiles\"' 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_get_firefox_cookie_data
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_get_firefox_cookie_data() {\n    local result\n    result=$(killall firefox; find ~/Library/Application\\\
+      \ Support/Firefox/Profiles/. | grep cookies.sqlite | xargs -I {} sqlite3 {} \"select * from moz_cookies\" 2>&1)\n  \
+      \  $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_view_url_associated_file_downloads
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_view_url_associated_file_downloads() {\n    local result\n    result=$(sqlite3 ~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV*\
+      \ 'select LSQuarantineDataURLString from LSQuarantineEvent' 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n  \
+      \  return 0\n}"

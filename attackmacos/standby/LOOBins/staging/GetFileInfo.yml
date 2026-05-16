@@ -1,0 +1,45 @@
+procedure_name: getfileinfo
+tactic: Discovery
+ttp_id: T9999
+guid: $GUID
+intent: Get attributes of files and directories.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Chris Campbell (@texasbe2trill)'
+created: '2023-04-23'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://macosbin.com/bin/getfileinfo
+  description: macOS/binaries/GetFileInfo
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --iterate-through-a-directory-to-getfileinfo
+    description: A bash or zsh oneliner can provide an attacker with information about specific files of interest.
+    execute_function:
+    - execute_iterate_through_directory_getfileinfo
+  global_variable:
+  - name: CMD_GETFILEINFO
+    type: string
+    default_value: /usr/bin/GetFileInfo
+  functions:
+  - name: execute_iterate_through_directory_getfileinfo
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_iterate_through_directory_getfileinfo() {\n    local result\n    result=$(for FILE in ~/Downloads/*; do\
+      \ echo $(GetFileInfo $FILE) >> fileinfo.txt; sleep 2; done 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n   \
+      \ return 0\n}"

@@ -1,0 +1,58 @@
+procedure_name: softwareupdate
+tactic: Discovery
+ttp_id: T9999
+guid: $GUID
+intent: Interact with the macOS software update service.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Jonathan Bar Or (@yo_yo_yo_jbo)'
+created: '2023-04-25'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://ss64.com/osx/softwareupdate.html
+  description: softwareupdate Man Page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --get-os-and-browser-version-information
+    description: Determine OS and Safari version by enumerating the available software updates.
+    execute_function:
+    - execute_get_os_browser_version_information
+  - option: --get-os-update-policy
+    description: Use the --schedule flag to return the OS update policy.
+    execute_function:
+    - execute_get_os_update_policy
+  global_variable:
+  - name: CMD_SOFTWAREUPDATE
+    type: string
+    default_value: /usr/sbin/softwareupdate
+  functions:
+  - name: execute_get_os_browser_version_information
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_get_os_browser_version_information() {\n    local result\n    result=$(softwareupdate --list 2>&1)\n  \
+      \  $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_get_os_update_policy
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_get_os_update_policy() {\n    local result\n    result=$(softwareupdate --schedule 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

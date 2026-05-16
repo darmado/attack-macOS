@@ -6,7 +6,7 @@ Use this area for **third-party catalogs** and **pre-schema** artifacts before p
 
 ## Status (LOOBins YAML → config)
 
-Per-binary `*.yml` files here were **bulk-promoted** to `attackmacos/core/config/` using `convert_loobin_to_procedure.py --promote-all` with MITRE mapping from `TTP_OVERLAY.yml` / built-in inference (`cicd/sync/convert_loobin_to_procedure.py`). **`screencapture`** and **`security`** were skipped (superseded by `screen_capture.yml` and `keychains.yml`). Refine individual techniques in config YAML as needed.
+Per-binary `*.yml` files here were **bulk-promoted** to `attackmacos/core/config/` using `convert_loobin_to_procedure.py --promote-all` with MITRE mapping from `TTP_OVERLAY.yml` / built-in inference (`cicd/convert/convert_loobin_to_procedure.py`). **`screencapture`** and **`security`** were skipped (superseded by `screen_capture.yml` and `keychains.yml`). Refine individual techniques in config YAML as needed.
 
 ## LOOBins (`attackmacos/standby/LOOBins/`)
 
@@ -14,30 +14,30 @@ Per-binary `*.yml` files here were **bulk-promoted** to `attackmacos/core/config
 |----------|------|
 | `loobins.json` | Full catalog snapshot from [LOOBins](https://www.loobins.io/) (synced via script below). |
 | `*.yml` | Per-binary snippets maintained alongside or derived from the project (examples: `defaults.yml`, `ioreg.yml`). |
-| `staging/` | Output from `cicd/sync/convert_loobin_to_procedure.py` — **draft** procedure YAML for human review (not production until moved + `ttp_id` fixed). |
+| `staging/` | Output from `cicd/convert/convert_loobin_to_procedure.py` — **draft** procedure YAML for human review (not production until moved + `ttp_id` fixed). |
 
 ### Sync latest JSON from LOOBins
 
 From the repository root:
 
 ```bash
-bash cicd/sync/sync_loobins_json.sh
+python3 cicd/fetch/fetch_loobins.py catalog
 ```
 
-Uses `curl` to fetch `https://www.loobins.io/loobins.json` into `attackmacos/standby/LOOBins/loobins.json`. Override the URL:
+Fetches `https://www.loobins.io/loobins.json` into `attackmacos/standby/LOOBins/loobins.json` (urllib; no shell). Override the URL:
 
 ```bash
-LOOBINS_JSON_URL='https://www.loobins.io/loobins.json' bash cicd/sync/sync_loobins_json.sh
+python3 cicd/fetch/fetch_loobins.py catalog --url 'https://www.loobins.io/loobins.json'
 ```
 
 The catalog is the same “Living off the Orchard” content indexed on [loobins.io/binaries](https://www.loobins.io/binaries/) and maintained in [infosecB/LOOBins](https://github.com/infosecB/LOOBins).
 
 ### Get one binary as YAML (pick one path)
 
-**A — From synced JSON (good when you already ran `sync_loobins_json.sh`):**
+**A — From synced JSON (good when you already ran `fetch_loobins.py catalog`):**
 
 ```bash
-python3 cicd/sync/extract_loobin_from_json.py <name>
+python3 cicd/extract/extract_loobin_from_json.py <name>
 # writes attackmacos/standby/LOOBins/<name>.yml
 ```
 
@@ -46,7 +46,7 @@ python3 cicd/sync/extract_loobin_from_json.py <name>
 **B — From GitHub raw (canonical per-file YAML):**
 
 ```bash
-sh cicd/sync/fetch_loobin_yaml_upstream.sh <name>
+python3 cicd/fetch/fetch_loobins.py binary <name>
 # downloads https://raw.githubusercontent.com/infosecB/LOOBins/main/LOOBins/<name>.yml
 ```
 
@@ -57,15 +57,15 @@ Use the exact upstream filename (case-sensitive), e.g. `GetFileInfo`, not `getfi
 Per-binary files (for example `attackmacos/standby/LOOBins/defaults.yml`) can be converted toward `attackmacos/core/schemas/procedure.schema.json`:
 
 ```bash
-cicd/venv/bin/python3 cicd/sync/convert_loobin_to_procedure.py attackmacos/standby/LOOBins/defaults.yml
+cicd/venv/bin/python3 cicd/convert/convert_loobin_to_procedure.py attackmacos/standby/LOOBins/defaults.yml
 ```
 
-Draft output is written to `attackmacos/standby/LOOBins/staging/<binary>.yml`. Edit **`ttp_id`** (placeholder `T9999`), **`intent`**, and functions, then copy or merge into `attackmacos/core/config/` and run **`python3 cicd/build/build_shell_procedure.py`**.
+Draft output is written to `attackmacos/standby/LOOBins/staging/<binary>.yml`. Edit **`ttp_id`** (placeholder `T9999`), **`intent`**, and functions, then copy or merge into `attackmacos/core/config/` and run **`python3 cicd/build/procedure_shell.py`**.
 
 **Batch (preferred — same tool, discoverable via `--help` pattern):**
 
 ```bash
-cicd/venv/bin/python3 cicd/sync/convert_loobin_to_procedure.py --all-standby
+cicd/venv/bin/python3 cicd/convert/convert_loobin_to_procedure.py --all-standby
 ```
 
 This processes every `*.yml` in `attackmacos/standby/LOOBins/` (skips failures per file with a message). No separate `stage_all_loobins.sh` — logic stays in the converter.
@@ -74,7 +74,7 @@ Fallback (shell loop from repo root):
 
 ```bash
 for f in attackmacos/standby/LOOBins/*.yml; do
-  cicd/venv/bin/python3 cicd/sync/convert_loobin_to_procedure.py "$f" || exit 1
+  cicd/venv/bin/python3 cicd/convert/convert_loobin_to_procedure.py "$f" || exit 1
 done
 ```
 
@@ -82,14 +82,30 @@ Field mapping reference: [docs/CICD/LOOBins_to_Procedure_Mapping.md](../../docs/
 
 ### Relation to “add a TTP”
 
-1. Sync JSON (optional) → refresh local catalog (`sync_loobins_json.sh`).  
-2. Obtain per-binary LOOBin YAML in `standby/LOOBins/` — copy from your notes, **`extract_loobin_from_json.py`**, or **`fetch_loobin_yaml_upstream.sh`**.  
+1. Fetch catalog (optional) → `python3 cicd/fetch/fetch_loobins.py catalog`.  
+2. Obtain per-binary LOOBin YAML in `standby/LOOBins/` — copy from your notes, **`extract_loobin_from_json.py`**, or **`fetch_loobins.py binary <name>`**.  
 3. Convert → staging procedure YAML (`convert_loobin_to_procedure.py`).  
 4. Finish metadata + MITRE IDs → move to `attackmacos/core/config/`.  
-5. Build (`python3 cicd/build/build_shell_procedure.py …`) — **lint is already included** (`sh -n`, same as `--lint-local`).  
+5. Build (`python3 cicd/build/procedure_shell.py …`) — **lint is already included** (`sh -n`, same as `--lint-local`).  
 6. Before a PR, run **`sh cicd/qa/run_local_qa.sh`** (see `cicd/README.md`). GitHub Actions can wrap the same steps later.
 
 Future UI (“sync LOOBins to my project”) can wrap steps 1–5.
+
+## Atomic Red Team (`attackmacos/standby/AtomicRedTeam/`)
+
+| Artifact | Role |
+|----------|------|
+| `macos-index.yaml` | Cached upstream index downloaded from Atomic Red Team. |
+| `index_summary.json` | Counts from the last **`fetch_atomic_red_team.py --all`** run. |
+| `atomics/` | Per-technique YAML with only macOS-supported tests (`python3 cicd/fetch/fetch_atomic_red_team.py --all`; **gitignored**). Files: `atomics/<TTP>/<TTP>_<mitre_name>.yaml`. |
+
+```sh
+python3 cicd/fetch/fetch_atomic_red_team.py --all
+python3 cicd/fetch/fetch_atomic_red_team.py --tactic discovery --format table
+python3 cicd/fetch/fetch_atomic_red_team.py --local --ttp T1049 --format json
+```
+
+Details and license note: [AtomicRedTeam/README.md](AtomicRedTeam/README.md). Porting guide: [docs/CICD/ART_to_Procedure.md](../../docs/CICD/ART_to_Procedure.md).
 
 ## Other folders
 

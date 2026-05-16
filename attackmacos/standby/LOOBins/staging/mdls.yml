@@ -1,0 +1,56 @@
+procedure_name: mdls
+tactic: Defense Evasion
+ttp_id: T9999
+guid: $GUID
+intent: List metadata attributes for the specified file.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Daniel Stinson-Diess (@shellcromancer)'
+created: '2023-05-29'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --validate-file-download-information
+    description: Use mdls to validate payload download sources and timestamps to guard against sandbox executions.
+    execute_function:
+    - execute_validate_file_download_information
+  - option: --query-file-paths
+    description: Use mdls to print file paths and sizes when enumerating host resources.
+    execute_function:
+    - execute_query_file_paths
+  global_variable:
+  - name: CMD_MDLS
+    type: string
+    default_value: /usr/bin/mdls
+  functions:
+  - name: execute_validate_file_download_information
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_validate_file_download_information() {\n    local result\n    result=$(mdls -name \"kMDItemWhereFroms\"\
+      \ -name \"kMDItemDownloadedDate\" 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_query_file_paths
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_query_file_paths() {\n    local result\n    result=$(xargs -0 mdls -n kMDItemPath -n kMDItemFSSize 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

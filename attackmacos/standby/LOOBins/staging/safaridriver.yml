@@ -1,0 +1,46 @@
+procedure_name: safaridriver
+tactic: Command and Control
+ttp_id: T9999
+guid: $GUID
+intent: Enable the WebDriver Safari browser API for Selenium testing.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Brendan Chamberlain (@infosecB)'
+created: '2023-05-20'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://developer.apple.com/documentation/webkit/about_webdriver_for_safari
+  description: About WebDriver for Safari
+- link: https://starlabs.sg/blog/2021/04-you-talking-to-me/
+  description: You Talking To Me?
+acknowledgement:
+- person: 'Chris Ross, Cedric Owens: Farming The Apple Orchards: Living Off The Land Techniques'
+  handle: ''
+procedure:
+  arguments:
+  - option: --enable-safaridriver
+    description: The following command can be used to enable the WebDriver Safari browser API. The command must be ru
+    execute_function:
+    - execute_enable_safaridriver
+  global_variable:
+  - name: CMD_SAFARIDRIVER
+    type: string
+    default_value: /System/Cryptexes/App/usr/bin/safaridriver
+  functions:
+  - name: execute_enable_safaridriver
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_enable_safaridriver() {\n    local result\n    result=$(sudo safaridriver --enable 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

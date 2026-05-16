@@ -1,0 +1,47 @@
+procedure_name: screencapture
+tactic: Collection
+ttp_id: T9999
+guid: $GUID
+intent: Capture a screenshot from command line.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Brendan Chamberlain (@infosecB)'
+created: '2023-04-27'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection:
+- ioc: 'Sigma: Screen Capture - macOS'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_screencapture.yml
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://ss64.com/osx/screencapture.html
+  description: SS64 screencapture man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --continously-capture-screenshots
+    description: 'The following command demonstrates how an attacker can use the tool to capture screenshots every 10 '
+    execute_function:
+    - execute_continously_capture_screenshots
+  global_variable:
+  - name: CMD_SCREENCAPTURE
+    type: string
+    default_value: /usr/sbin/screencapture
+  functions:
+  - name: execute_continously_capture_screenshots
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_continously_capture_screenshots() {\n    local result\n    result=$(while true; do ts=$(date +\"%Y%m%d-%H%M%S\"\
+      ); o=\"/tmp/screenshots\"; screencapture -x \"$o/ss-$ts.png\"; sleep 10; done 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\"\
+      \ \"$result\"\n    return 0\n}"

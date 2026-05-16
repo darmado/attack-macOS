@@ -1,0 +1,62 @@
+procedure_name: sfltool
+tactic: Discovery
+ttp_id: T9999
+guid: $GUID
+intent: Binary to manage the Shared File List framework.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Eliott (@Koyiott)'
+created: '2023-09-12'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection:
+- ioc: 'Jamf Protect: Detect attempts to dump BTM or being reverted to installation defaults'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/sfltool_activity
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://www.unix.com/man-page/mojave/1/sfltool/
+  description: sfltool man page
+- link: https://eclecticlight.co/2023/02/15/controlling-login-and-background-items-in-ventura/
+  description: Controlling login and background items
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --display-login-items
+    description: Identify all current login and background items configured on the system.
+    execute_function:
+    - execute_display_login_items
+  - option: --reset-login-items-to-defaults
+    description: Reset all third-party Login Items and revert to installation defaults.
+    execute_function:
+    - execute_reset_login_items_defaults
+  global_variable:
+  - name: CMD_SFLTOOL
+    type: string
+    default_value: /usr/bin/sfltool
+  functions:
+  - name: execute_display_login_items
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_display_login_items() {\n    local result\n    result=$(sfltool dumpbtm 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_reset_login_items_defaults
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_reset_login_items_defaults() {\n    local result\n    result=$(sfltool resetbtm 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

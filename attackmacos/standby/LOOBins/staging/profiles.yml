@@ -1,0 +1,58 @@
+procedure_name: profiles
+tactic: Discovery
+ttp_id: T9999
+guid: $GUID
+intent: List and remove configuration profiles.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Will Huang (@In0de_16)'
+created: '2023-05-16'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://book.hacktricks.xyz/macos-hardening/macos-security-and-privilege-escalation/macos-mdm
+  description: macOS MDM introduction.
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --collect-system-dep-information
+    description: 'The following command determines whether device is DEP(Device Enrolment Program) enabled and output '
+    execute_function:
+    - execute_collect_system_dep_information
+  - option: --remove-configuration-profiles
+    description: The following command deletes the specified profiles. An optional password used when removing a conf
+    execute_function:
+    - execute_remove_configuration_profiles
+  global_variable:
+  - name: CMD_PROFILES
+    type: string
+    default_value: /usr/bin/profiles
+  functions:
+  - name: execute_collect_system_dep_information
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_collect_system_dep_information() {\n    local result\n    result=$(sudo profiles show -type enrollment\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_remove_configuration_profiles
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_remove_configuration_profiles() {\n    local result\n    result=$(profiles remove -identifier com.profile.identifier\
+      \ -password <password> 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

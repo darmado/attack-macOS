@@ -1,0 +1,60 @@
+procedure_name: dsconfigad
+tactic: Discovery
+ttp_id: T9999
+guid: $GUID
+intent: retrieves/changes configuration for Directory Services Active Directory Plugin.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Ethan Nay'
+created: '2023-08-23'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://macosbin.com/bin/dsconfigad
+  description: macOS/binaries/dsconfigad
+- link: https://www.unix.com/man-page/osx/8/dsconfigad/
+  description: dsconfigad man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --retrieves-the-active-directory-configuration
+    description: Retrieves the Active Directory configuration
+    execute_function:
+    - execute_retrieves_active_directory_configuration
+  - option: --retrieves-the-active-directory-name
+    description: Retrieves the Active Directory name
+    execute_function:
+    - execute_retrieves_active_directory_name
+  global_variable:
+  - name: CMD_DSCONFIGAD
+    type: string
+    default_value: /usr/sbin/dsconfigad
+  functions:
+  - name: execute_retrieves_active_directory_configuration
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_retrieves_active_directory_configuration() {\n    local result\n    result=$(dsconfigad -show 2>&1)\n \
+      \   $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_retrieves_active_directory_name
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_retrieves_active_directory_name() {\n    local result\n    result=$(dsconfigad -show |awk '/Active Directory\
+      \ Domain/{print $NF}' 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

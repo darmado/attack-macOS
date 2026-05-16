@@ -1,0 +1,46 @@
+procedure_name: kextstat
+tactic: Discovery
+ttp_id: T9999
+guid: $GUID
+intent: Display the status of loaded kernal extensions (kexts)
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Mark Morowczynsk (@markmorow)'
+created: '2023-07-30'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection:
+- ioc: No detections at time of publishing
+  analysis: n/a
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://ss64.com/osx/kextstat.html
+  description: kextstat man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --list-kernel-extensions
+    description: Uses kexstat showloaded to display kernel extensions and address in kernel memory it has been loaded
+    execute_function:
+    - execute_list_kernel_extensions
+  global_variable:
+  - name: CMD_KEXTSTAT
+    type: string
+    default_value: /usr/sbin/kextstat
+  functions:
+  - name: execute_list_kernel_extensions
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_list_kernel_extensions() {\n    local result\n    result=$(kexstat 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"

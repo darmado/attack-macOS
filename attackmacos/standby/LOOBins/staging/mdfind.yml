@@ -1,0 +1,77 @@
+procedure_name: mdfind
+tactic: Reconnaissance
+ttp_id: T9999
+guid: $GUID
+intent: Locate files using the Spotlight database.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Chris Campbell (@texasbe2trill)'
+created: '2023-04-22'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection:
+- ioc: 'Jamf Protect: Detect activity related to mdfind used to search for stored AWS keys'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/mdfind_search_aws_keys
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://youtu.be/Snwh4mMe-Cg?t=45
+  description: '"Farming The Apple Orchards: Living off the Land Techniques" - Chris Ross & Cedric Owens'
+- link: https://www.jamf.com/blog/zero-day-tcc-bypass-discovered-in-xcsset-malware/
+  description: '"Zero-Day TCC bypass discovered in XCSSET malware" - Jaron Bradley, Ferdous Saljooki, Stuart Ashenbrenner'
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --use-mdfind-to-provide-live-updates-to-the-number-of-files-matching-the
+    description: A bash or zsh oneliner can cause mdfind to provide an attacker with live updates to the number of fi
+    execute_function:
+    - execute_use_mdfind_provide_live_updates_number_files_matching_query
+  - option: --use-mdfind-to-search-for-aws-keys
+    description: Allows an attacker to query the filesystem via the CommandLine/Terminal to search for AWS keys.
+    execute_function:
+    - execute_use_mdfind_search_aws_keys
+  - option: --use-mdfind-to-search-for-apps-to-infect
+    description: Allows an attacker to determine if specific applications are installed and can be leveraged
+    execute_function:
+    - execute_use_mdfind_search_apps_infect
+  global_variable:
+  - name: CMD_MDFIND
+    type: string
+    default_value: /usr/bin/mdfind
+  functions:
+  - name: execute_use_mdfind_provide_live_updates_number_files_matching_query
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_use_mdfind_provide_live_updates_number_files_matching_query() {\n    local result\n    result=$(mdfind\
+      \ -live passw 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_use_mdfind_search_aws_keys
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_use_mdfind_search_aws_keys() {\n    local result\n    result=$(mdfind 'kMDItemTextContext == AKIA || kMDItemDisplayName\
+      \ = *AKIA* -onlyin ~' 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_use_mdfind_search_apps_infect
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_use_mdfind_search_apps_infect() {\n    local result\n    result=$(set appId to do shell script \"mdfind\
+      \ kMDItemCFBundleIdentifier = '\" & bundleId & \"'\" 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"

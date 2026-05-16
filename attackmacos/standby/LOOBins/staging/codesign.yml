@@ -1,0 +1,48 @@
+procedure_name: codesign
+tactic: Defense Evasion
+ttp_id: T9999
+guid: $GUID
+intent: Create, manipulate and verify code signatures.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Thijs Xhaflaire'
+created: '2024-07-29'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection:
+- ioc: 'Jamf Protect: Detect ad-hod codesigning activity'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/adhoc_codesigning
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://www.sentinelone.com/blog/when-apple-admits-macos-malware-is-a-problem-its-time-to-take-notice/
+  description: When Apple Admits macOS Malware Is A Problem – It’s Time To Take Notice
+- link: https://ss64.com/mac/codesign.html
+  description: codesign man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --ad-hod-codesigning-an-app-bundle
+    description: This command forcefully re-signs the MyApp.app application with an ad-hoc signature, applying the si
+    execute_function:
+    - execute_ad_hod_codesigning_app_bundle
+  global_variable:
+  - name: CMD_CODESIGN
+    type: string
+    default_value: /usr/bin/codesign
+  functions:
+  - name: execute_ad_hod_codesigning_app_bundle
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_ad_hod_codesigning_app_bundle() {\n    local result\n    result=$(codesign --force --deep -s - MyApp.app\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

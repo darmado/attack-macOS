@@ -1,0 +1,70 @@
+procedure_name: t1005_copy_apple_notes_database_files_using_applescript
+tactic: Collection
+ttp_id: T1005
+guid: 20f8f9cf-720b-4e14-b94e-ad2514f2b71f
+intent: This command will copy Apple Notes database files using AppleScript as seen in Atomic Stealer.
+author: '@darmado | https://x.com/darmad0'
+credit: Atomic Red Team (cfb6d400-a269-4c06-a347-6d88d584d5f7)
+created: '2026-05-07'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection: []
+resources:
+- link: https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1005/T1005.md
+  description: 'Atomic Red Team T1005: Data from Local System'
+- link: https://github.com/redcanaryco/atomic-red-team
+  description: Atomic Red Team project
+acknowledgement: []
+procedure:
+  arguments:
+  - option: --run
+    description: 'Run Atomic test: Copy Apple Notes database files using AppleScript'
+    execute_function:
+    - execute_copy_apple_notes_database_files_using_applescript
+  - option: --destination-path
+    description: Specify the path to copy the database files into.
+    type: string
+    input_required: true
+    execute_function:
+    - execute_copy_apple_notes_database_files_using_applescript
+  - option: --cleanup
+    description: Run Atomic cleanup command
+    execute_function:
+    - cleanup_copy_apple_notes_database_files_using_applescript
+  global_variable:
+  - name: INPUT_DESTINATION_PATH
+    type: string
+    default_value: /private/tmp
+  - name: CMD_OSASCRIPT
+    type: string
+    default_value: osascript
+  - name: CMD_RM
+    type: string
+    default_value: rm
+  functions:
+  - name: execute_copy_apple_notes_database_files_using_applescript
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_copy_apple_notes_database_files_using_applescript() {\n    local result\n    result=$(\"$CMD_OSASCRIPT\"\
+      \ -e 'tell application \"Finder\"' -e 'set destinationFolderPath to POSIX file \"${INPUT_DESTINATION_PATH}\"' -e 'set\
+      \ notesFolderPath to (path to home folder as text) & \"Library:Group Containers:group.com.apple.notes:\"' -e 'set notesFolder\
+      \ to folder notesFolderPath' -e 'set notesFiles to {file \"NoteStore.sqlite\", file \"NoteStore.sqlite-shm\", file \"\
+      NoteStore.sqlite-wal\"} of notesFolder' -e 'repeat with aFile in notesFiles' -e 'duplicate aFile to folder destinationFolderPath\
+      \ with replacing' -e 'end' -e 'end tell' 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: cleanup_copy_apple_notes_database_files_using_applescript
+    type: helper
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "cleanup_copy_apple_notes_database_files_using_applescript() {\n    local result\n    result=$(\"$CMD_RM\" \"${INPUT_DESTINATION_PATH}/NoteStore.sqlite*\"\
+      \ 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

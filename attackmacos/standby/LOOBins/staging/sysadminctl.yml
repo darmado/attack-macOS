@@ -1,0 +1,134 @@
+procedure_name: sysadminctl
+tactic: Initial Access
+ttp_id: T9999
+guid: $GUID
+intent: Create/delete local accounts, guest account, enable SMB/AFP Guest access.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Hare Sudhan (@cyb3rbuff)'
+created: '2024-11-19'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection:
+- ioc: 'Sigma: Creation Of A Local User Account'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_create_account.yml
+- ioc: 'Sigma: User Added To Admin Group Via Sysadminctl'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_sysadminctl_add_user_to_admin_group.yml
+- ioc: 'Sigma: Guest Account Enabled Via Sysadminctl'
+  analysis: https://github.com/SigmaHQ/sigma/blob/master/rules/macos/process_creation/proc_creation_macos_sysadminctl_enable_guest_account.yml
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://ss64.com/mac/sysadminctl.html
+  description: sysadminctl man page
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --enable-guest-account
+    description: sysadminctl can be used to enable the guest account
+    execute_function:
+    - execute_enable_guest_account
+  - option: --create-local-user-account
+    description: sysadminctl can be used to create a local user account
+    execute_function:
+    - execute_create_local_user_account
+  - option: --create-a-local-admin-account
+    description: sysadminctl can be used to create a local admin account
+    execute_function:
+    - execute_create_local_admin_account
+  - option: --reset-user-password
+    description: sysadminctl can be used to reset password for a particular user account
+    execute_function:
+    - execute_reset_user_password
+  - option: --delete-a-local-account
+    description: sysadminctl can delete the specified user account
+    execute_function:
+    - execute_delete_local_account
+  - option: --enable-smb-guest-access
+    description: sysadminctl can enable SMB Guest Access
+    execute_function:
+    - execute_enable_smb_guest_access
+  - option: --enable-afp-guest-access
+    description: sysadminctl can enable AFP Guest Access
+    execute_function:
+    - execute_enable_afp_guest_access
+  global_variable:
+  - name: CMD_SYSADMINCTL
+    type: string
+    default_value: /usr/sbin/sysadminctl
+  functions:
+  - name: execute_enable_guest_account
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_enable_guest_account() {\n    local result\n    result=$(sudo sysadminctl -guestAccount on\n 2>&1)\n  \
+      \  $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_create_local_user_account
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_create_local_user_account() {\n    local result\n    result=$(sudo sysadminctl -addUser randomUser -password\
+      \ \"randomPassword\"\n 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_create_local_admin_account
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_create_local_admin_account() {\n    local result\n    result=$(sudo sysadminctl -addUser randomUser -password\
+      \ \"randomPassword\" -admin\n 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_reset_user_password
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_reset_user_password() {\n    local result\n    result=$(sudo sysadminctl -resetPasswordFor randomUser -newPassword\
+      \ \"randomPassword\"\n 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_delete_local_account
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_delete_local_account() {\n    local result\n    result=$(sudo sysadminctl -deleteUser randomUser\n 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_enable_smb_guest_access
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_enable_smb_guest_access() {\n    local result\n    result=$(sudo sysadminctl -smbGuestAccess on\n 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_enable_afp_guest_access
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_enable_afp_guest_access() {\n    local result\n    result=$(sudo sysadminctl -afpGuestAccess on\n 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"

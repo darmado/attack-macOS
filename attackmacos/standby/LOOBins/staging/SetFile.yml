@@ -1,0 +1,60 @@
+procedure_name: setfile
+tactic: Persistence
+ttp_id: T9999
+guid: $GUID
+intent: Set attributes of files and directories.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Chris Campbell (@texasbe2trill)'
+created: '2023-04-23'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection: []
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://daringfireball.net/2008/04/the_invisible_bit
+  description: The Invisible Bit
+acknowledgement:
+- person: ''
+  handle: ''
+procedure:
+  arguments:
+  - option: --set-a-file-or-directory-attribute-to-invisible
+    description: A bash or zsh oneliner can allow an attacker to set the file attribute to invisible. This action can
+    execute_function:
+    - execute_set_file_directory_attribute_invisible
+  - option: --change-a-file-s-creation-and-modification-timestamps
+    description: Setfile can be used with the -d and -m arguments to alter a file's creation and modification date, r
+    execute_function:
+    - execute_change_file_s_creation_modification_timestamps
+  global_variable:
+  - name: CMD_SETFILE
+    type: string
+    default_value: /usr/bin/SetFile
+  functions:
+  - name: execute_set_file_directory_attribute_invisible
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_set_file_directory_attribute_invisible() {\n    local result\n    result=$(for FILE in ~/*; do echo $(SetFile\
+      \ -a V $FILE && echo $(GetFileInfo $FILE)) >> /tmp/fileinfo.txt; sleep 2; done 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_change_file_s_creation_modification_timestamps
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_change_file_s_creation_modification_timestamps() {\n    local result\n    result=$(SetFile -d \"04/25/2023\
+      \ 11:11:00\" -m \"04/25/2023 11:12:00\" targetfile.txt 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return\
+      \ 0\n}"

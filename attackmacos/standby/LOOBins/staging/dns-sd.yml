@@ -1,0 +1,90 @@
+procedure_name: dns-sd
+tactic: Discovery
+ttp_id: T9999
+guid: $GUID
+intent: Discover local network services using the DNS-Based Service Discovery (SD) protocol.
+author: '@darmado | https://x.com/darmad0'
+credit: 'LOOBins catalog author: Brendan Chamberlain (@infosecB)'
+created: '2023-05-19'
+updated: $UPDATED
+version: 1.0.0
+platform:
+- darwin
+detection:
+- ioc: 'Jamf Protect: Detect dns-sd discovery activity'
+  analysis: https://github.com/jamf/jamfprotect/blob/main/custom_analytic_detections/dns_service_discovery
+resources:
+- link: https://www.loobins.io/
+  description: LOOBins — Living Off The Orchard macOS binaries
+- link: ''
+  description: ''
+- link: https://themittenmac.com/what-does-apt-activity-look-like-on-macos
+  description: What does APT Activity Look Like on macOS?
+- link: https://jonathanmumm.com/tech-it/mdns-bonjour-bible-common-service-strings-for-various-vendors/
+  description: mDNS / Bonjour Bible - List of Common Service Strings for various vendors
+acknowledgement:
+- person: 'Chris Ross, Cedric Owens: Farming The Apple Orchards: Living Off The Land Techniques'
+  handle: ''
+procedure:
+  arguments:
+  - option: --discover-ssh-hosts
+    description: Hosts serving SSH can be discovered using the _ssh._tcp service string.
+    execute_function:
+    - execute_discover_ssh_hosts
+  - option: --discover-web-hosts
+    description: Hosts serving web services can be discovered using the _http._tcp service string.
+    execute_function:
+    - execute_discover_web_hosts
+  - option: --discover-hosts-serving-remote-screen-sharing
+    description: Hosts serving remote screen sharing can be discovered using the _rfb._tcp service string.
+    execute_function:
+    - execute_discover_hosts_serving_remote_screen_sharing
+  - option: --discover-hosts-serving-smb
+    description: Hosts serving SMB can be discovered using the _smb._tcp service string.
+    execute_function:
+    - execute_discover_hosts_serving_smb
+  global_variable:
+  - name: CMD_DNS_SD
+    type: string
+    default_value: /usr/bin/dns-sd
+  functions:
+  - name: execute_discover_ssh_hosts
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_discover_ssh_hosts() {\n    local result\n    result=$(dns-sd -B _ssh._tcp 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_discover_web_hosts
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_discover_web_hosts() {\n    local result\n    result=$(dns-sd -B _http._tcp 2>&1)\n    $CMD_PRINTF \"RESULT|%s\\\
+      n\" \"$result\"\n    return 0\n}"
+  - name: execute_discover_hosts_serving_remote_screen_sharing
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_discover_hosts_serving_remote_screen_sharing() {\n    local result\n    result=$(dns-sd -B _rfb._tcp 2>&1)\n\
+      \    $CMD_PRINTF \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
+  - name: execute_discover_hosts_serving_smb
+    type: main
+    language:
+    - shell
+    opsec:
+      check_fda:
+        enabled: false
+        exit_on_failure: true
+    code: "execute_discover_hosts_serving_smb() {\n    local result\n    result=$(dns-sd -B _smb._tcp 2>&1)\n    $CMD_PRINTF\
+      \ \"RESULT|%s\\n\" \"$result\"\n    return 0\n}"
