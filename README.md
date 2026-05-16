@@ -281,7 +281,7 @@ The `./attackmacos/attackmacos.sh` handler script requires:
 
 ```sh
 # 1. Build and sync Caldera plugin
-python cicd/build/build_shell_procedure.py --sync-caldera
+python cicd/build/procedure_shell.py --sync-caldera
 
 # 2. Copy plugin to Caldera
 cp -r integrations/caldera/plugins/attackmacos /path/to/caldera/plugins/
@@ -312,7 +312,7 @@ cd attack-macOS
 ./ttp/credential_access/shell/keychains.sh --verbose --log-output --encode base64
 
 # 4. Build a procedure from YAML (from repo root)
-python3 cicd/build/build_shell_procedure.py attackmacos/core/config/system_info.yml
+python3 cicd/build/procedure_shell.py attackmacos/core/config/system_info.yml
 ```
 
 ### Remote Execution (Direct)
@@ -329,6 +329,19 @@ wget -qO- https://raw.githubusercontent.com/darmado/attack-macOS/main/ttp/discov
 ```
 
 ## Integrations
+
+### Third-party integration docs and security
+
+- **[Integrations index](docs/Integrations/README.md)** — GitHub (`gh`), Caldera, and future vendor touchpoints.
+- **[Third-party security baseline](docs/Integrations/third_party_security.md)** — generic minimums; links to per-integration pages (e.g. [GitHub](docs/Integrations/github_repo_interaction.md)).
+
+### Shipped procedures, upstreams, and maintainer scripts
+
+[Shipped procedures: upstream sources and maintainer scripts](docs/Shipped_procedures_upstream_sources_and_maintainer_scripts.md)
+
+### Coding standards
+
+[Coding and documentation standards](docs/Standards/README.md)
 
 ### Caldera Plugin
 **Repository:** [https://github.com/darmado/caldera-plugin-attack-macos](https://github.com/darmado/caldera-plugin-attack-macos)
