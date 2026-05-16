@@ -1,0 +1,59 @@
+# Registry of `core_*` entrypoints implemented in `attackmacos/core/base/base.sh`.
+#
+# The shell builder does **not** load this file today; it exists so maintainers,
+# audits, and future automation can diff against `base.sh` without parsing shell.
+# Per-function prose lives under `docs/Functions/Shell/` (synced via
+# `cicd/sync/sync_function_docs.py`). Keep this list alphabetically sorted when
+# you add or rename functions.
+
+core_functions:
+  - core_apply_steganography
+  - core_check_db_lock
+  - core_check_fda
+  - core_check_perms
+  - core_debug_print
+  - core_display_help
+  - core_dns_safe_encode
+  - core_emit_error_json_stdout
+  - core_encode_output
+  - core_encrypt_output
+  - core_exec_cmd
+  - core_exec_cmd_construct
+  - core_exec_cmd_herestring
+  - core_exec_keychain_obfuscated
+  - core_execute_function
+  - core_execute_main_logic
+  - core_exfil_dns
+  - core_exfil_http_get
+  - core_exfil_http_post
+  - core_exfiltrate_data
+  - core_extract_domain
+  - core_extract_domain_from_url
+  - core_extract_steganography
+  - core_format_as_csv
+  - core_format_as_json
+  - core_format_output
+  - core_generate_encryption_key
+  - core_generate_job_id
+  - core_generate_json_payload
+  - core_get_content_type
+  - core_get_log_filename
+  - core_get_timestamp
+  - core_get_user_agent
+  - core_handle_error
+  - core_json_escape_minimal
+  - core_log_output
+  - core_main
+  - core_normalize_uri
+  - core_parse_args
+  - core_prepare_exfil_data
+  - core_prepare_proxy_arg
+  - core_process_output
+  - core_send_key_via_dns
+  - core_steganography
+  - core_transform_output
+  - core_url_safe_encode
+  - core_validate_command
+  - core_validate_domain
+  - core_validate_input
+  - core_validate_parsed_args

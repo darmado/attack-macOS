@@ -7,7 +7,8 @@
 # in this repo currently *loads* this YAML into the shell builder—keep
 # `core_commands` here **in sync** when you add or change a command in `base.sh`,
 # and add procedure-only binaries **only** in that procedure YAML until you
-# promote a shared wrapper to `base.sh`.
+# promote a shared wrapper to `base.sh`. Companion `core_*` function names:
+# `attackmacos/core/global/functions.yml` (not loaded by the builder yet).
 #
 # Do not hardcode `/usr/bin/...` in function bodies when a `CMD_*` exists for
 # the same binary; use `$("$CMD_FOO" …)` per Naming Conventions.

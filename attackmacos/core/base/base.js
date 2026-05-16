@@ -20,7 +20,7 @@
     ObjC.import('Foundation');
     // PLACEHOLDER_EXTRA_IMPORTS
 
-    // MITRE / procedure metadata (filled by cicd/build/build_jxa_procedure.py)
+    // MITRE / procedure metadata (filled by cicd/build/procedure_jxa.py)
     var PROCEDURE_NAME = "";
     var TACTIC = "";
     var TTP_ID = "";
