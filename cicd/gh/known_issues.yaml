@@ -1,0 +1,10 @@
+# Presets: named bundles (id, title, body under .github/issue_bodies/, labels) for
+# `python3 cicd/gh/github_issues.py create <preset_id>` → `gh issue create …`.
+# List ids: `python3 cicd/gh/github_issues.py presets`
+# Body paths must stay under .github/issue_bodies/ (enforced by github_issues.py).
+
+jxa-audit-full:
+  title: "[Bug] JXA static audit (--full) fails on persistence/jxa scripts"
+  body: .github/issue_bodies/jxa_audit_full.md
+  labels:
+    - bug

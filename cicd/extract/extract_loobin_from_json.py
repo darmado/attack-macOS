@@ -6,11 +6,11 @@ per-binary YAML file for convert_loobin_to_procedure.py.
 The JSON catalog matches the shape used on https://www.loobins.io/ (same project
 as https://github.com/infosecB/LOOBins). Refresh JSON first:
 
-  bash cicd/sync/sync_loobins_json.sh
+  python3 cicd/fetch/fetch_loobins.py catalog
 
 Usage (from repo root):
-  python3 cicd/sync/extract_loobin_from_json.py log
-  python3 cicd/sync/extract_loobin_from_json.py dns-sd --stdout
+  python3 cicd/extract/extract_loobin_from_json.py log
+  python3 cicd/extract/extract_loobin_from_json.py dns-sd --stdout
 """
 
 from __future__ import annotations
@@ -19,6 +19,10 @@ import argparse
 import json
 import sys
 from pathlib import Path
+
+_CICD_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_CICD_ROOT))
+import validate_input  # noqa: E402
 
 import yaml
 
@@ -31,6 +35,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "binary",
+        type=validate_input.validate_loobin_binary_stem,
         help="LOOBin name field to extract (e.g. log, defaults, dns-sd)",
     )
     parser.add_argument(
@@ -54,7 +59,7 @@ def main() -> int:
 
     if not args.json_path.is_file():
         print(f"Error: JSON not found: {args.json_path}", file=sys.stderr)
-        print("Run: bash cicd/sync/sync_loobins_json.sh", file=sys.stderr)
+        print("Run: python3 cicd/fetch/fetch_loobins.py catalog", file=sys.stderr)
         return 1
 
     with args.json_path.open(encoding="utf-8") as f:
@@ -63,7 +68,7 @@ def main() -> int:
         print("Error: expected loobins.json to be a JSON array", file=sys.stderr)
         return 1
 
-    want = args.binary.strip()
+    want = args.binary
     found = None
     for entry in catalog:
         if isinstance(entry, dict) and entry.get("name") == want:

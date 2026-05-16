@@ -1,4 +1,4 @@
-# Minimal procedure for cicd/build/build_jxa_procedure.py --self-test (not loaded by attackmacos.sh).
+# Minimal procedure for cicd/build/procedure_jxa.py --self-test (not loaded by attackmacos.sh).
 procedure_name: jxa_fixture_echo
 ttp_id: T1115
 tactic: Collection

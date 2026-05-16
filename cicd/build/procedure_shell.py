@@ -19,16 +19,16 @@ Dependencies:
     - jsonschema
 
 Usage:
-    python3 cicd/build/build_shell_procedure.py <yaml_file>        Build single YAML file
-    python3 cicd/build/build_shell_procedure.py --all              Build all YAML files
-    python3 cicd/build/build_shell_procedure.py --force <file>     Force overwrite existing file
-    python3 cicd/build/build_shell_procedure.py --all --force      Force overwrite all files
-    python3 cicd/build/build_shell_procedure.py --validate <file>  Validate YAML only
-    python3 cicd/build/build_shell_procedure.py --sync-caldera     Sync built scripts to Caldera plugin
-    python3 cicd/build/build_shell_procedure.py --help             Show this help
+    python3 cicd/build/procedure_shell.py <yaml_file>        Build single YAML file
+    python3 cicd/build/procedure_shell.py --all              Build all YAML files
+    python3 cicd/build/procedure_shell.py --force <file>     Force overwrite existing file
+    python3 cicd/build/procedure_shell.py --all --force      Force overwrite all files
+    python3 cicd/build/procedure_shell.py --validate <file>  Validate YAML only
+    python3 cicd/build/procedure_shell.py --sync-caldera     Sync built scripts to Caldera plugin
+    python3 cicd/build/procedure_shell.py --help             Show this help
 
 Example:
-    python3 cicd/build/build_shell_procedure.py attackmacos/core/config/system_info.yml
+    python3 cicd/build/procedure_shell.py attackmacos/core/config/system_info.yml
 """
 
 import yaml
@@ -42,7 +42,7 @@ from pathlib import Path
 import jsonschema
 from datetime import datetime
 
-# This file lives at cicd/build/build_shell_procedure.py; repo root is two levels up.
+# This file lives at cicd/build/procedure_shell.py; repo root is two levels up.
 _CICD_BUILD_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _CICD_BUILD_DIR.parent.parent
 
@@ -68,19 +68,19 @@ def show_usage():
     print(f"\n{BOLD}Attack-macOS Build Tool{RESET}")
     print("Build shell scripts from YAML procedure definitions")
     print(f"\n{BOLD}USAGE:{RESET}")
-    print(f"  python3 cicd/build/build_shell_procedure.py <yaml_file>        Build single YAML file")
-    print(f"  python3 cicd/build/build_shell_procedure.py --all              Build all YAML files")
-    print(f"  python3 cicd/build/build_shell_procedure.py --force <file>     Force overwrite existing file")
-    print(f"  python3 cicd/build/build_shell_procedure.py --all --force      Force overwrite all files")
-    print(f"  python3 cicd/build/build_shell_procedure.py --validate <file>  Validate YAML only")
-    print(f"  python3 cicd/build/build_shell_procedure.py --sync-caldera     Sync built scripts to Caldera plugin")
-    print(f"  python3 cicd/build/build_shell_procedure.py --help             Show this help")
+    print(f"  python3 cicd/build/procedure_shell.py <yaml_file>        Build single YAML file")
+    print(f"  python3 cicd/build/procedure_shell.py --all              Build all YAML files")
+    print(f"  python3 cicd/build/procedure_shell.py --force <file>     Force overwrite existing file")
+    print(f"  python3 cicd/build/procedure_shell.py --all --force      Force overwrite all files")
+    print(f"  python3 cicd/build/procedure_shell.py --validate <file>  Validate YAML only")
+    print(f"  python3 cicd/build/procedure_shell.py --sync-caldera     Sync built scripts to Caldera plugin")
+    print(f"  python3 cicd/build/procedure_shell.py --help             Show this help")
     print(f"\n{BOLD}EXAMPLES:{RESET}")
-    print(f"  python3 cicd/build/build_shell_procedure.py attackmacos/core/config/system_info.yml")
-    print(f"  python3 cicd/build/build_shell_procedure.py --force attackmacos/core/config/system_info.yml")
-    print(f"  python3 cicd/build/build_shell_procedure.py --all --force")
-    print(f"  python3 cicd/build/build_shell_procedure.py --validate attackmacos/core/config/browser_history.yml")
-    print(f"  python3 cicd/build/build_shell_procedure.py --sync-caldera")
+    print(f"  python3 cicd/build/procedure_shell.py attackmacos/core/config/system_info.yml")
+    print(f"  python3 cicd/build/procedure_shell.py --force attackmacos/core/config/system_info.yml")
+    print(f"  python3 cicd/build/procedure_shell.py --all --force")
+    print(f"  python3 cicd/build/procedure_shell.py --validate attackmacos/core/config/browser_history.yml")
+    print(f"  python3 cicd/build/procedure_shell.py --sync-caldera")
     print()
 
 

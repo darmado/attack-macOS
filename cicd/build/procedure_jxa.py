@@ -2,7 +2,7 @@
 """
 Build JXA (.js) procedures from YAML definitions, merged with attackmacos/core/base/base.js.
 
-Models cicd/build/build_shell_procedure.py: validate YAML, substitute placeholders, write under
+Models cicd/build/procedure_shell.py: validate YAML, substitute placeholders, write under
 attackmacos/ttp/<tactic>/jxa/, then run osascript smoke test and cicd/audit/audit_jxa.py.
 
 Author: @darmado | https://x.com/darmad0
@@ -450,12 +450,12 @@ def show_usage() -> None:
     print(f"\n{BOLD}Attack-macOS JXA Build Tool{RESET}")
     print("Build JXA scripts from YAML (language: [jxa]) merged with core/base/base.js")
     print(f"\n{BOLD}USAGE:{RESET}")
-    print("  python3 cicd/build/build_jxa_procedure.py <yaml_file>     Build one procedure")
-    print("  python3 cicd/build/build_jxa_procedure.py --all           Build all config YAMLs with JXA")
-    print("  python3 cicd/build/build_jxa_procedure.py --all --force   Overwrite outputs")
-    print("  python3 cicd/build/build_jxa_procedure.py --validate <f> Validate YAML (schema)")
-    print("  python3 cicd/build/build_jxa_procedure.py --self-test     Build fixture + osascript check")
-    print("  python3 cicd/build/build_jxa_procedure.py --help")
+    print("  python3 cicd/build/procedure_jxa.py <yaml_file>     Build one procedure")
+    print("  python3 cicd/build/procedure_jxa.py --all           Build all config YAMLs with JXA")
+    print("  python3 cicd/build/procedure_jxa.py --all --force   Overwrite outputs")
+    print("  python3 cicd/build/procedure_jxa.py --validate <f> Validate YAML (schema)")
+    print("  python3 cicd/build/procedure_jxa.py --self-test     Build fixture + osascript check")
+    print("  python3 cicd/build/procedure_jxa.py --help")
     print()
 
 

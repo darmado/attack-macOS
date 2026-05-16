@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-LOOBins to Procedure Converter
+Name: convert_loobin_to_procedure.py
+Author: @darmado | https://x.com/darmad0
+License: Apache 2.0
+Repository: https://github.com/armadoinc/attack-macOS
+Description: Convert LOOBins YAML into attack-macOS procedure YAML drafts.
 
 Load procedure template, fill with a per-binary LOOBin YAML (standby/LOOBins/*.yml).
 Output draft YAML under attackmacos/standby/LOOBins/staging/ for review before
@@ -17,6 +21,7 @@ from datetime import datetime
 from pathlib import Path
 
 import yaml
+from convert_common import LOOBINS_PROJECT_URL, load_yaml, mitre_technique_url, save_yaml
 
 _BUILD_DIR = Path(__file__).resolve().parent.parent / "build"
 _pm_spec = importlib.util.spec_from_file_location(
@@ -25,6 +30,11 @@ _pm_spec = importlib.util.spec_from_file_location(
 procedure_metadata = importlib.util.module_from_spec(_pm_spec)
 assert _pm_spec.loader is not None
 _pm_spec.loader.exec_module(procedure_metadata)
+
+
+def save_yaml_compat(data, path):
+    """Compatibility wrapper preserving (data, path) call order."""
+    save_yaml(path, data)
 
 
 # MITRE tactic → default technique when upstream does not publish a technique ID.
@@ -45,8 +55,8 @@ TACTIC_DEFAULT_TTP = {
     "Impact": "T1486",
 }
 
-# Binaries already covered by first-class procedures in core/config (skip promote).
-SUPERSEDED_BY_EXISTING = {
+# LOOBin `name` stems to skip during --promote-all: curated procedures already ship under core/config.
+LOOBIN_PROMOTE_SKIP = {
     "screencapture": "Use attackmacos/core/config/screen_capture.yml (T1113).",
     "security": "Use attackmacos/core/config/keychains.yml (security / keychain).",
 }
@@ -108,20 +118,13 @@ BINARY_TTP_OVERRIDE = {
 }
 
 
-def mitre_technique_url(ttp_id: str) -> str:
-    if "." in ttp_id:
-        base, sub = ttp_id.split(".", 1)
-        return f"https://attack.mitre.org/techniques/{base}/{sub}/"
-    return f"https://attack.mitre.org/techniques/{ttp_id}/"
-
-
 def infer_ttp_entry(binary_stem: str, loobin_data: dict) -> dict:
     """Return keys: ttp_id, tactic, skip_promote (bool), note (optional)."""
     key = binary_stem.lower()
-    if key in SUPERSEDED_BY_EXISTING:
+    if key in LOOBIN_PROMOTE_SKIP:
         return {
             "skip_promote": True,
-            "note": SUPERSEDED_BY_EXISTING[key],
+            "note": LOOBIN_PROMOTE_SKIP[key],
             "ttp_id": "",
             "tactic": "",
         }
@@ -172,12 +175,12 @@ def write_ttp_overlay(project_root: Path) -> Path:
         "description": "Inferred mapping from standby LOOBins YAML (first tactic + overrides). Edit before relying on legal/compliance contexts.",
         "entries": entries,
     }
-    save_yaml(payload, out_path)
+    save_yaml_compat(payload, out_path)
     return out_path
 
 
 def validate_config_yaml(project_root: Path, yaml_path: Path) -> bool:
-    builder = project_root / "cicd" / "build" / "build_shell_procedure.py"
+    builder = project_root / "cicd" / "build" / "procedure_shell.py"
     r = subprocess.run(
         [sys.executable, str(builder), "--validate", str(yaml_path)],
         cwd=str(project_root),
@@ -212,7 +215,7 @@ def promote_loobin_file(
 
     procedure_data = convert(loobin_path, template_path)
     apply_promotion_metadata(procedure_data, entry)
-    save_yaml(procedure_data, config_path)
+    save_yaml_compat(procedure_data, config_path)
     if not validate_config_yaml(project_root, config_path):
         config_path.unlink(missing_ok=True)
         print(f"FAIL {stem}: schema validation failed")
@@ -228,7 +231,7 @@ def promote_all_standby(template_path: Path, project_root: Path, force: bool = F
     for path in ymls:
         if promote_loobin_file(path, template_path, project_root, force=force):
             ok += 1
-    print(f"Promoted {ok}/{len(ymls)} procedure(s). Next: cicd/build/build_shell_procedure.py --all --force")
+    print(f"Promoted {ok}/{len(ymls)} procedure(s). Next: cicd/build/procedure_shell.py --all --force")
 
 
 FILLER_WORDS = frozenset(
@@ -249,17 +252,6 @@ FILLER_WORDS = frozenset(
         "by",
     }
 )
-
-
-def load_yaml(path):
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
-def save_yaml(data, path):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        yaml.dump(data, f, default_flow_style=False, sort_keys=False, indent=2)
 
 
 def slug_option(name):
@@ -312,7 +304,7 @@ def map_metadata(template, loobin_data):
     template["guid"] = "$GUID"
     template["platform"] = ["darwin"]
     resources_link = {
-        "link": "https://www.loobins.io/",
+        "link": LOOBINS_PROJECT_URL,
         "description": "LOOBins — Living Off The Orchard macOS binaries",
     }
     template.setdefault("resources", [])
@@ -420,7 +412,7 @@ def write_procedure_yaml(loobin_path: Path, template_path: Path, project_root: P
     procedure_data = convert(loobin_path, template_path)
     staging_dir = project_root / "attackmacos" / "standby" / "LOOBins" / "staging"
     output_path = staging_dir / f"{loobin_path.stem}.yml"
-    save_yaml(procedure_data, output_path)
+    save_yaml_compat(procedure_data, output_path)
     return output_path
 
 
@@ -462,10 +454,10 @@ def main():
 
     if len(argv) != 1:
         print(
-            "Usage: python3 cicd/sync/convert_loobin_to_procedure.py <attackmacos/standby/LOOBins/<binary>.yml>\n"
-            "   or: python3 cicd/sync/convert_loobin_to_procedure.py --all-standby\n"
-            "   or: python3 cicd/sync/convert_loobin_to_procedure.py --write-ttp-overlay\n"
-            "   or: python3 cicd/sync/convert_loobin_to_procedure.py [--force] --promote-all"
+            "Usage: python3 cicd/convert/convert_loobin_to_procedure.py <attackmacos/standby/LOOBins/<binary>.yml>\n"
+            "   or: python3 cicd/convert/convert_loobin_to_procedure.py --all-standby\n"
+            "   or: python3 cicd/convert/convert_loobin_to_procedure.py --write-ttp-overlay\n"
+            "   or: python3 cicd/convert/convert_loobin_to_procedure.py [--force] --promote-all"
         )
         sys.exit(1)
 
@@ -476,7 +468,7 @@ def main():
 
     output_path = write_procedure_yaml(loobin_path, template_path, project_root)
     print(f"Wrote draft procedure YAML: {output_path}")
-    print("Next: set ttp_id (replace T9999), review functions, copy to attackmacos/core/config/, run cicd/build/build_shell_procedure.py")
+    print("Next: set ttp_id (replace T9999), review functions, copy to attackmacos/core/config/, run cicd/build/procedure_shell.py")
 
 
 if __name__ == "__main__":

@@ -9,8 +9,12 @@ documentation files in docs/R&D Library/Functions/Shell/ directory.
 import os
 import re
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
+from urllib.parse import quote
+
+import yaml
 
 
 def extract_functions_from_base_sh(base_sh_path: str) -> Dict[str, str]:
@@ -44,6 +48,65 @@ def extract_functions_from_base_sh(base_sh_path: str) -> Dict[str, str]:
         functions[func_name] = complete_function
         
     return functions
+
+
+def write_function_index(project_root: Path) -> bool:
+    """
+    Write docs/Indexes/Function Index.md from attackmacos/core/global/functions.yml.
+
+    Uses function_name_to_doc_name() so links match docs/Functions/Shell/*.md.
+    """
+    func_yml = project_root / "attackmacos" / "core" / "global" / "functions.yml"
+    out_path = project_root / "docs" / "Indexes" / "Function Index.md"
+    if not func_yml.exists():
+        print(f"Error: missing {func_yml}", file=sys.stderr)
+        return False
+    with open(func_yml, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    names = data.get("core_functions") or []
+    if not names:
+        print("Error: core_functions empty or missing in functions.yml", file=sys.stderr)
+        return False
+
+    lines = [
+        "# Function index",
+        "",
+        "## Purpose",
+        "",
+        "- List **`core_*` functions** registered in **`attackmacos/core/global/functions.yml`** "
+        "(aligned with **`attackmacos/core/base/base.sh`**) and link to prose under **`docs/Functions/Shell/`**.",
+        "- **Procedure-local** shell functions (blocks emitted from procedure YAML) are **not** "
+        "enumerated here; they are built under **`attackmacos/ttp/<tactic>/shell/`**. "
+        "Use **`python3 cicd/audit/audit_procedure_inventory.py --strict`** for YAML ↔ script parity.",
+        "",
+        "> **Regenerate:** `python3 cicd/sync/sync_function_docs.py --write-function-index-only`",
+        "",
+        "## Runtime framework (`core_*`)",
+        "",
+        "| Function | Documentation |",
+        "|----------|-----------------|",
+    ]
+    for fn in sorted(names):
+        doc = function_name_to_doc_name(fn)
+        enc = quote(doc, safe="")
+        lines.append(f"| `{fn}` | [{doc}](../Functions/Shell/{enc}) |")
+
+    today = date.today().isoformat()
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            f"Last modified: {today}",
+            "Version: 1.0.0",
+        ]
+    )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    text = "\n".join(lines) + "\n"
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(text)
+    print(f"Wrote {out_path} ({len(names)} functions)")
+    return True
 
 
 def function_name_to_doc_name(func_name: str) -> str:
@@ -410,7 +473,7 @@ def create_documentation_file(doc_path: str, func_name: str, func_code: str) -> 
 </details> 
 """
         else:
-        template = f"""# {clean_name}
+            template = f"""# {clean_name}
 
 ## Purpose
 
@@ -639,4 +702,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    if "--write-function-index-only" in sys.argv:
+        _root = Path(__file__).resolve().parent.parent.parent
+        sys.exit(0 if write_function_index(_root) else 1)
+    main()
