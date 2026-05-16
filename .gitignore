@@ -147,6 +147,13 @@ encoded_data/
 # Any file with 'secret' in the name
 *secret*
 
+# Atomic Red Team standby atomics (fetch_atomic_red_team.py --all)
+attackmacos/standby/AtomicRedTeam/atomics/
+# Legacy folder from removed extract step (*_macos.yml); not generated anymore
+attackmacos/standby/AtomicRedTeam/snippets/
+
 # Ignore all hidden files and directories except .gitignore
 .*
 !.gitignore
+# Track GitHub templates and maintainer issue bodies (see cicd/gh/)
+!.github/
