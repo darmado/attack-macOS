@@ -1,6 +1,6 @@
 # Encryption Functionality
 
-## Overview
+## Purpose
 The encryption functionality provides secure data protection for exfiltrated data using industry-standard encryption methods. This document describes the encryption system implementation and usage.
 
 ## MITRE ATT&CK Mapping

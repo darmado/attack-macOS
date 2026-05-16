@@ -1,5 +1,9 @@
 # TODO: Coverage Map Script Fixes
 
+## Purpose
+
+Tracking notes for procedure coverage mapping and related issues.
+
 ## Priority 1: Path Mismatch Issues
 
 ### Problem

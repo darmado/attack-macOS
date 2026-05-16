@@ -1,6 +1,6 @@
 # Prepare Proxy Arg
 
-### Purpose
+## Purpose
 Checks if `PROXY_URL` is set, validates it has a protocol prefix (adds "http://" if missing), then formats it as a curl-compatible proxy argument string ("--proxy URL") or returns empty string if no proxy configured.
 
 ### Dependencies

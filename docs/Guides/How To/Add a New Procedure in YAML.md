@@ -1,10 +1,13 @@
 # How to Add a New Procedure in YAML
 
+## Purpose
+
 **Quick path:** [Create a New TTP Fast.md](Create%20a%20New%20TTP%20Fast.md) (copy template, fill metadata, build, `--lint-local`).
+
 
 YAML procedures compile to shell on top of `base.sh`, inheriting logging, encoding, encryption, and optional exfiltration (DNS/HTTP) from the base runtime.
 
-**End-to-end checklist:** edit YAML → `python3 cicd/build/build_shell_procedure.py --validate` → `python3 cicd/build/build_shell_procedure.py <file>` (build runs **`sh -n`** automatically) → optional `./attackmacos/attackmacos.sh --lint-local ...` to re-check without rebuilding → optional `bash attackmacos/ttp/<tactic>/shell/<procedure_name>.sh --help`. Sourcing and MITRE alignment: [R&D References.md](../../R&D%20References.md). Parent index: [Guides README.md](../README.md).
+**End-to-end checklist:** edit YAML → `python3 cicd/build/procedure_shell.py --validate` → `python3 cicd/build/procedure_shell.py <file>` (build runs **`sh -n`** automatically) → optional `./attackmacos/attackmacos.sh --lint-local ...` to re-check without rebuilding → optional `bash attackmacos/ttp/<tactic>/shell/<procedure_name>.sh --help`. Sourcing and MITRE alignment: [R&D References.md](../../R&D%20References.md). Parent index: [Guides README.md](../README.md).
 
 ## YAML Structure Order
 
@@ -741,14 +744,14 @@ From the repository root, using the project venv:
 ```bash
 python3 -m venv cicd/venv
 cicd/venv/bin/pip install pyyaml jsonschema
-cicd/venv/bin/python3 cicd/build/build_shell_procedure.py --validate attackmacos/core/config/<procedure_name>.yml
-cicd/venv/bin/python3 cicd/build/build_shell_procedure.py attackmacos/core/config/<procedure_name>.yml
+cicd/venv/bin/python3 cicd/build/procedure_shell.py --validate attackmacos/core/config/<procedure_name>.yml
+cicd/venv/bin/python3 cicd/build/procedure_shell.py attackmacos/core/config/<procedure_name>.yml
 ```
 
 Regenerate and overwrite an existing generated script:
 
 ```bash
-cicd/venv/bin/python3 cicd/build/build_shell_procedure.py --force attackmacos/core/config/<procedure_name>.yml
+cicd/venv/bin/python3 cicd/build/procedure_shell.py --force attackmacos/core/config/<procedure_name>.yml
 ```
 
 **Syntax:** Successful build already runs **`sh -n`** on the output script (equivalent to `--lint-local`). Optional re-check:

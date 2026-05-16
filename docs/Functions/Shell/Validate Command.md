@@ -1,6 +1,6 @@
 # Validate Command
 
-### Purpose
+## Purpose
 Iterates through essential commands (`date`, `printf`) and uses `command -v` to verify each is available in the system PATH. Collects missing commands and calls error handler if any are unavailable. Returns 0 if all commands found, 1 if any missing.
 
 ### Dependencies

@@ -1,6 +1,6 @@
 # Execute Main Logic
 
-### Purpose
+## Purpose
 core_execute_main_logic function implementation from base.sh.
 
 ### Dependencies

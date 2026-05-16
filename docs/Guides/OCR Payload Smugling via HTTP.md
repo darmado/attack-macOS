@@ -1,5 +1,9 @@
 # OCR-Based Payload Extraction via HTTP
 
+## Purpose
+
+Documentation for «OCR-Based Payload Extraction via HTTP» in attack-macOS.
+
 ## Technical Overview
 This document describes a theoretical technique for extracting executable content from images using Optical Character Recognition (OCR) capabilities available in operating systems.
 

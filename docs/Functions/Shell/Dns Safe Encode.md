@@ -1,6 +1,6 @@
 # Dns Safe Encode
 
-### Purpose
+## Purpose
 Performs two-step encoding for DNS compatibility: 1) Base64 encodes the input data, 2) Makes it DNS-safe by replacing '+' with '-', '/' with '_', and removing '=' padding characters to ensure valid DNS label format.
 
 ### Dependencies

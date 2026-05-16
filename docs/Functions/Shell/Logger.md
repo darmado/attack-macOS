@@ -1,6 +1,6 @@
 # Logger Documentation
 
-## Overview
+## Purpose
 
 The attack-macOS includes logging capabilities through the `core_log_output` function in `base.sh`. Logging captures execution details, function metadata, and output data for analysis and detection engineering.
 

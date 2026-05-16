@@ -1,6 +1,6 @@
 # Encode Output
 
-### Purpose
+## Purpose
 Converts encoding type to lowercase, then applies the specified encoding method: base64 (using system base64), hex (using xxd), perl_b64 (using Perl MIME::Base64), or perl_utf8 (using Perl hex unpacking). Returns original data for unknown encoding types.
 
 ### Dependencies

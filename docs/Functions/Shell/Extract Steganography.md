@@ -1,6 +1,6 @@
 # Extract Steganography
 
-### Purpose
+## Purpose
 core_extract_steganography function implementation from base.sh.
 
 ### Dependencies

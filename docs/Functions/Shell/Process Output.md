@@ -1,6 +1,6 @@
 # Process Output
 
-### Purpose
+## Purpose
 Orchestrates a 5-step transformation pipeline: 1) Format output (JSON/CSV), 2) Apply encoding (base64/hex), 3) Apply encryption (AES/GPG/XOR), 4) Apply steganography if requested, 5) Handle JSON metadata for transformations. Returns the fully processed output string.
 
 ### Dependencies

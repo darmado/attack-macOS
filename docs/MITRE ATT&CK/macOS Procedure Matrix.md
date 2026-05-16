@@ -2,6 +2,10 @@
 
 # **MacOS Attack Procedure Matrix**
 
+## Purpose
+
+ATT&CK technique-to-procedure matrix for macOS: coverage statistics and links to implemented scripts.
+
 <p>The Matrix contains information for the macOS platform</br>The number of possible procedures per technique is vast. These statistics use conservative estimates for coverage calculations.</p>
 
 </div>

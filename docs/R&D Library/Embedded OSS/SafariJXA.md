@@ -15,7 +15,7 @@ A JavaScript for Automation (JXA) library and CLI tool that controls and extends
 ##
 
 
-### Purpose
+## Purpose
 
 To provide a JXA tool for controlling, automating, and extending Safari browser functionality on macOS within the boundaries of TCC. 
 

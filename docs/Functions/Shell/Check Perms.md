@@ -1,6 +1,6 @@
 # Check Perms
 
-### Purpose
+## Purpose
 Tests file existence and validates read, write, and execute permissions based on specified requirements. Returns 0 if all required permissions are granted, 1 if any are missing.
 
 ### Dependencies

@@ -1,6 +1,6 @@
 # Get Log Filename
 
-### Purpose
+## Purpose
 core_get_log_filename function implementation from base.sh.
 
 ### Dependencies

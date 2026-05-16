@@ -1,6 +1,6 @@
 # Send Key Via Dns
 
-### Purpose
+## Purpose
 core_send_key_via_dns function implementation from base.sh.
 
 ### Dependencies

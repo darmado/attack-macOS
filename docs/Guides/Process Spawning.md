@@ -1,6 +1,6 @@
 # Process Spawning System
 
-## Overview
+## Purpose
 The process spawning system provides functionality to execute script logic in background processes using named pipes for inter-process communication. This system spawns child processes and manages their lifecycle through PID tracking.
 
 ## Core Functions

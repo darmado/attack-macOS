@@ -1,6 +1,9 @@
 # Add a Procedure from MITRE ATT&CK
 
+## Purpose
+
 Day-to-day workflow: start from the **technique** (what adversaries achieve), name and scope the **procedure** in the same spirit as ATT&CK wording, then implement in YAML and ship through the builders. This reduces rework: clear intent first, modular YAML second, generated scripts last.
+
 
 **Use with:** [Create a New TTP Fast.md](Create%20a%20New%20TTP%20Fast.md) (short commands), [Add a New Procedure in YAML.md](Add%20a%20New%20Procedure%20in%20YAML.md) (full field reference), [Naming Conventions.md](../Naming%20Conventions.md) (procedure names, flags, functions).
 
@@ -65,10 +68,10 @@ Bulk imports and Google snippets are not enough. **Read the technique** on ATT&C
 1. **Pick the technique** — Use the official ATT&CK page for the technique or sub-technique. Record `ttp_id` and **tactic** (schema uses MITRE display names, e.g. `Discovery`). See [R&D References.md](../../R&D%20References.md) and coverage hints in [macOS Procedure Matrix.md](../../MITRE%20ATT&CK/macOS%20Procedure%20Matrix.md).
 2. **Name the procedure** — `procedure_name` should read like **what the emulation does for the analyst**, not an opaque binary string (`software_version` not `sw_vers`). Short CLI flags carry **mode**, not repeated intent ([Naming Conventions.md](../Naming%20Conventions.md) — CLI options + `procedure_name` bullets).
 3. **Author YAML** — Start from `attackmacos/core/templates/procedure.yml`. Fill `intent`, `detection`, `resources` honestly. Define `arguments` → `execute_function` → `functions` with `language: [shell]` and tactic-appropriate function prefixes (`discover_*`, `collect_*`, … per Naming Conventions). Use **`CMD_*`** / procedure `global_variable` for binaries ([Add a New Procedure in YAML.md](Add%20a%20New%20Procedure%20in%20YAML.md)).
-4. **Validate** — `python3 cicd/build/build_shell_procedure.py --validate attackmacos/core/config/<name>.yml` against `attackmacos/core/schemas/procedure.schema.json`.
-5. **Build** — `python3 cicd/build/build_shell_procedure.py attackmacos/core/config/<name>.yml` (includes `sh -n`). Output: `attackmacos/ttp/<tactic_slug>/shell/<procedure_name>.sh`. Details: [Create a New TTP Fast.md](Create%20a%20New%20TTP%20Fast.md), [docs/CICD/build_shell_procedure.md](../../CICD/build_shell_procedure.md).
+4. **Validate** — `python3 cicd/build/procedure_shell.py --validate attackmacos/core/config/<name>.yml` against `attackmacos/core/schemas/procedure.schema.json`.
+5. **Build** — `python3 cicd/build/procedure_shell.py attackmacos/core/config/<name>.yml` (includes `sh -n`). Output: `attackmacos/ttp/<tactic_slug>/shell/<procedure_name>.sh`. Details: [Create a New TTP Fast.md](Create%20a%20New%20TTP%20Fast.md), [docs/CICD/build_shell_procedure.md](../../CICD/build_shell_procedure.md).
 6. **Verify** — `--help` plus at least one real execution path in a lab. Optional: `./attackmacos/attackmacos.sh --lint-local …` to re-check syntax without rebuilding ([Create a New TTP Fast.md](Create%20a%20New%20TTP%20Fast.md)).
-7. **Optional JXA twin** — Same YAML can gain JXA functions with `language: [jxa]` when builders and schema support your layout; run **`python3 cicd/build/build_jxa_procedure.py`** and **`python3 cicd/audit/audit_jxa.py`**. See [JXA Script Blueprint.md](../../Functions/Shell/JXA%20Script%20Blueprint.md), [build_jxa_procedure.md](../../CICD/build_jxa_procedure.md), [Guides README](../README.md) (JXA bullet).
+7. **Optional JXA twin** — Same YAML can gain JXA functions with `language: [jxa]` when builders and schema support your layout; run **`python3 cicd/build/procedure_jxa.py`** and **`python3 cicd/audit/audit_jxa.py`**. See [JXA Script Blueprint.md](../../Functions/Shell/JXA%20Script%20Blueprint.md), [build_jxa_procedure.md](../../CICD/build_jxa_procedure.md), [Guides README](../README.md) (JXA bullet).
 8. **Catalogs (LOOBins, ART, etc.)** — Treat as **reference only**. If you import or transcribe YAML, **re-map MITRE IDs, rename for intent, and verify** before the file is project canon. Do not bulk-port unverified upstream option text.
 
 ---
@@ -114,8 +117,8 @@ Run from the repository root after changing YAML or shell scripts:
 2. **Validate and build** — Single procedure or full tree (see [cicd/README.md](../../../cicd/README.md)).
 
    ```bash
-   python3 cicd/build/build_shell_procedure.py --validate attackmacos/core/config/<name>.yml
-   python3 cicd/build/build_shell_procedure.py --all
+   python3 cicd/build/procedure_shell.py --validate attackmacos/core/config/<name>.yml
+   python3 cicd/build/procedure_shell.py --all
    ```
 
 3. **MITRE check** — Confirm `ttp_id`, tactic, procedure scope, and (if used) sub-technique against the official technique page and Procedure Examples; optional STIX cross-check via [mitre/cti](https://github.com/mitre/cti).

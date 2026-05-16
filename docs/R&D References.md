@@ -1,5 +1,11 @@
 # R&D Sources
 
+## Purpose
+
+Bibliography and external reference material for designing and validating macOS procedures. Points to shipped-procedure provenance for pipeline and script facts.
+
+For shipped procedure location, upstream catalogs, and maintainer scripts, see **[Shipped procedures: upstream sources and maintainer scripts](Shipped_procedures_upstream_sources_and_maintainer_scripts.md)**. This document is the bibliography and research notes for designing procedures; it does not define the conversion pipeline.
+
 Reference material used when designing and validating macOS procedures for attack-macOS (techniques, tooling behavior, and detection context).
 
 ## How we use these sources for new TTPs
@@ -15,14 +21,14 @@ Reference material used when designing and validating macOS procedures for attac
 | Kind | Role |
 |------|------|
 | [MITRE ATT&CK](https://attack.mitre.org/) | Technique IDs, tactics, and procedure descriptions |
-| [MITRE Caldera](https://github.com/mitre/caldera) | Adversary emulation; this repo can **sync** built abilities via `python3 cicd/build/build_shell_procedure.py --sync-caldera` |
-| [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) | Large catalog of tests; macOS atomics are **reference** for parity checks |
+| [MITRE Caldera](https://github.com/mitre/caldera) | Adversary emulation; this repo can **sync** built abilities via `python3 cicd/build/procedure_shell.py --sync-caldera` |
+| [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) | Large catalog of tests; macOS atomics are **reference** for parity checks. Standby fetch: `python3 cicd/fetch/fetch_atomic_red_team.py` using `atomics/Indexes/macos-index.yaml` ([ART_to_Procedure.md](CICD/ART_to_Procedure.md)) |
 | Independent macOS security blogs (e.g. [Objective-See](https://objective-see.com/blog.html), vendor research) | Real-world behavior and detection notes |
 | [LOOBins](https://www.loobins.io/) | Native binary usage and argument patterns |
 
 ### Future: upstream change monitoring (idea)
 
-A small **maintainer tool** could periodically fetch release feeds or API data from ATT&CK, Atomic Red Team (macOS paths), and LOOBins, then diff against local technique coverage (for example `attackmacos/core/config/*.yml`). That would flag **new or updated** upstream content for human review—**not** auto-add TTPs without validation.
+A small **maintainer tool** could periodically fetch release feeds or API data from ATT&CK, Atomic Red Team (macOS paths), and LOOBins, then diff against local technique coverage (for example `attackmacos/core/config/*.yml`). That would flag **new or updated** upstream content for human review—**not** auto-add TTPs without validation. **Today:** LOOBins and ART have manual sync/extract scripts under `cicd/sync/`; automated diffing against `core/config/` is still an idea.
 
 ## Tools and Research by MITRE ATT&CK Tactic
 
@@ -77,4 +83,3 @@ External tools were integrated through porting, modification, referencing, or di
 | Tool | ShellCheck | Vidar Holen | Static analysis for shell scripts | [GitHub](https://github.com/koalaman/shellcheck) | [GNU General Public License v3.0](https://github.com/koalaman/shellcheck/blob/master/LICENSE) |
 | Tool | macOS Security Tools | ashishb | Awesome macOS security tools collection | [GitHub](https://github.com/ashishb/osx-and-ios-security-awesome) | N/A |
 | Tool | macOS Security Scripts | 0xmachos | macOS security scripts collection | [GitHub](https://github.com/0xmachos/mOSL) | N/A |
-

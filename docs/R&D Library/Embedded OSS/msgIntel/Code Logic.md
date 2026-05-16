@@ -1,5 +1,9 @@
 # MsgIntel Code Logic
 
+## Purpose
+
+Documentation for «MsgIntel Code Logic» in attack-macOS.
+
 ## Core Principles
 1. Every message has a handle_id that references handle.ROWID
 2. handle.id contains the actual identifier (phone/email)

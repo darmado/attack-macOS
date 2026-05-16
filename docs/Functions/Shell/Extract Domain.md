@@ -1,6 +1,6 @@
 # Extract Domain
 
-### Purpose
+## Purpose
 core_extract_domain function implementation from base.sh.
 
 ### Dependencies

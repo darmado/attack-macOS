@@ -1,6 +1,6 @@
 # Exfil Dns
 
-### Purpose
+## Purpose
 core_exfil_dns function implementation from base.sh.
 
 ### Dependencies

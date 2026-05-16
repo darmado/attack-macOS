@@ -1,6 +1,6 @@
 # TCC Permission Checking Techniques in JXA
 
-## Overview
+## Purpose
 
 This document outlines advanced techniques for checking Transparency, Consent, and Control (TCC) permissions, particularly Full Disk Access (FDA), using JavaScript for Automation (JXA) on macOS. These methods prioritize stealth and OPSEC considerations.
 

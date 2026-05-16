@@ -7,7 +7,7 @@
 This document provides an index of commands used in our security scripts, organized by MITRE ATT&CK techniques. It serves as a quick reference for the various commands implemented across different scripts.
 
 
-### Purpose
+## Purpose
 - To provide a centralized reference for all commands used in the project
 - To map commands to their corresponding MITRE ATT&CK techniques
 - To facilitate easier navigation and understanding of the project's capabilities

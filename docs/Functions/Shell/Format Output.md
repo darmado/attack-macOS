@@ -1,6 +1,6 @@
 # Format Output
 
-### Purpose
+## Purpose
 Converts format string to lowercase using `tr`, then routes to appropriate formatting function based on format type. Supports JSON (calls `core_format_as_json`), CSV (calls `core_format_as_csv`), or returns raw data unchanged for other formats.
 
 ### Dependencies

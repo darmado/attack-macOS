@@ -1,6 +1,9 @@
 # msgIntel
 
+## Purpose
+
 msgIntel reads, correlates, searches, and extracts data between all databases used by the Messages desktop application.
+
 
 ##
 
@@ -77,4 +80,3 @@ DEBUG:
 ### References
 - macOS Messages Framework
 - JXA Development Guide
-

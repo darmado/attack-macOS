@@ -1,6 +1,6 @@
 # Log Output
 
-### Purpose
+## Purpose
 Creates log directory if needed, rotates log files when they exceed size limits, writes structured log entries with metadata (timestamp, PID, job ID, TTP info), and sends entries to both file and syslog. Also outputs to stdout in debug mode.
 
 ### Dependencies

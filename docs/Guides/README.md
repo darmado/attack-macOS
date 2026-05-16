@@ -1,8 +1,20 @@
 # Guides
 
+## Purpose
+
+Index of human-authored workflows under `docs/Guides/`, with links to required standards, shipped-procedure provenance, and CI entrypoints for maintainers.
+
 Authoritative workflow and style documentation for the attack-macOS project. **Read this tree** when authoring YAML procedures, changing `base.sh`, or integrating tooling so runtime behavior and build steps stay consistent.
 
+**Standards (required):** [`../Standards/README.md`](../Standards/README.md) — coding and documentation norms by language.
+
+**Shipped procedures, upstreams, maintainer scripts:** [`../Shipped_procedures_upstream_sources_and_maintainer_scripts.md`](../Shipped_procedures_upstream_sources_and_maintainer_scripts.md).
+
 Maintainers extending CI should follow **`cicd/README.md`**: scripts live under **`cicd/build/`**, **`cicd/audit/`**, **`cicd/sync/`**, and **`cicd/commit/`** (avoid overlapping entrypoints; extend existing builders where possible).
+
+## Indexes
+
+- [`../Indexes/README.md`](../Indexes/README.md) — procedure / tool / function index pages and how they relate to `base.sh` and `functions.yml`.
 
 ## Read first (workflows)
 
@@ -17,15 +29,15 @@ Maintainers extending CI should follow **`cicd/README.md`**: scripts live under 
 
 ## Procedure shape (shell vs JXA)
 
-- **Shell procedures** — YAML under `attackmacos/core/config/` with `language: [shell]` functions; **`cicd/build/build_shell_procedure.py`** emits merged **`attackmacos/ttp/<tactic>/shell/<name>.sh`** on top of `base.sh`. This is the default path for LOLBins and terminal-native techniques.
-- **JXA procedures** — Same MITRE technique and **same operator intent** as the shell twin: **1:1 objective** (variant execution chain only—like choosing a different encrypt or exfil option). Prefer **Foundation / AppKit (and peers) via `ObjC.import`** over shell-outs. Implement under **`attackmacos/ttp/<tactic>/jxa/<Name>.js`** following [JXA Style Guide.md](JXA%20Style%20Guide.md), [JXA Debug Guide.md](JXA%20Debug%20Guide.md), and [../Functions/Shell/JXA Script Blueprint.md](../Functions/Shell/JXA%20Script%20Blueprint.md). YAML-driven output merges **`attackmacos/core/base/base.js`** with **`python3 cicd/build/build_jxa_procedure.py`** (see [../CICD/build_jxa_procedure.md](../CICD/build_jxa_procedure.md)). Where shell coverage is ahead of JXA, add JXA siblings deliberately rather than one-off scripts with divergent goals. **QA:** run **`python3 cicd/audit/audit_jxa.py`** (and `osascript -l JavaScript …` smoke tests) on new JXA; extend rules in `cicd/audit/audit_jxa.py` as principles harden.
+- **Shell procedures** — YAML under `attackmacos/core/config/` with `language: [shell]` functions; **`cicd/build/procedure_shell.py`** emits merged **`attackmacos/ttp/<tactic>/shell/<name>.sh`** on top of `base.sh`. This is the default path for LOLBins and terminal-native techniques.
+- **JXA procedures** — Same MITRE technique and **same operator intent** as the shell twin: **1:1 objective** (variant execution chain only—like choosing a different encrypt or exfil option). Prefer **Foundation / AppKit (and peers) via `ObjC.import`** over shell-outs. Implement under **`attackmacos/ttp/<tactic>/jxa/<Name>.js`** following [JXA Style Guide.md](JXA%20Style%20Guide.md), [JXA Debug Guide.md](JXA%20Debug%20Guide.md), and [../Functions/Shell/JXA Script Blueprint.md](../Functions/Shell/JXA%20Script%20Blueprint.md). YAML-driven output merges **`attackmacos/core/base/base.js`** with **`python3 cicd/build/procedure_jxa.py`** (see [../CICD/build_jxa_procedure.md](../CICD/build_jxa_procedure.md)). Where shell coverage is ahead of JXA, add JXA siblings deliberately rather than one-off scripts with divergent goals. **QA:** run **`python3 cicd/audit/audit_jxa.py`** (and `osascript -l JavaScript …` smoke tests) on new JXA; extend rules in `cicd/audit/audit_jxa.py` as principles harden.
 
 ## Cross-cutting rules (non-negotiable for new TTPs)
 
 1. **Runtime is native macOS only** — Procedures execute with built-in / LOLBin commands. No extra downloads on the target for technique execution.
-2. **Build-time Python OK** — `cicd/build/build_shell_procedure.py` uses PyYAML + jsonschema; that is developer-side only.
+2. **Build-time Python OK** — `cicd/build/procedure_shell.py` uses PyYAML + jsonschema; that is developer-side only.
 3. **Validate and lint** — After YAML edits: `--validate` → build (build runs **`sh -n`** automatically). Optional: `./attackmacos/attackmacos.sh --lint-local ...` to re-check without rebuilding.
-4. **Sourcing and citations** — See [R&D References.md](../R&D%20References.md) for MITRE mapping, blogs, ART/Caldera as reference (not runtime deps).
+4. **Sourcing and citations** — Canonical index: **[`Shipped_procedures_upstream_sources_and_maintainer_scripts.md`](../Shipped_procedures_upstream_sources_and_maintainer_scripts.md)**. Bibliography and research context: [`R&D References.md`](../R&D%20References.md).
 5. **Schema** — `attackmacos/core/schemas/procedure.schema.json` (e.g. `platform` must include `darwin`).
 6. **CI helpers** — New maintenance scripts belong under the appropriate **`cicd/build/`**, **`cicd/audit/`**, **`cicd/sync/`**, or **`cicd/commit/`** folder with a note in `cicd/README.md`. Prefer extending existing builders over one-off scrapers unless documented.
 
@@ -45,9 +57,9 @@ Maintainers extending CI should follow **`cicd/README.md`**: scripts live under 
 
 ## Third-party → TTP pipeline (LOOBins)
 
-1. Sync catalog: `bash cicd/sync/sync_loobins_json.sh` (writes `attackmacos/standby/LOOBins/loobins.json`).
-2. Convert per-binary YAML, or batch: `python3 cicd/sync/convert_loobin_to_procedure.py --all-standby` → drafts under `attackmacos/standby/LOOBins/staging/`.
-3. Edit **`ttp_id`**, review functions, move YAML to `attackmacos/core/config/`, run **`python3 cicd/build/build_shell_procedure.py`** (includes **`sh -n`**).
+1. Refresh catalog: `python3 cicd/fetch/fetch_loobins.py catalog` (writes `attackmacos/standby/LOOBins/loobins.json`).
+2. Convert per-binary YAML, or batch: `python3 cicd/convert/convert_loobin_to_procedure.py --all-standby` → drafts under `attackmacos/standby/LOOBins/staging/`.
+3. Edit **`ttp_id`**, review functions, move YAML to `attackmacos/core/config/`, run **`python3 cicd/build/procedure_shell.py`** (includes **`sh -n`**).
 
 Details: [attackmacos/standby/README.md](../../attackmacos/standby/README.md), [LOOBins_to_Procedure_Mapping.md](../CICD/LOOBins_to_Procedure_Mapping.md).
 

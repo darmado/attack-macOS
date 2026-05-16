@@ -1,5 +1,10 @@
 
 # Syscalls vs Foundation APIs 
+
+## Purpose
+
+Documentation for «Syscalls vs Foundation APIs» in attack-macOS.
+
 <p>
   <span style="display: inline-block; padding: 5px 10px; background-color: #007bff; color: white; border-radius: 5px; font-size: 0.8em;">Good Stuff</span>
 </p>
@@ -57,4 +62,3 @@ This document compares low-level system calls (syscalls) with their correspondin
 | shmget() | Creates or accesses a shared memory segment. | NSFileHandle with memory-mapped files | High-level interface for file handling with shared memory. |
 | shmat() | Attaches a shared memory segment to the process's address space. | - | Not directly applicable; lower-level shared memory handling. |
 | shmdt() | Detaches a shared memory segment from the process. | - | Not directly applicable; lower-level shared memory handling. |
-

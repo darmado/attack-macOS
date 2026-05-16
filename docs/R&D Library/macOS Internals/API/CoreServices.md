@@ -1,6 +1,6 @@
 # CoreServices API: MDQuery for TCC Permission Checking
 
-## Overview
+## Purpose
 The MDQuery API, part of the CoreServices framework, can be used to indirectly check for TCC (Transparency, Consent, and Control) permissions, particularly Full Disk Access (FDA).
 
 ## Key Functions

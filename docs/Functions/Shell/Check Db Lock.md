@@ -1,6 +1,6 @@
 # Check Db Lock
 
-### Purpose
+## Purpose
 Performs 3-method database lock detection: 1) Checks for SQLite lock files (-wal, -shm, -journal), 2) Uses `lsof` to detect processes with file open, 3) Attempts brief database query with timeout. Returns 1 if locked, 0 if available.
 
 ### Dependencies

@@ -1,6 +1,6 @@
 # Parse Args
 
-### Purpose
+## Purpose
 Processes command-line arguments using a `while` loop and `case` statement to set global flag variables. Handles argument values, tracks unknown arguments and missing values, but performs no validation. Reports warnings for unknown/missing arguments but continues execution.
 
 ### Dependencies

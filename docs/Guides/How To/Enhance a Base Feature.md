@@ -1,6 +1,9 @@
 # Enhancing Existing Features in base.sh
 
+## Purpose
+
 **Scope:** Edits to [`attackmacos/core/base/base.sh`](../../../attackmacos/core/base/base.sh). For new techniques without base changes, use [Create a New TTP Fast.md](Create%20a%20New%20TTP%20Fast.md).
+
 
 This guide explains how to enhance existing features in `base.sh`, using XOR encryption in the encryption framework as a practical example.
 

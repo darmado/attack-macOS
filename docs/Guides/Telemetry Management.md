@@ -1,5 +1,9 @@
 # Telemetry Managment
+
+## Purpose
+
 When writin code, assume the operator will make mistakes.  But dont overcompensate by writin bullet-proof scripts. Instead, Use good messaging, capture exceptions, reeturn error codes, and prioiritize telemtry.
+
 
 **Less is better **
 A simple way to measure telemetry volume is by using tools like Red Canary's [Mac Monitor](https://github.com/redcanaryco/mac-monitor), or the built-in `log` utility.

@@ -1,6 +1,9 @@
 # How to Add a New Encryption Method to base.sh
 
+## Purpose
+
 Target file: [`attackmacos/core/base/base.sh`](../../../attackmacos/core/base/base.sh). Coordinate with [Enhance a Base Feature.md](Enhance%20a%20Base%20Feature.md) for case-switch and help text.
+
 
 ---
 

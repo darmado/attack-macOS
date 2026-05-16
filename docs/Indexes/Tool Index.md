@@ -1,5 +1,9 @@
 # macOS Security Testing Tools Index
 
+## Purpose
+
+Index of tools and binaries referenced across procedures and documentation.
+
 A catalog of tools and scripts designed for testing macOS security controls and endpoint detection capabilities.
 
 ## Security Testing Tools

@@ -1,6 +1,9 @@
 # Lessons Learned: Working with JXA
 
+## Purpose
+
 Working with JavaScript for Automation (JXA) can be an enjoyable experience, but it comes with its own set of challenges and nuances. Here are some key lessons learned:
+
 
 ## Specific Differences
 

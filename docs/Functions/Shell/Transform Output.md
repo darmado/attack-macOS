@@ -1,6 +1,6 @@
 # Transform Output
 
-### Purpose
+## Purpose
 Manages final output delivery through logging, exfiltration, and display. Always prints output to stdout, conditionally logs to file if enabled, conditionally exfiltrates if enabled, and prints encryption key in debug mode.
 
 ### Dependencies

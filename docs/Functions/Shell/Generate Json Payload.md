@@ -1,6 +1,6 @@
 # Generate Json Payload
 
-### Purpose
+## Purpose
 core_generate_json_payload function implementation from base.sh.
 
 ### Dependencies

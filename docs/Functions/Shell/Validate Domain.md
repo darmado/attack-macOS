@@ -1,6 +1,6 @@
 # Validate Domain
 
-### Purpose
+## Purpose
 Validates domain resolution using three-tier fallback: 1) Uses `dig` with options for A record lookup, 2) Falls back to `host` command for address resolution, 3) Falls back to `nslookup` for address lookup. Skips empty domains and IP addresses, returns error if domain doesn't resolve.
 
 ### Dependencies

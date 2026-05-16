@@ -1,18 +1,10 @@
-# Bash Script Code Guide for MacOS Security Tools
+# JXA style guide (macOS)
 
-### Description
-This document outlines the coding guide and best practices for developing Bash scripts for MacOS security tools. It provides guidelines to ensure consistency, readability, and maintainability across the project.
+## Purpose
+
+Style and practice expectations for JavaScript for Automation (JXA) and native macOS APIs in attack-macOS: prefer `ObjC.import`, avoid shell-outs where APIs exist, and keep procedures aligned with project audit rules.
 
 > **Note:** The code in `util/_templates/utility_functions.sh` serves as a template and should not be modified. The guide below apply to new scripts created from this template.
-
-##
-
-### Purpose
-The purpose of these guide is to:
-1. Standardize coding practices across the project
-2. Improve code readability and maintainability
-3. Enhance security and reliability of the scripts
-4. Facilitate easier collaboration among team members
 
 ##
 

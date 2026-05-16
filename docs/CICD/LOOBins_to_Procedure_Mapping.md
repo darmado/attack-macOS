@@ -1,5 +1,9 @@
 # LOOBins to Procedure YAML Mapping
 
+## Purpose
+
+Document field-level mapping from LOOBins YAML to attack-macOS `procedure.schema.json` YAML produced by `cicd/convert/convert_loobin_to_procedure.py`, including credit, tactics, and detection blocks.
+
 ## Field Mapping Table
 
 | LOOBins Field | Procedure Field | Conversion Logic |
@@ -115,10 +119,11 @@ def clean_function_name(name):
 
 | Step | Command / path |
 |------|----------------|
-| Refresh catalog JSON | `bash cicd/sync/sync_loobins_json.sh` → `attackmacos/standby/LOOBins/loobins.json` |
-| Convert per-binary YAML | `python3 cicd/sync/convert_loobin_to_procedure.py attackmacos/standby/LOOBins/<bin>.yml` → `attackmacos/standby/LOOBins/staging/<bin>.yml` |
-| Convert all standby YAML | `python3 cicd/sync/convert_loobin_to_procedure.py --all-standby` |
-| Promote all to `core/config/` | `python3 cicd/sync/convert_loobin_to_procedure.py --promote-all` (optional `--force` to overwrite) |
+| Refresh catalog JSON | `python3 cicd/fetch/fetch_loobins.py catalog` → `attackmacos/standby/LOOBins/loobins.json` |
+| Fetch one upstream binary YAML | `python3 cicd/fetch/fetch_loobins.py binary <name>` → `attackmacos/standby/LOOBins/<name>.yml` |
+| Convert per-binary YAML | `python3 cicd/convert/convert_loobin_to_procedure.py attackmacos/standby/LOOBins/<bin>.yml` → `attackmacos/standby/LOOBins/staging/<bin>.yml` |
+| Convert all standby YAML | `python3 cicd/convert/convert_loobin_to_procedure.py --all-standby` |
+| Promote all to `core/config/` | `python3 cicd/convert/convert_loobin_to_procedure.py --promote-all` (optional `--force` to overwrite) |
 | Review inferred MITRE map | `attackmacos/standby/LOOBins/TTP_OVERLAY.yml` |
 | Field reference | This document; staging layout | [attackmacos/standby/README.md](../../attackmacos/standby/README.md) |
 

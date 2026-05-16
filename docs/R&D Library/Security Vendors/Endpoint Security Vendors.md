@@ -1,6 +1,6 @@
 # Endpoint Security Vendors for macOS
 
-## Overview
+## Purpose
 This table lists common endpoint security vendors and their associated processes and file paths on macOS systems. It supports security software discovery scripts like `security_software.sh` and `swiftbelt.js`.
 
 ## Purpose

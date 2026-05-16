@@ -1,5 +1,9 @@
 # Message Intelligence Data Analysis
 
+## Purpose
+
+Documentation for «Message Intelligence Data Analysis» in attack-macOS.
+
 ## Job Metadata Analysis
 - `job_id`: Unique identifier for tracking query execution and correlating results
 - Query metadata provides chain of custody:

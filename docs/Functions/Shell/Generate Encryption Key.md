@@ -1,6 +1,6 @@
 # Generate Encryption Key
 
-### Purpose
+## Purpose
 Checks if encryption is enabled (not "none"), then generates a SHA-256 hash from concatenated job ID, timestamp, and random number. Sets the global `ENCRYPT_KEY` variable and optionally prints key in debug mode.
 
 ### Dependencies

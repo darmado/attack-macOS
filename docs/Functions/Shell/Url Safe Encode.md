@@ -1,6 +1,6 @@
 # Url Safe Encode
 
-### Purpose
+## Purpose
 Performs two-step encoding: 1) Base64 encodes the input data, 2) Makes it URL-safe by replacing '+' with '-', '/' with '_', and removing '=' padding characters using `tr` command.
 
 ### Dependencies

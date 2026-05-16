@@ -1,5 +1,8 @@
 # Acknowledgements
 
+## Purpose
+
+Third-party tools, licenses, and URLs credited by the project.
 
 >[!NOTE]
 

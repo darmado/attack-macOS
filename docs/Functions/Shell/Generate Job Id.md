@@ -1,6 +1,6 @@
 # Generate Job ID Function
 
-## Overview
+## Purpose
 The `core_generate_job_id()` function creates a unique 8-character hexadecimal identifier for tracking script execution across logging, exfiltration, and debugging operations.
 
 ## Function Signature

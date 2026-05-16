@@ -1,6 +1,6 @@
 # Main
 
-### Purpose
+## Purpose
 Orchestrates complete script execution flow: 1) Parse arguments, 2) Display help if requested, 3) Validate arguments, 4) Generate encryption key, 5) Validate commands, 6) Run permission/TCC checks, 7) Initialize logging, 8) Execute technique logic or ls/steganography, 9) Process output, 10) Transform final output.
 
 ### Dependencies

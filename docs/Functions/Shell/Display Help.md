@@ -1,6 +1,6 @@
 # Display Help
 
-### Purpose
+## Purpose
 Outputs a help message using `cat` with heredoc syntax, displaying usage instructions, option descriptions, and notes. Includes dynamic variable substitution for script name, TTP ID, tactic, and configuration values.
 
 ### Dependencies

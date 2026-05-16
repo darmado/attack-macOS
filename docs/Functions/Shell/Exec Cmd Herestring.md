@@ -1,6 +1,6 @@
 # Exec Cmd Herestring
 
-### Purpose
+## Purpose
 core_exec_cmd_herestring function implementation from base.sh.
 
 ### Dependencies

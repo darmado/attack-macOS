@@ -15,7 +15,7 @@ This document outlines the naming conventions and standards for variables used i
 
 ##
 
-### Purpose
+## Purpose
 - Standardize variable naming across the project
 - Improve code readability and maintainability
 - Facilitate easier collaboration among team members
@@ -37,7 +37,7 @@ Examples:
 ```bash
 build_flag_vars()       # Builds flag variable declarations
 build_arg_parser()      # Builds argument parser cases  
-validate_yaml()         # Validates a procedure YAML file (see cicd/build/build_shell_procedure.py)
+validate_yaml()         # Validates a procedure YAML file (see cicd/build/procedure_shell.py)
 validate_yaml()         # Validates YAML file structure
 parse_arguments()       # Parses command line arguments
 transform_sudo()        # Transforms commands with sudo

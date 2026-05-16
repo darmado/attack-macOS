@@ -1,6 +1,6 @@
 # Debug Print
 
-### Purpose
+## Purpose
 Outputs debug messages to stderr with timestamp when DEBUG flag is enabled for troubleshooting and development.
 
 ### Dependencies

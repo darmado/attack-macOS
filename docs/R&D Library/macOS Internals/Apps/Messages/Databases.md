@@ -1,5 +1,9 @@
 # Messages Database Structure
 
+## Purpose
+
+Documentation for «Messages Database Structure» in attack-macOS.
+
 ## Research Progress
 
 ### Completed

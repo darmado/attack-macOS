@@ -1,6 +1,6 @@
 # Execute Function
 
-### Purpose
+## Purpose
 core_execute_function function implementation from base.sh.
 
 ### Dependencies

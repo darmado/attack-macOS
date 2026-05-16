@@ -1,10 +1,8 @@
 # test_script_options.dev.sh
 
-Tests generated shell scripts for proper argument parsing and option handling.
-
 ## Purpose
 
-Validates that generated shell scripts correctly implement command-line options, argument parsing, and help functionality. Ensures scripts meet quality standards before deployment.
+Optional deeper checks for generated shell scripts: argument parsing, option handling, and help output. Use when triaging option regressions beyond `sh -n` and `--lint-local`.
 
 ## CI/CD Integration
 
@@ -231,7 +229,7 @@ jobs:
       - name: Build procedures
         run: |
           source cicd/venv/bin/activate
-          python3 cicd/build/build_shell_procedure.py --all --force
+          python3 cicd/build/procedure_shell.py --all --force
       - name: Test generated scripts
         run: bash cicd/test_script_options.dev.sh
       - name: Sync documentation

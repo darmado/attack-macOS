@@ -1,5 +1,9 @@
 # AppKit Framework in JXA
 
+## Purpose
+
+Documentation for «AppKit Framework in JXA» in attack-macOS.
+
 ## TODO DOC
 
 **Apple Docs** 

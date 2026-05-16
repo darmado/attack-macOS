@@ -1,6 +1,6 @@
 # Get User Agent
 
-### Purpose
+## Purpose
 Returns a hardcoded Safari user agent string for macOS Monterey to mimic legitimate browser traffic in HTTP requests and avoid detection by web application firewalls.
 
 ### Dependencies

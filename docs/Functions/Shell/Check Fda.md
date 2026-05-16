@@ -1,6 +1,6 @@
 # Check Fda
 
-### Purpose
+## Purpose
 Checks if both system and user TCC databases exist and are readable for Full Disk Access validation.
 
 ### Dependencies

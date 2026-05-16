@@ -1,6 +1,9 @@
 # Create a New TTP Fast
 
+## Purpose
+
 Short path for a new procedure. When you are driving from a **MITRE ATT&CK technique** (naming, intent, verification order), read [Add a Procedure from MITRE ATT&CK.md](Add%20a%20Procedure%20from%20MITRE%20ATT&CK.md) first. For field-by-field detail, use [Add a New Procedure in YAML.md](Add%20a%20New%20Procedure%20in%20YAML.md).
+
 
 ## 5-Minute Flow
 
@@ -39,8 +42,8 @@ Schema reference: `attackmacos/core/schemas/procedure.schema.json`. For techniqu
 ```bash
 python3 -m venv cicd/venv
 cicd/venv/bin/pip install pyyaml jsonschema
-cicd/venv/bin/python3 cicd/build/build_shell_procedure.py --validate attackmacos/core/config/<procedure_name>.yml
-cicd/venv/bin/python3 cicd/build/build_shell_procedure.py attackmacos/core/config/<procedure_name>.yml
+cicd/venv/bin/python3 cicd/build/procedure_shell.py --validate attackmacos/core/config/<procedure_name>.yml
+cicd/venv/bin/python3 cicd/build/procedure_shell.py attackmacos/core/config/<procedure_name>.yml
 # Overwrite an existing generated script: add --force before the YAML path
 ```
 

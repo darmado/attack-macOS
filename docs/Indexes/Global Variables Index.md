@@ -1,6 +1,6 @@
 # Global Variables Blueprint
 
-## Overview
+## Purpose
 All global variables defined in this document are used by the core base script located at `attackmacos/core/base/base.sh`. 
 
 ## Variable Categories

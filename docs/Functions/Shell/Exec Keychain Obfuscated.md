@@ -1,6 +1,6 @@
 # Exec Keychain Obfuscated
 
-### Purpose
+## Purpose
 core_exec_keychain_obfuscated function implementation from base.sh.
 
 ### Dependencies

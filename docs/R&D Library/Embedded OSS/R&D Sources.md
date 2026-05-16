@@ -1,6 +1,9 @@
 # R&D Sources
 
+## Purpose
+
 This document provides R&D sources used for macOS security research required to build the Attack MacOS project.
+
 
 ## Tools and Research by MITRE ATT&CK Tactic
 
@@ -55,4 +58,3 @@ External tools were integrated through porting, modification, referencing, or di
 | Tool | ShellCheck | Vidar Holen | Static analysis for shell scripts | [GitHub](https://github.com/koalaman/shellcheck) | [GNU General Public License v3.0](https://github.com/koalaman/shellcheck/blob/master/LICENSE) |
 | Tool | macOS Security Tools | ashishb | Awesome macOS security tools collection | [GitHub](https://github.com/ashishb/osx-and-ios-security-awesome) | N/A |
 | Tool | macOS Security Scripts | 0xmachos | macOS security scripts collection | [GitHub](https://github.com/0xmachos/mOSL) | N/A |
-

@@ -1,6 +1,9 @@
 # Adding a Feature to base.sh
 
+## Purpose
+
 **Scope:** Changes to [`attackmacos/core/base/base.sh`](../../../attackmacos/core/base/base.sh) (shared runtime merged into every generated TTP). If you only add or change a YAML procedure, follow [Create a New TTP Fast.md](Create%20a%20New%20TTP%20Fast.md) instead.
+
 
 This guide explains how to add new features to `base.sh` while maintaining the modular pipeline architecture. Steganography appears as a worked example where applicable.
 
@@ -319,7 +322,7 @@ elif [ "$STEG_EXTRACT" = true ]; then
 bash attackmacos/core/base/base.sh --help
 ```
 
-The stock `base.sh` template is driven by merged procedure output; many flags exist only after `build_shell_procedure.py` combines YAML with `base.sh`. For pipeline behavior (encode/encrypt/exfil), build a **minimal YAML procedure** that exercises your new flags, run `./attackmacos/attackmacos.sh --lint-local ...`, then test the generated script in a lab.
+The stock `base.sh` template is driven by merged procedure output; many flags exist only after `procedure_shell.py` combines YAML with `base.sh`. For pipeline behavior (encode/encrypt/exfil), build a **minimal YAML procedure** that exercises your new flags, run `./attackmacos/attackmacos.sh --lint-local ...`, then test the generated script in a lab.
 
 Example (steganography-related flags, after merging into a built script):
 

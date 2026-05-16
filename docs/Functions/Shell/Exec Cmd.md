@@ -1,6 +1,6 @@
 # Exec Cmd
 
-### Purpose
+## Purpose
 core_exec_cmd function implementation from base.sh.
 
 ### Dependencies

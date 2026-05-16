@@ -1,5 +1,9 @@
 # Message Sample Data Analysis
 
+## Purpose
+
+Documentation for «Message Sample Data Analysis» in attack-macOS.
+
 ## SQLite Query
 ```sql
 sqlite> "SELECT ROWID, service, service_center, version, type, error, destination_caller_id, message_source, is_auto_reply, is_system_message, is_service_message, is_forward, is_emote, is_audio_message, item_type, message_action_type, account, account_guid, handle_id, country, text, subject, attributedBody, message_summary_info, payload_data, balloon_bundle_id, cache_roomnames, part_count, is_delivered, is_sent, is_read, is_played, is_prepared, is_finished, was_delivered_quietly, did_notify_recipient, was_downgraded, was_detonated, is_delayed, is_empty, is_archive, is_spam, is_corrupt, is_expirable, expire_state, replace, reply_to_guid, thread_originator_guid, thread_originator_part, associated_message_guid, associated_message_type, associated_message_range_location, associated_message_range_length, share_status, share_direction, group_action_type, ck_sync_state, sort_id, date, date_read, date_delivered, date_played, date_retracted, date_edited, time_expressive_send_played FROM message where guid='BBE5511E-C8E1-4180-878F-8FDBFD149B81';"

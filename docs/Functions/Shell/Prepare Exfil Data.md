@@ -1,6 +1,6 @@
 # Prepare Exfil Data
 
-### Purpose
+## Purpose
 core_prepare_exfil_data function implementation from base.sh.
 
 ### Dependencies

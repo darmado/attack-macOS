@@ -1,6 +1,6 @@
 # Apply Steganography
 
-### Purpose
+## Purpose
 core_apply_steganography function implementation from base.sh.
 
 ### Dependencies

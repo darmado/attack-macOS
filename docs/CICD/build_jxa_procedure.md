@@ -18,18 +18,18 @@ Builds JXA (JavaScript for Automation) procedures from the same YAML schema as t
 
 ```bash
 # Schema validation only (same jsonschema as build_shell_procedure)
-python3 cicd/build/build_jxa_procedure.py --validate attackmacos/core/config/<name>.yml
+python3 cicd/build/procedure_jxa.py --validate attackmacos/core/config/<name>.yml
 
 # Build one procedure (writes attackmacos/ttp/<tactic>/jxa/<procedure_name>.js)
-python3 cicd/build/build_jxa_procedure.py attackmacos/core/config/<name>.yml
-python3 cicd/build/build_jxa_procedure.py --force attackmacos/core/config/<name>.yml
+python3 cicd/build/procedure_jxa.py attackmacos/core/config/<name>.yml
+python3 cicd/build/procedure_jxa.py --force attackmacos/core/config/<name>.yml
 
 # All config YAMLs that declare at least one JXA function
-python3 cicd/build/build_jxa_procedure.py --all
-python3 cicd/build/build_jxa_procedure.py --all --force
+python3 cicd/build/procedure_jxa.py --all
+python3 cicd/build/procedure_jxa.py --all --force
 
 # CI fixture: temp YAML copy, build, osascript --hello, delete artifact
-python3 cicd/build/build_jxa_procedure.py --self-test
+python3 cicd/build/procedure_jxa.py --self-test
 ```
 
 ## Post-build checks
@@ -44,7 +44,7 @@ Failures remove the incomplete output file (same idea as `sh -n` for shell build
 | Path | Role |
 |------|------|
 | `attackmacos/core/base/base.js` | Template with placeholders (`PLACEHOLDER_*`) |
-| `cicd/build/build_shell_procedure.py` | Shared: `read_yaml`, `validate_yaml`, `ProcedureData`, `get_tactic_directory`, GUID bump |
+| `cicd/build/procedure_shell.py` | Shared: `read_yaml`, `validate_yaml`, `ProcedureData`, `get_tactic_directory`, GUID bump |
 | `cicd/audit/audit_jxa.py` | Post-build static audit |
 | `cicd/build/fixtures/jxa_procedure_minimal.yml` | `--self-test` input |
 
@@ -52,7 +52,7 @@ Failures remove the incomplete output file (same idea as `sh -n` for shell build
 
 ```yaml
 - name: JXA builder self-test (macOS)
-  run: python3 cicd/build/build_jxa_procedure.py --self-test
+  run: python3 cicd/build/procedure_jxa.py --self-test
 ```
 
 Use a **macOS** runner; Linux CI cannot execute `osascript`.

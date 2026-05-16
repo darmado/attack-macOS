@@ -1,6 +1,6 @@
 # Exec Cmd Construct
 
-### Purpose
+## Purpose
 core_exec_cmd_construct function implementation from base.sh.
 
 ### Dependencies

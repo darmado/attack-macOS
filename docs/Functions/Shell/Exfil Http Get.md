@@ -1,6 +1,6 @@
 # Exfil Http Get
 
-### Purpose
+## Purpose
 core_exfil_http_get function implementation from base.sh.
 
 ### Dependencies

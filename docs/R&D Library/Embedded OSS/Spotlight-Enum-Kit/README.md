@@ -1,5 +1,9 @@
 # Spotlight Enumeration Kit
+
+## Purpose
+
 **NOTE: THIS REPO DOES NOT CONTAIN ANY TCC BYPASSES. INSTEAD THIS REPO CONTAINS EXAMPLE SCRIPTS OF SEARCHING THE SPOTLIGHT DB FOR INTERESTING INFO**
+
 
 Repo of Swift and JXA projects to leverage macOS Spotlight db data for the following:
 

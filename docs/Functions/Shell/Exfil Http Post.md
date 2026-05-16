@@ -1,6 +1,6 @@
 # Exfil Http Post
 
-### Purpose
+## Purpose
 core_exfil_http_post function implementation from base.sh.
 
 ### Dependencies

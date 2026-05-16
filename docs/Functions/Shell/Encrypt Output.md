@@ -1,6 +1,6 @@
 # Encrypt Output
 
-### Purpose
+## Purpose
 Converts encryption method to lowercase, then routes to specific encryption functions: `encrypt_with_aes()` for AES-256-CBC, `encrypt_with_gpg()` for GPG symmetric, `encrypt_with_xor()` for XOR, or returns original data for "none" or unknown methods.
 
 ### Dependencies

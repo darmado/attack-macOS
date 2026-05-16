@@ -1,5 +1,9 @@
 # Mystikal
+
+## Purpose
+
 macOS Initial Access Payload Generator
+
 
 - Intended to be used with https://github.com/its-a-feature/Mythic
 

@@ -1,6 +1,6 @@
 # Get Content Type
 
-### Purpose
+## Purpose
 core_get_content_type function implementation from base.sh.
 
 ### Dependencies

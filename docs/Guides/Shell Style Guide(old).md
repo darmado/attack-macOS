@@ -1,22 +1,13 @@
-# Shell Script Code Guide for MacOS Security Tools
+# Shell script style guide (macOS)
 
-> **Note:** Kept for historical detail; [Guides README.md](README.md) lists current workflows. Project automation (`build_shell_procedure.py`) targets POSIX-friendly generated scripts; align new shell with those patterns and `attackmacos/core/base/base.sh` conventions.
+> **Note:** Kept for historical detail; [Guides README.md](README.md) lists current workflows. Project automation (`procedure_shell.py`) targets POSIX-friendly generated scripts; align new shell with those patterns and `attackmacos/core/base/base.sh` conventions.
 
-### Description
-This document outlines the coding guide and best practices for developing POSIX-compliant shell scripts for MacOS security tools. It provides guidelines to ensure consistency, readability, and maintainability across the project.
+## Purpose
+
+POSIX-oriented shell practices for macOS security tooling in this repository: consistency, readability, portability, and safe patterns for generated and hand-written scripts.
 
 
 
-
-##
-
-### Purpose
-The purpose of these guide is to:
-1. Standardize coding practices across the project
-2. Improve code readability and maintainability
-3. Enhance security and reliability of the scripts
-4. Facilitate easier collaboration among team members
-5. Ensure POSIX compliance and portability
 
 ##
 

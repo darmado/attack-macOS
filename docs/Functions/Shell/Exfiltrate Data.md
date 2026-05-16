@@ -1,6 +1,6 @@
 # Exfiltrate Data
 
-### Purpose
+## Purpose
 Routes data to appropriate exfiltration method (HTTP POST/GET or DNS) based on `EXFIL_METHOD` setting. Validates URI is provided, logs attempt, calls method-specific functions, and handles success/failure results.
 
 ### Dependencies

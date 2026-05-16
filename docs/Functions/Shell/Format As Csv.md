@@ -1,6 +1,6 @@
 # Format As Csv
 
-### Purpose
+## Purpose
 core_format_as_csv function implementation from base.sh.
 
 ### Dependencies

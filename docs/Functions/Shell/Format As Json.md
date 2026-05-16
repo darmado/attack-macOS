@@ -1,6 +1,6 @@
 # Format As Json
 
-### Purpose
+## Purpose
 Converts output to structured JSON format with metadata including timestamp, job ID, encoding/encryption status, and data array.
 
 ### Dependencies

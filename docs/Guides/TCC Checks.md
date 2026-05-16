@@ -1,6 +1,6 @@
 # TCC OPSEC with JXA
 
-## Overview
+## Purpose
 
 This document details practical procedures to enumerate Transparency, Consent, and Control (TCC) permissions with JavaScript for Automation (JXA) maintaining ood OPSEC priciples.
 

@@ -1,5 +1,9 @@
 # Local QA (before a pull request)
 
+## Purpose
+
+List the local checks contributors run before opening a pull request so CI and maintainer review see fewer avoidable failures.
+
 GitHub Actions are optional later. Today, contributors run the same checks locally so maintainers see fewer surprise failures in review.
 
 ## One command
@@ -13,9 +17,9 @@ sh cicd/qa/run_local_qa.sh
 What it does:
 
 1. **`audit_procedure_inventory.py --strict`** — every `attackmacos/core/config/*.yml` has a matching built shell under `attackmacos/ttp/<tactic>/shell/<procedure_name>.sh`, and orphan scripts are only those allowlisted in `cicd/audit/inventory_allowlist.txt`.
-2. **`build_shell_procedure.py --validate`** on **each** `core/config/*.yml` — schema and builder rules without writing scripts.
+2. **`procedure_shell.py --validate`** on **each** `core/config/*.yml` — schema and builder rules without writing scripts.
 3. **`audit_jxa.py --full`** — static JXA rules on all `attackmacos/ttp/**/jxa/*.js`.
-4. **On macOS only** — `build_jxa_procedure.py --self-test` (osascript smoke). Set `SKIP_JXA_SELFTEST=1` to skip. On Linux, step 4 is skipped automatically.
+4. **On macOS only** — `procedure_jxa.py --self-test` (osascript smoke). Set `SKIP_JXA_SELFTEST=1` to skip. On Linux, step 4 is skipped automatically.
 
 Override Python: `PYTHON=/path/to/python3 sh cicd/qa/run_local_qa.sh`.
 

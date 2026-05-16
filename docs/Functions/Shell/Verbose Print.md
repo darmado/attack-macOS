@@ -1,6 +1,6 @@
 # Verbose Print
 
-### Purpose
+## Purpose
 Checks the global `VERBOSE` flag and if true, prints formatted informational messages to stdout with timestamp prefix. Used for providing detailed execution information to users.
 
 ### Dependencies

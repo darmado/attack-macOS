@@ -1,6 +1,6 @@
 # TCC Permission Checks in JXA
 
-## Overview
+## Purpose
 
 This document outlines methods for checking Transparency, Consent, and Control (TCC) permissions using JavaScript for Automation (JXA) on macOS. These methods focus on OPSEC considerations and minimal system interaction.
 

@@ -1,5 +1,9 @@
 # Messages Database Column Relationships
 
+## Purpose
+
+Documentation for «Messages Database Column Relationships» in attack-macOS.
+
 ## Table Relationship Patterns
 
 ### Join Table Pattern

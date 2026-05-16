@@ -1,6 +1,6 @@
 # Validate Parsed Args
 
-### Purpose
+## Purpose
 core_validate_parsed_args function implementation from base.sh.
 
 ### Dependencies

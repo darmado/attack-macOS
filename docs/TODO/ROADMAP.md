@@ -1,5 +1,9 @@
 # attack-macOS Project Roadmap
 
+## Purpose
+
+Planned features, core shell function status, and discovery backlog for attack-macOS.
+
 This document outlines the planned features and improvements for the attack-macOS project.
 
 
@@ -31,8 +35,8 @@ This document outlines the planned features and improvements for the attack-macO
 | Community Contribution Workflow | Planned | High | Streamlined community contribution workflow |
 | Additional Techniques | Planned | Medium | Implement more MITRE ATT&CK techniques (see Discovery backlog below) |
 | Testing / QA | In progress | Medium | `attackmacos.sh --lint-local` for syntax; broader execution tests remain optional |
-| Caldera plugin sync | Available | Low | `python3 cicd/build/build_shell_procedure.py --sync-caldera` pushes abilities to `integrations/caldera/` |
-| Atomic Red Team parity | Manual | Medium | No automated pull from ART; port macOS-relevant atomics into YAML as native procedures |
+| Caldera plugin sync | Available | Low | `python3 cicd/build/procedure_shell.py --sync-caldera` pushes abilities to `integrations/caldera/` |
+| Atomic Red Team parity | Available | Medium | Fetch ART macOS index into standby: `python3 cicd/fetch/fetch_atomic_red_team.py`; port to `core/config/` remains manual ([ART_to_Procedure.md](../CICD/ART_to_Procedure.md)) |
 
 
 ### Discovery

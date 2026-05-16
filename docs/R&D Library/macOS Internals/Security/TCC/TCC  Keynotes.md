@@ -1,4 +1,8 @@
-## TCC (Transparency, Consent, and Control)
+# TCC keynotes
+
+## Purpose
+
+Summary of Apple Transparency, Consent, and Control (TCC): protected resources, consent flows, and pointers to official documentation.
 
 TCC is Apple's privacy protection system that manages app access to certain protected resources and user data. It requires user consent before allowing apps to access sensitive information or features.
 

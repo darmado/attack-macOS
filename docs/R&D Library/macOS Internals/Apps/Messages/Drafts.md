@@ -1,6 +1,6 @@
 # Messages.app Draft System Analysis
 
-## Overview
+## Purpose
 Messages.app maintains drafts in a file-based system outside the main SQLite database, using property lists and a structured directory hierarchy.
 
 ## File System Structure

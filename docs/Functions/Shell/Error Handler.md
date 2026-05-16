@@ -1,6 +1,6 @@
 # Handle Error
 
-### Purpose
+## Purpose
 core_handle_error function implementation from base.sh.
 
 ### Dependencies

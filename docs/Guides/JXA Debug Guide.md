@@ -1,7 +1,9 @@
-
 # Debugging JXA
 
+## Purpose
+
 This document outlines the standard approach for implementing debugging in our JXA (JavaScript for Automation) scripts. These practices ensure consistent, scalable, and informative debugging across all our JXA implementations.
+
 
 ## 1. Debug Flag
 

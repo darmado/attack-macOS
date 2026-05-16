@@ -1,6 +1,6 @@
 # Normalize Uri
 
-### Purpose
+## Purpose
 core_normalize_uri function implementation from base.sh.
 
 ### Dependencies

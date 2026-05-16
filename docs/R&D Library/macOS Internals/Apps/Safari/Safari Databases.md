@@ -1,6 +1,9 @@
 # Safari Databases Reference
 
+## Purpose
+
 This document provides an overview of the database structures used by Safari on macOS.
+
 
 ## CloudExtensions.db
 

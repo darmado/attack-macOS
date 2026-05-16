@@ -5,7 +5,7 @@ This document lists status codes and error messages for Apple devices and servic
 
 ##
 
-### Purpose
+## Purpose
 This error reference aims to:
 1. Describe error codes clearly and concisely.
 2. Link error codes to official Apple Developer documentation where possible.

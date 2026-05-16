@@ -1,6 +1,6 @@
 # OPSEC Guide for Offensive Operations
 
-## Overview
+## Purpose
 
 This guide outlines key principles and practices for maintaining Operational Security (OPSEC) during offensive security operations on macOS systems.
 
